@@ -104,7 +104,7 @@ export default function Home() {
                   className="pl-10 h-12 text-lg"
                 />
               </div>
-              <Button type="submit" size="lg" className="px-8">
+              <Button type="submit" size="lg" className="px-8" style={{height: '48px'}}>
                 搜尋
               </Button>
             </div>
