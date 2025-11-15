@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, BarChart3, Wallet, History, Star } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -95,7 +95,7 @@ export default function Home() {
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/50 transition-colors">
             <CardHeader>
-              <BarChart3 className="h-12 w-12 text-primary mb-4" />
+              <Search className="h-12 w-12 text-primary mb-4" />
               <CardTitle>即時股票數據</CardTitle>
               <CardDescription>
                 獲取最新的股票價格、歷史走勢和技術指標，掌握市場動態
@@ -112,13 +112,23 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
           </Card>
-
-          <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/50 transition-colors">
+          
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/portfolio")}>
             <CardHeader>
               <Wallet className="h-12 w-12 text-primary mb-4" />
               <CardTitle>投資組合管理</CardTitle>
               <CardDescription>
                 追蹤您的持股表現，計算投資回報，優化資產配置
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/ai-advisor")}>
+            <CardHeader>
+              <Sparkles className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>AI 投資顧問</CardTitle>
+              <CardDescription>
+                與專業 AI 顧問對話，獲取個性化投資建議和市場分析
               </CardDescription>
             </CardHeader>
           </Card>

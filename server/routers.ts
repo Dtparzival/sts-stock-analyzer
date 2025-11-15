@@ -276,6 +276,33 @@ ${companyName ? `公司名稱: ${companyName}` : ''}
         
         return { prediction, fromCache: false };
       }),
+
+    // AI 聊天功能
+    chatWithAI: publicProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const { messages } = input;
+        
+        const systemMessage = {
+          role: "system" as const,
+          content: "你是一位專業的美股投資顧問，擁有豐富的市場分析經驗。你可以回答關於美股投資、技術分析、基本面分析、風險管理等各方面的問題。請用繁體中文回答，並提供專業且易懂的建議。"
+        };
+        
+        const response = await invokeLLM({
+          messages: [systemMessage, ...messages],
+        });
+        
+        const message = typeof response.choices[0].message.content === 'string'
+          ? response.choices[0].message.content
+          : "無法生成回懆";
+        
+        return { message };
+      }),
   }),
 
   watchlist: router({

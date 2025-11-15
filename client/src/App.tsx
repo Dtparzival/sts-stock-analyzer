@@ -9,6 +9,7 @@ import StockDetail from "./pages/StockDetail";
 import Watchlist from "./pages/Watchlist";
 import Portfolio from "./pages/Portfolio";
 import SearchHistory from "./pages/SearchHistory";
+import AIAdvisor from "./pages/AIAdvisor";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path={"/watchlist"} component={Watchlist} />
       <Route path={"/portfolio"} component={Portfolio} />
       <Route path={"/history"} component={SearchHistory} />
+      <Route path={"/ai-advisor"} component={AIAdvisor} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -27,7 +29,10 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider
+        defaultTheme="light"
+        switchable
+      >
         <TooltipProvider>
           <Toaster />
           <Router />

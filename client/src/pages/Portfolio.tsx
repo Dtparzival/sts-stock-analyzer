@@ -1,22 +1,151 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, Plus, Trash2, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
+import { toast } from "sonner";
 
 export default function Portfolio() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
 
-  const { data: portfolio, isLoading } = trpc.portfolio.list.useQuery(undefined, {
+  // 表單狀態
+  const [formData, setFormData] = useState({
+    symbol: "",
+    shares: "",
+    purchasePrice: "",
+    purchaseDate: new Date().toISOString().split('T')[0],
+    notes: "",
+  });
+
+  const { data: portfolio = [], isLoading, refetch } = trpc.portfolio.list.useQuery(undefined, {
     enabled: !!user,
   });
 
-  if (loading) {
+  const addMutation = trpc.portfolio.add.useMutation({
+    onSuccess: () => {
+      toast.success("持倉已添加");
+      refetch();
+      setIsAddDialogOpen(false);
+      resetForm();
+    },
+    onError: (error) => {
+      toast.error(`添加失敗: ${error.message}`);
+    },
+  });
+
+  const deleteMutation = trpc.portfolio.delete.useMutation({
+    onSuccess: () => {
+      toast.success("持倉已刪除");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`刪除失敗: ${error.message}`);
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      symbol: "",
+      shares: "",
+      purchasePrice: "",
+      purchaseDate: new Date().toISOString().split('T')[0],
+      notes: "",
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.symbol || !formData.shares || !formData.purchasePrice) {
+      toast.error("請填寫所有必填欄位");
+      return;
+    }
+
+    addMutation.mutate({
+      symbol: formData.symbol.toUpperCase(),
+      shares: parseInt(formData.shares),
+      purchasePrice: parseFloat(formData.purchasePrice),
+      purchaseDate: new Date(formData.purchaseDate),
+      notes: formData.notes || undefined,
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("確定要刪除這筆持倉嗎？")) {
+      deleteMutation.mutate({ id });
+    }
+  };
+
+  // 獲取當前股價
+  useEffect(() => {
+    if (portfolio.length === 0) return;
+
+    const fetchPrices = async () => {
+      const prices: Record<string, number> = {};
+      
+      for (const item of portfolio) {
+        try {
+          const response = await fetch(
+            `/api/trpc/stock.getStockData?input=${encodeURIComponent(JSON.stringify({ symbol: item.symbol, range: "1d", interval: "1d" }))}`
+          );
+          const data = await response.json();
+          
+          if (data.result?.data?.chart?.result?.[0]?.meta?.regularMarketPrice) {
+            prices[item.symbol] = data.result.data.chart.result[0].meta.regularMarketPrice;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch price for ${item.symbol}:`, error);
+        }
+      }
+      
+      setStockPrices(prices);
+    };
+
+    fetchPrices();
+  }, [portfolio]);
+
+  // 計算統計數據
+  const calculateStats = () => {
+    let totalInvestment = 0;
+    let totalCurrentValue = 0;
+
+    portfolio.forEach((item) => {
+      const purchasePrice = item.purchasePrice / 100; // 轉換回美元
+      const currentPrice = stockPrices[item.symbol] || purchasePrice;
+      
+      totalInvestment += purchasePrice * item.shares;
+      totalCurrentValue += currentPrice * item.shares;
+    });
+
+    const totalGainLoss = totalCurrentValue - totalInvestment;
+    const totalGainLossPercent = totalInvestment > 0 
+      ? (totalGainLoss / totalInvestment) * 100 
+      : 0;
+
+    return {
+      totalInvestment,
+      totalCurrentValue,
+      totalGainLoss,
+      totalGainLossPercent,
+    };
+  };
+
+  const stats = calculateStats();
+
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -24,83 +153,277 @@ export default function Portfolio() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-12">
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground mb-6">請先登入以查看投資組合</p>
-              <Button asChild>
-                <a href={getLoginUrl()}>登入</a>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>需要登入</CardTitle>
+            <CardDescription>請先登入以查看您的投資組合</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              className="w-full" 
+              onClick={() => window.location.href = getLoginUrl()}
+            >
+              登入
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setLocation("/")}
+            >
+              返回首頁
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首頁
-        </Button>
+      {/* 頂部導航 */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocation("/")}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                返回首頁
+              </Button>
+              <h1 className="text-2xl font-bold">投資組合</h1>
+            </div>
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  添加持倉
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>添加新持倉</DialogTitle>
+                  <DialogDescription>
+                    輸入您的股票持倉資訊
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit}>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="symbol">股票代碼 *</Label>
+                      <Input
+                        id="symbol"
+                        placeholder="例如: AAPL"
+                        value={formData.symbol}
+                        onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="shares">持股數量 *</Label>
+                      <Input
+                        id="shares"
+                        type="number"
+                        min="1"
+                        placeholder="例如: 100"
+                        value={formData.shares}
+                        onChange={(e) => setFormData({ ...formData, shares: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="purchasePrice">購買價格 (USD) *</Label>
+                      <Input
+                        id="purchasePrice"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="例如: 150.50"
+                        value={formData.purchasePrice}
+                        onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="purchaseDate">購買日期 *</Label>
+                      <Input
+                        id="purchaseDate"
+                        type="date"
+                        value={formData.purchaseDate}
+                        onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">備註</Label>
+                      <Textarea
+                        id="notes"
+                        placeholder="選填：記錄購買原因或其他資訊"
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsAddDialogOpen(false);
+                        resetForm();
+                      }}
+                    >
+                      取消
+                    </Button>
+                    <Button type="submit" disabled={addMutation.isPending}>
+                      {addMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      添加
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex items-center gap-3 mb-6">
-          <Wallet className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">投資組合</h1>
+      <main className="container mx-auto px-4 py-8">
+        {/* 統計卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>總投資金額</CardDescription>
+              <CardTitle className="text-2xl">
+                ${stats.totalInvestment.toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>當前總價值</CardDescription>
+              <CardTitle className="text-2xl">
+                ${stats.totalCurrentValue.toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>總損益</CardDescription>
+              <CardTitle className={`text-2xl flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.totalGainLoss >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                ${Math.abs(stats.totalGainLoss).toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>總報酬率</CardDescription>
+              <CardTitle className={`text-2xl ${stats.totalGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.totalGainLossPercent >= 0 ? '+' : ''}{stats.totalGainLossPercent.toFixed(2)}%
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : !portfolio || portfolio.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground mb-4">尚未添加任何持倉</p>
-              <p className="text-sm text-muted-foreground">
-                此功能即將推出，敬請期待
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {portfolio.map((item) => (
-              <Card key={item.id} className="cursor-pointer hover:border-primary/50 transition-colors">
-                <CardContent className="py-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold mb-1">{item.symbol}</h3>
-                      <p className="text-sm text-muted-foreground">{item.companyName || item.symbol}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">持股數量</p>
-                      <p className="text-xl font-bold">{item.shares}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
-                    <div>
-                      <p className="text-sm text-muted-foreground">買入價格</p>
-                      <p className="font-semibold">${(item.purchasePrice / 100).toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">買入日期</p>
-                      <p className="font-semibold">
-                        {new Date(item.purchaseDate).toLocaleDateString("zh-TW")}
-                      </p>
-                    </div>
-                  </div>
-                  {item.notes && (
-                    <p className="text-sm text-muted-foreground mt-4">備註：{item.notes}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+        {/* 持倉列表 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>持倉明細</CardTitle>
+            <CardDescription>
+              您的股票投資組合詳情
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : portfolio.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>尚無持倉記錄</p>
+                <p className="text-sm mt-2">點擊上方「添加持倉」按鈕開始記錄您的投資</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>股票代碼</TableHead>
+                      <TableHead>公司名稱</TableHead>
+                      <TableHead className="text-right">持股數量</TableHead>
+                      <TableHead className="text-right">購買價格</TableHead>
+                      <TableHead className="text-right">當前價格</TableHead>
+                      <TableHead className="text-right">成本</TableHead>
+                      <TableHead className="text-right">市值</TableHead>
+                      <TableHead className="text-right">損益</TableHead>
+                      <TableHead className="text-right">報酬率</TableHead>
+                      <TableHead className="text-right">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {portfolio.map((item) => {
+                      const purchasePrice = item.purchasePrice / 100;
+                      const currentPrice = stockPrices[item.symbol] || purchasePrice;
+                      const costBasis = purchasePrice * item.shares;
+                      const marketValue = currentPrice * item.shares;
+                      const gainLoss = marketValue - costBasis;
+                      const gainLossPercent = (gainLoss / costBasis) * 100;
+
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">
+                            <button
+                              onClick={() => setLocation(`/stock/${item.symbol}`)}
+                              className="text-primary hover:underline"
+                            >
+                              {item.symbol}
+                            </button>
+                          </TableCell>
+                          <TableCell>{item.companyName || '-'}</TableCell>
+                          <TableCell className="text-right">{item.shares}</TableCell>
+                          <TableCell className="text-right">${purchasePrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">
+                            {stockPrices[item.symbol] ? (
+                              `$${currentPrice.toFixed(2)}`
+                            ) : (
+                              <Loader2 className="h-4 w-4 animate-spin inline" />
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">${costBasis.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">${marketValue.toFixed(2)}</TableCell>
+                          <TableCell className={`text-right ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)}
+                          </TableCell>
+                          <TableCell className={`text-right ${gainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }
