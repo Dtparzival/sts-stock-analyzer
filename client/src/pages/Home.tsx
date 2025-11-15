@@ -3,14 +3,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import FloatingAIChat from "@/components/FloatingAIChat";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      toast.success("登出成功");
+      window.location.reload();
+    },
+    onError: () => {
+      toast.error("登出失敗");
+    }
+  });
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +63,11 @@ export default function Home() {
                     <History className="h-4 w-4 mr-2" />
                     歷史
                   </Button>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{user.name || user.email}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{user.name || user.email}</span>
+                    <Button variant="ghost" size="sm" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4" />
+                    </Button>
                   </div>
                 </>
               ) : (
@@ -93,7 +113,7 @@ export default function Home() {
 
         {/* 功能特色 */}
         <div className="grid md:grid-cols-3 gap-6 mb-16">
-          <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/50 transition-colors">
+          <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
             <CardHeader>
               <Search className="h-12 w-12 text-primary mb-4" />
               <CardTitle>即時股票數據</CardTitle>
@@ -103,7 +123,7 @@ export default function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/50 transition-colors">
+          <Card className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <CardHeader>
               <TrendingUp className="h-12 w-12 text-primary mb-4" />
               <CardTitle>AI 投資分析</CardTitle>
@@ -123,15 +143,7 @@ export default function Home() {
             </CardHeader>
           </Card>
           
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/ai-advisor")}>
-            <CardHeader>
-              <Sparkles className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>AI 投資顧問</CardTitle>
-              <CardDescription>
-                與專業 AI 顧問對話，獲取個性化投資建議和市場分析
-              </CardDescription>
-            </CardHeader>
-          </Card>
+
         </div>
 
         {/* 熱門股票 */}
@@ -176,6 +188,9 @@ export default function Home() {
           </p>
         </div>
       </footer>
+      
+      {/* 浮動 AI 顧問 */}
+      <FloatingAIChat />
     </div>
   );
 }
