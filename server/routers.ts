@@ -29,7 +29,18 @@ export const appRouter = router({
         interval: z.string().optional().default('1d'),
       }))
       .query(async ({ input, ctx }) => {
-        const { symbol, range, interval } = input;
+        let { symbol, range, interval } = input;
+        
+        // 處理自訂日期範圍 (timestamp 格式: "startTimestamp-endTimestamp")
+        let period1: string | undefined;
+        let period2: string | undefined;
+        
+        if (range.includes('-')) {
+          const [start, end] = range.split('-');
+          period1 = start;
+          period2 = end;
+          range = undefined as any; // 使用 period1/period2 時不需要 range
+        }
         
         // 記錄搜尋歷史（如果用戶已登入）
         if (ctx.user) {
@@ -59,15 +70,24 @@ export const appRouter = router({
           }
         }
         
+        const queryParams: any = {
+          symbol,
+          region: 'US',
+          interval,
+          includeAdjustedClose: 'true',
+          events: 'div,split',
+        };
+        
+        // 根據是否有自訂日期範圍使用不同參數
+        if (period1 && period2) {
+          queryParams.period1 = period1;
+          queryParams.period2 = period2;
+        } else {
+          queryParams.range = range;
+        }
+        
         const data = await callDataApi("YahooFinance/get_stock_chart", {
-          query: {
-            symbol,
-            region: 'US',
-            interval,
-            range,
-            includeAdjustedClose: 'true',
-            events: 'div,split',
-          },
+          query: queryParams,
         });
         
         return data;

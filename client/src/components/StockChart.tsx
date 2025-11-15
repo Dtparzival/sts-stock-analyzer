@@ -10,7 +10,12 @@ import {
 } from "recharts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
+import { format } from "date-fns";
+import { zhTW } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface ChartDataPoint {
   timestamp: number;
@@ -42,10 +47,47 @@ export default function StockChart({
   isLoading = false,
 }: StockChartProps) {
   const [selectedRange, setSelectedRange] = useState("1mo");
+  const [customStartDate, setCustomStartDate] = useState<Date>();
+  const [customEndDate, setCustomEndDate] = useState<Date>();
+  const [isCustomRange, setIsCustomRange] = useState(false);
 
   const handleRangeChange = (range: string, interval: string) => {
     setSelectedRange(range);
+    setIsCustomRange(false);
     onRangeChange?.(range, interval);
+  };
+
+  const handleCustomRangeApply = () => {
+    if (!customStartDate || !customEndDate) {
+      return;
+    }
+    
+    if (customStartDate > customEndDate) {
+      alert("起始日期不能晚於結束日期");
+      return;
+    }
+    
+    setIsCustomRange(true);
+    setSelectedRange("custom");
+    
+    // 計算日期差異以決定適當的 interval
+    const daysDiff = Math.ceil((customEndDate.getTime() - customStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    let interval = "1d";
+    if (daysDiff <= 5) {
+      interval = "15m";
+    } else if (daysDiff <= 60) {
+      interval = "1d";
+    } else if (daysDiff <= 365) {
+      interval = "1wk";
+    } else {
+      interval = "1mo";
+    }
+    
+    // 轉換為 Unix timestamp (秒)
+    const startTimestamp = Math.floor(customStartDate.getTime() / 1000);
+    const endTimestamp = Math.floor(customEndDate.getTime() / 1000);
+    
+    onRangeChange?.(`${startTimestamp}-${endTimestamp}`, interval);
   };
 
   // 計算價格變化百分比
@@ -81,11 +123,11 @@ export default function StockChart({
   return (
     <div className="space-y-4">
       {/* 時間範圍選擇器 */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {timeRanges.map((range) => (
           <Button
             key={range.value}
-            variant={selectedRange === range.value ? "default" : "outline"}
+            variant={selectedRange === range.value && !isCustomRange ? "default" : "outline"}
             size="sm"
             onClick={() => handleRangeChange(range.value, range.interval)}
             disabled={isLoading}
@@ -93,6 +135,75 @@ export default function StockChart({
             {range.label}
           </Button>
         ))}
+        
+        {/* 分隔線 */}
+        <div className="h-8 w-px bg-border mx-2" />
+        
+        {/* 自訂日期範圍 */}
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !customStartDate && "text-muted-foreground"
+                )}
+                disabled={isLoading}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {customStartDate ? format(customStartDate, "yyyy/MM/dd", { locale: zhTW }) : "起始日期"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={customStartDate}
+                onSelect={setCustomStartDate}
+                disabled={(date) => date > new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <span className="text-muted-foreground">至</span>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !customEndDate && "text-muted-foreground"
+                )}
+                disabled={isLoading}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {customEndDate ? format(customEndDate, "yyyy/MM/dd", { locale: zhTW }) : "結束日期"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={customEndDate}
+                onSelect={setCustomEndDate}
+                disabled={(date) => date > new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            size="sm"
+            onClick={handleCustomRangeApply}
+            disabled={!customStartDate || !customEndDate || isLoading}
+            variant={isCustomRange ? "default" : "outline"}
+          >
+            查詢
+          </Button>
+        </div>
       </div>
 
       {/* 圖表區域 */}
