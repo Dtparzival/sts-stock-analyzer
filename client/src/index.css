@@ -134,6 +134,29 @@
 }
 
 @layer components {
+  /* 股票卡片樣式 */
+  .stock-card {
+    @apply bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors;
+  }
+
+  /* 價格變動顏色 */
+  .price-up {
+    @apply text-green-500;
+  }
+
+  .price-down {
+    @apply text-red-500;
+  }
+
+  .price-neutral {
+    @apply text-muted-foreground;
+  }
+
+  /* 圖表容器樣式 */
+  .chart-container {
+    @apply w-full h-full min-h-[300px] relative;
+  }
+
   /**
    * Custom container utility that centers content and adds responsive padding.
    *

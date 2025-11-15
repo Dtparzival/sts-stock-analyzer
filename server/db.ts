@@ -1,11 +1,25 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, and, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, 
+  users, 
+  watchlist, 
+  Watchlist, 
+  InsertWatchlist,
+  searchHistory,
+  SearchHistory,
+  InsertSearchHistory,
+  analysisCache,
+  AnalysisCache,
+  InsertAnalysisCache,
+  portfolio,
+  Portfolio,
+  InsertPortfolio
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -89,4 +103,121 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Watchlist functions
+export async function getUserWatchlist(userId: number): Promise<Watchlist[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(watchlist).where(eq(watchlist.userId, userId)).orderBy(desc(watchlist.addedAt));
+}
+
+export async function addToWatchlist(data: InsertWatchlist): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(watchlist).values(data);
+}
+
+export async function removeFromWatchlist(userId: number, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(watchlist).where(
+    and(
+      eq(watchlist.userId, userId),
+      eq(watchlist.symbol, symbol)
+    )
+  );
+}
+
+export async function isInWatchlist(userId: number, symbol: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.select().from(watchlist).where(
+    and(
+      eq(watchlist.userId, userId),
+      eq(watchlist.symbol, symbol)
+    )
+  ).limit(1);
+  
+  return result.length > 0;
+}
+
+// Search history functions
+export async function addSearchHistory(data: InsertSearchHistory): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(searchHistory).values(data);
+}
+
+export async function getUserSearchHistory(userId: number, limit: number = 20): Promise<SearchHistory[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(searchHistory)
+    .where(eq(searchHistory.userId, userId))
+    .orderBy(desc(searchHistory.searchedAt))
+    .limit(limit);
+}
+
+// Analysis cache functions
+export async function getAnalysisCache(symbol: string, analysisType: string): Promise<AnalysisCache | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const now = new Date();
+  const result = await db.select().from(analysisCache).where(
+    and(
+      eq(analysisCache.symbol, symbol),
+      eq(analysisCache.analysisType, analysisType),
+      gt(analysisCache.expiresAt, now)
+    )
+  ).limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function setAnalysisCache(data: InsertAnalysisCache): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(analysisCache).values(data);
+}
+
+// Portfolio functions
+export async function getUserPortfolio(userId: number): Promise<Portfolio[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(portfolio)
+    .where(eq(portfolio.userId, userId))
+    .orderBy(desc(portfolio.createdAt));
+}
+
+export async function addToPortfolio(data: InsertPortfolio): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(portfolio).values(data);
+}
+
+export async function updatePortfolio(id: number, data: Partial<InsertPortfolio>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(portfolio).set(data).where(eq(portfolio.id, id));
+}
+
+export async function deleteFromPortfolio(id: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(portfolio).where(
+    and(
+      eq(portfolio.id, id),
+      eq(portfolio.userId, userId)
+    )
+  );
+}

@@ -1,17 +1,10 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, index } from "drizzle-orm/mysql-core";
 
 /**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * 核心用戶表
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -25,4 +18,76 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * 用戶收藏的股票
+ */
+export const watchlist = mysqlTable("watchlist", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  companyName: text("companyName"),
+  addedAt: timestamp("addedAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  symbolIdx: index("symbol_idx").on(table.symbol),
+}));
+
+export type Watchlist = typeof watchlist.$inferSelect;
+export type InsertWatchlist = typeof watchlist.$inferInsert;
+
+/**
+ * 用戶的股票查詢歷史
+ */
+export const searchHistory = mysqlTable("searchHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  companyName: text("companyName"),
+  searchedAt: timestamp("searchedAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  searchedAtIdx: index("searchedAt_idx").on(table.searchedAt),
+}));
+
+export type SearchHistory = typeof searchHistory.$inferSelect;
+export type InsertSearchHistory = typeof searchHistory.$inferInsert;
+
+/**
+ * AI 分析結果緩存
+ */
+export const analysisCache = mysqlTable("analysisCache", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  analysisType: varchar("analysisType", { length: 50 }).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  expiresAtIdx: index("expiresAt_idx").on(table.expiresAt),
+}));
+
+export type AnalysisCache = typeof analysisCache.$inferSelect;
+export type InsertAnalysisCache = typeof analysisCache.$inferInsert;
+
+/**
+ * 用戶投資組合
+ */
+export const portfolio = mysqlTable("portfolio", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  companyName: text("companyName"),
+  shares: int("shares").notNull(),
+  purchasePrice: int("purchasePrice").notNull(), // 以分為單位存儲（美分）
+  purchaseDate: timestamp("purchaseDate").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  symbolIdx: index("symbol_idx").on(table.symbol),
+}));
+
+export type Portfolio = typeof portfolio.$inferSelect;
+export type InsertPortfolio = typeof portfolio.$inferInsert;
