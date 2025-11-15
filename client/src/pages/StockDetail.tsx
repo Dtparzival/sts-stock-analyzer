@@ -8,6 +8,7 @@ import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import StockChart from "@/components/StockChart";
 
 export default function StockDetail() {
   const [, params] = useRoute("/stock/:symbol");
@@ -17,9 +18,11 @@ export default function StockDetail() {
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
+  const [chartRange, setChartRange] = useState("1mo");
+  const [chartInterval, setChartInterval] = useState("1d");
 
   const { data: stockData, isLoading: loadingStock } = trpc.stock.getStockData.useQuery(
-    { symbol, range: "1mo", interval: "1d" },
+    { symbol, range: chartRange, interval: chartInterval },
     { enabled: !!symbol }
   );
 
@@ -50,6 +53,39 @@ export default function StockDetail() {
 
   const [analysis, setAnalysis] = useState<string>("");
   const [prediction, setPrediction] = useState<string>("");
+
+  // 格式化圖表數據
+  const formatChartData = (data: any) => {
+    if (!data?.chart?.result?.[0]) return [];
+    
+    const result = data.chart.result[0];
+    const timestamps = result.timestamp || [];
+    const quotes = result.indicators?.quote?.[0] || {};
+    const closes = quotes.close || [];
+    const volumes = quotes.volume || [];
+    
+    return timestamps.map((timestamp: number, index: number) => {
+      const date = new Date(timestamp * 1000);
+      const price = closes[index];
+      
+      // 根據時間範圍決定日期格式
+      let dateStr = "";
+      if (chartRange === "1d") {
+        dateStr = date.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+      } else if (chartRange === "5d") {
+        dateStr = date.toLocaleDateString("zh-TW", { month: "short", day: "numeric", hour: "2-digit" });
+      } else {
+        dateStr = date.toLocaleDateString("zh-TW", { month: "short", day: "numeric" });
+      }
+      
+      return {
+        timestamp,
+        date: dateStr,
+        price: price || 0,
+        volume: volumes[index] || 0,
+      };
+    }).filter((item: any) => item.price > 0);
+  };
 
   const meta = (stockData as any)?.chart?.result?.[0]?.meta;
   const companyName = meta?.longName || symbol;
@@ -202,6 +238,19 @@ export default function StockDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 股價走勢圖 */}
+        <div className="mb-6">
+          <StockChart
+            symbol={symbol}
+            data={formatChartData(stockData)}
+            isLoading={loadingStock}
+            onRangeChange={(range, interval) => {
+              setChartRange(range);
+              setChartInterval(interval);
+            }}
+          />
+        </div>
 
         {/* 分析標籤頁 */}
         <Tabs defaultValue="analysis" className="space-y-6">
