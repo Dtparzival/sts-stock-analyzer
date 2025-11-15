@@ -85,7 +85,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
-            美股投資分析平台
+            STS 美股投資分析平台
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             透過 AI 驅動的深度分析，掌握美股市場趨勢，做出更明智的投資決策
