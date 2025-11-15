@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, RefreshCw, Download } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
@@ -141,6 +141,54 @@ export default function StockDetail() {
       toast.error("獲取預測失敗");
     } finally {
       setIsPredicting(false);
+    }
+  };
+
+  const handleDownloadPDF = async (type: 'analysis' | 'prediction') => {
+    try {
+      const content = type === 'analysis' ? analysis : prediction;
+      const title = type === 'analysis' ? 'AI 投資分析' : '未來趨勢預測';
+      
+      // 創建一個隱藏的 div 來渲染 Markdown
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.className = 'prose prose-invert max-w-none p-8';
+      tempDiv.innerHTML = `
+        <h1>${symbol} - ${companyName}</h1>
+        <h2>${title}</h2>
+        <div>${content}</div>
+        <p style="margin-top: 40px; font-size: 12px; color: #888;">生成時間：${new Date().toLocaleString('zh-TW')}</p>
+      `;
+      document.body.appendChild(tempDiv);
+
+      // 使用 html2canvas 和 jsPDF 生成 PDF
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        backgroundColor: '#1a1a1a',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const imgWidth = 210; // A4 寬度
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${symbol}_${title}_${new Date().getTime()}.pdf`);
+      
+      document.body.removeChild(tempDiv);
+      toast.success('PDF 下載成功');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('PDF 生成失敗');
     }
   };
 
@@ -282,8 +330,20 @@ export default function StockDetail() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="prose prose-invert max-w-none">
-                    <Streamdown>{analysis}</Streamdown>
+                  <div className="space-y-4">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={handleGetAnalysis} disabled={isAnalyzing}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        重新生成
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF('analysis')}>
+                        <Download className="h-4 w-4 mr-2" />
+                        下載 PDF
+                      </Button>
+                    </div>
+                    <div className="prose prose-invert max-w-none">
+                      <Streamdown>{analysis}</Streamdown>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -313,8 +373,20 @@ export default function StockDetail() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="prose prose-invert max-w-none">
-                    <Streamdown>{prediction}</Streamdown>
+                  <div className="space-y-4">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={handleGetPrediction} disabled={isPredicting}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        重新生成
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF('prediction')}>
+                        <Download className="h-4 w-4 mr-2" />
+                        下載 PDF
+                      </Button>
+                    </div>
+                    <div className="prose prose-invert max-w-none">
+                      <Streamdown>{prediction}</Streamdown>
+                    </div>
                   </div>
                 )}
               </CardContent>

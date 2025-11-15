@@ -84,7 +84,7 @@ export default function FloatingAIChat() {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-96 h-[600px] shadow-2xl flex flex-col z-50">
+    <Card className="fixed bottom-6 right-6 w-[420px] h-[650px] shadow-2xl flex flex-col z-50 bg-card">
       {/* 標題欄 */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-2">
