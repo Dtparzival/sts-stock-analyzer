@@ -58,13 +58,16 @@ interface TiingoMeta {
  */
 export async function getTiingoQuote(symbol: string): Promise<TiingoQuote | null> {
   try {
-    // 使用 End-of-Day API 的 prices endpoint 獲取最近 5 天的數據，以確保能獲取前一天的收盤價
+    // 使用 End-of-Day API 的 prices endpoint 獲取最近 10 天的數據
+    // 這樣可以確保即使在交易日之前也能獲取到最新的收盤數據
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 5);
+    startDate.setDate(endDate.getDate() - 10);
     
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
+    
+    console.log(`[Tiingo] Fetching quote for ${symbol} from ${startDateStr} to ${endDateStr}`);
     
     const url = `${TIINGO_BASE_URL}/tiingo/daily/${symbol}/prices?startDate=${startDateStr}&endDate=${endDateStr}&token=${ENV.tiingoApiToken}`;
     const response = await fetch(url, {
@@ -80,8 +83,16 @@ export async function getTiingoQuote(symbol: string): Promise<TiingoQuote | null
 
     const data = await response.json();
     
+    console.log(`[Tiingo] Received ${data.length} data points for ${symbol}`);
+    
     if (!data || data.length === 0) {
       console.error(`[Tiingo] No data found for ${symbol}`);
+      return null;
+    }
+    
+    // 如果 API 返回錯誤訊息
+    if (data.detail) {
+      console.error(`[Tiingo] API returned error: ${data.detail}`);
       return null;
     }
 
@@ -140,11 +151,18 @@ export async function getTiingoHistoricalPrices(
 
     const data = await response.json();
     
+    // 如果 API 返回錯誤訊息
+    if (data.detail) {
+      console.error(`[Tiingo] API returned error: ${data.detail}`);
+      return null;
+    }
+    
     if (!data || data.length === 0) {
       console.error(`[Tiingo] No historical data found for ${symbol}`);
       return null;
     }
 
+    console.log(`[Tiingo] Received ${data.length} historical data points for ${symbol}`);
     return data as TiingoHistoricalPrice[];
   } catch (error) {
     console.error(`[Tiingo] Failed to fetch historical prices for ${symbol}:`, error);
@@ -172,11 +190,18 @@ export async function getTiingoMeta(symbol: string): Promise<TiingoMeta | null> 
 
     const data = await response.json();
     
+    // 如果 API 返回錯誤訊息
+    if (data.detail) {
+      console.error(`[Tiingo] API returned error: ${data.detail}`);
+      return null;
+    }
+    
     if (!data) {
       console.error(`[Tiingo] No meta data found for ${symbol}`);
       return null;
     }
 
+    console.log(`[Tiingo] Received meta data for ${symbol}: ${data.name}`);
     return data as TiingoMeta;
   } catch (error) {
     console.error(`[Tiingo] Failed to fetch meta for ${symbol}:`, error);
