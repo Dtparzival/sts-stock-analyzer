@@ -218,19 +218,45 @@ ${currentPrice ? `當前價格: $${currentPrice}` : ''}
           return { prediction: cached.content, fromCache: true };
         }
         
-        const prompt = `你是一位專業的股票市場分析師，專長於趨勢預測和技術分析。請針對以下美股進行未來趨勢預測：
+        // 獲取系統當前日期
+        const today = new Date();
+        const currentDate = today.toLocaleDateString('zh-TW', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          weekday: 'long'
+        });
+        
+        // 計算未來日期範圍
+        const shortTermEnd = new Date(today);
+        shortTermEnd.setMonth(shortTermEnd.getMonth() + 3);
+        const shortTermEndDate = shortTermEnd.toLocaleDateString('zh-TW', { 
+          year: 'numeric', 
+          month: 'long'
+        });
+        
+        const midTermEnd = new Date(today);
+        midTermEnd.setMonth(midTermEnd.getMonth() + 6);
+        const midTermEndDate = midTermEnd.toLocaleDateString('zh-TW', { 
+          year: 'numeric', 
+          month: 'long'
+        });
+        
+        const prompt = `你是一位專業的股票市場分析師，專長於趨勢預測和技術分析。
+
+**重要：請以今天（${currentDate}）為起算點，進行未來趨勢預測。**
 
 股票代碼: ${symbol}
 ${companyName ? `公司名稱: ${companyName}` : ''}
 
 請提供以下預測分析：
 
-1. **短期趨勢預測（未來1-3個月）**
-   - 價格走勢預測
+1. **短期趨勢預測（從今天起至 ${shortTermEndDate}，未來3個月）**
+   - 價格走勢預測（請明確指出預期的價格範圍）
    - 關鍵技術指標分析
    - 可能的突破點或轉折點
 
-2. **中期趨勢預測（未來3-6個月）**
+2. **中期趨勢預測（從今天起至 ${midTermEndDate}，未來6個月）**
    - 整體趨勢方向
    - 影響因素分析
    - 潛在催化劑
@@ -250,7 +276,7 @@ ${companyName ? `公司名稱: ${companyName}` : ''}
    - 基準情境：最可能的走勢
    - 最差情境：需要注意的下行風險
 
-請以數據驅動的方式進行分析，並使用繁體中文回覆。`;
+請以數據驅動的方式進行分析，並使用繁體中文回覆。所有預測都應該基於今天（${currentDate}）的時間點。`;
 
         const response = await invokeLLM({
           messages: [
