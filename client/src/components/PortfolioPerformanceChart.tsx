@@ -45,16 +45,17 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>投資組合績效</CardTitle>
-            <CardDescription>追蹤您的投資組合價值變化</CardDescription>
+            <CardDescription className="hidden sm:block">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <Button
               variant={timeRange === '7' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('7')}
+              className="flex-1 sm:flex-none"
             >
               7天
             </Button>
@@ -62,6 +63,7 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
               variant={timeRange === '30' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('30')}
+              className="flex-1 sm:flex-none"
             >
               30天
             </Button>
@@ -69,6 +71,7 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
               variant={timeRange === '90' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('90')}
+              className="flex-1 sm:flex-none"
             >
               90天
             </Button>
@@ -76,6 +79,7 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
               variant={timeRange === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('all')}
+              className="flex-1 sm:flex-none"
             >
               全部
             </Button>
