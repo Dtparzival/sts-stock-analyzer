@@ -423,3 +423,12 @@
 - [x] 重寫 getTiingoHistoricalPrices 函數，確保正確獲取歷史數據
 - [x] 添加詳細的日誌輸出，方便調試
 - [ ] 等待 API 速率限制重置後測試功能
+
+## 新增問題：Tiingo API 返回 INTERNAL_SERVER_ERROR
+
+- [x] 檢查伺服器日誌找出具體錯誤原因（429 Too Many Requests）
+- [x] 分析 Tiingo API 調用失敗的根本原因（每次查詢調用 3 個 API，觸發速率限制）
+- [x] 對比用戶提供的成功 API URL 與代碼中的實作差異
+- [x] 修正 API 調用邏輯，優化為只需 2 個 API 請求（historical + meta）
+- [x] 測試修正後的功能（TSLA, AAPL, GOOGL 等美股）
+- [x] 驗證所有美股數據獲取功能正常運作
