@@ -260,6 +260,11 @@ export default function StockDetail() {
         <StockChart
           symbol={symbol}
           data={chartData}
+          isLoading={loadingStock}
+          onRangeChange={(range, interval) => {
+            setChartRange(range);
+            setChartInterval(interval);
+          }}
         />
 
         {/* 分析和預測標籤頁 */}
