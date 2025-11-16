@@ -91,3 +91,25 @@ export const portfolio = mysqlTable("portfolio", {
 
 export type Portfolio = typeof portfolio.$inferSelect;
 export type InsertPortfolio = typeof portfolio.$inferInsert;
+
+/**
+ * 投資組合歷史記錄
+ * 記錄每日的投資組合總價值，用於生成績效曲線圖
+ */
+export const portfolioHistory = mysqlTable("portfolioHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  totalValue: int("totalValue").notNull(), // 當日投資組合總價值（以分為單位）
+  totalCost: int("totalCost").notNull(), // 總成本（以分為單位）
+  totalGainLoss: int("totalGainLoss").notNull(), // 總損益（以分為單位）
+  gainLossPercent: int("gainLossPercent").notNull(), // 報酬率（以萬分之一為單位，例如 10000 = 100%）
+  recordDate: timestamp("recordDate").notNull(), // 記錄日期
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  recordDateIdx: index("recordDate_idx").on(table.recordDate),
+  userDateIdx: index("user_date_idx").on(table.userId, table.recordDate),
+}));
+
+export type PortfolioHistory = typeof portfolioHistory.$inferSelect;
+export type InsertPortfolioHistory = typeof portfolioHistory.$inferInsert;

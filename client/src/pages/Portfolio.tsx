@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
+import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart";
+import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashboard";
 
 export default function Portfolio() {
   const { user, loading: authLoading } = useAuth();
@@ -145,6 +147,37 @@ export default function Portfolio() {
   };
 
   const stats = calculateStats();
+
+  // 獲取歷史記錄
+  const { data: historyData = [] } = trpc.portfolio.getHistory.useQuery(
+    { days: undefined }, // 獲取所有歷史
+    { enabled: !!user }
+  );
+
+  // 獲取持倉分析數據
+  const { data: analysisData } = trpc.portfolio.getAnalysis.useQuery(undefined, {
+    enabled: !!user && portfolio.length > 0,
+  });
+
+  // 記錄當前價值的 mutation
+  const recordValueMutation = trpc.portfolio.recordCurrentValue.useMutation();
+
+  // 當統計數據更新時，自動記錄當前價值
+  useEffect(() => {
+    if (!user || portfolio.length === 0 || Object.keys(stockPrices).length === 0) return;
+    
+    // 檢查是否所有股票都已獲取價格
+    const allPricesFetched = portfolio.every(item => stockPrices[item.symbol] !== undefined);
+    if (!allPricesFetched) return;
+
+    // 記錄當前價值
+    recordValueMutation.mutate({
+      totalValue: stats.totalCurrentValue,
+      totalCost: stats.totalInvestment,
+      totalGainLoss: stats.totalGainLoss,
+      gainLossPercent: stats.totalGainLossPercent,
+    });
+  }, [stats.totalCurrentValue, stats.totalInvestment, user, portfolio.length, Object.keys(stockPrices).length]);
 
   if (authLoading) {
     return (
@@ -295,6 +328,23 @@ export default function Portfolio() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* 績效圖表 */}
+        {historyData.length > 0 && (
+          <div className="mb-8">
+            <PortfolioPerformanceChart data={historyData} />
+          </div>
+        )}
+
+        {/* 持倉分析儀表板 */}
+        {analysisData && portfolio.length > 0 && (
+          <div className="mb-8">
+            <PortfolioAnalysisDashboard 
+              distribution={analysisData.distribution}
+              riskMetrics={analysisData.riskMetrics}
+            />
+          </div>
+        )}
+
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>

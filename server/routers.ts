@@ -468,6 +468,85 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         await db.deleteFromPortfolio(input.id, ctx.user.id);
         return { success: true };
       }),
+
+    // 獲取投資組合歷史記錄
+    getHistory: protectedProcedure
+      .input(z.object({
+        days: z.number().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const history = await db.getPortfolioHistory(ctx.user.id, input.days);
+        // 轉換數據格式（從分轉換為美元）
+        return history.map(record => ({
+          ...record,
+          totalValue: record.totalValue / 100,
+          totalCost: record.totalCost / 100,
+          totalGainLoss: record.totalGainLoss / 100,
+          gainLossPercent: record.gainLossPercent / 100, // 從萬分之一轉換為百分比
+        }));
+      }),
+
+    // 記錄當前投資組合價值
+    recordCurrentValue: protectedProcedure
+      .input(z.object({
+        totalValue: z.number(),
+        totalCost: z.number(),
+        totalGainLoss: z.number(),
+        gainLossPercent: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        await db.addPortfolioHistory({
+          userId: ctx.user.id,
+          totalValue: Math.round(input.totalValue * 100),
+          totalCost: Math.round(input.totalCost * 100),
+          totalGainLoss: Math.round(input.totalGainLoss * 100),
+          gainLossPercent: Math.round(input.gainLossPercent * 100),
+          recordDate: today,
+        });
+        
+        return { success: true };
+      }),
+
+    // 獲取持倉分析數據
+    getAnalysis: protectedProcedure.query(async ({ ctx }) => {
+      const holdings = await db.getUserPortfolio(ctx.user.id);
+      
+      if (holdings.length === 0) {
+        return {
+          distribution: [],
+          sectors: [],
+          riskMetrics: {
+            concentration: 0,
+            diversification: 0,
+          },
+        };
+      }
+      
+      // 計算持倉分布（按市值）
+      const totalValue = holdings.reduce((sum, h) => sum + (h.shares * h.purchasePrice), 0);
+      const distribution = holdings.map(h => ({
+        symbol: h.symbol,
+        companyName: h.companyName || h.symbol,
+        value: h.shares * h.purchasePrice / 100,
+        percentage: (h.shares * h.purchasePrice / totalValue) * 100,
+      }));
+      
+      // 計算風險指標
+      const concentrationIndex = Math.max(...distribution.map(d => d.percentage));
+      const diversificationScore = Math.min(100, (holdings.length / 10) * 100);
+      
+      return {
+        distribution,
+        sectors: [], // 產業分類需要額外的API調用，暫時返回空陣列
+        riskMetrics: {
+          concentration: concentrationIndex,
+          diversification: diversificationScore,
+        },
+      };
+    }),
   }),
 });
 

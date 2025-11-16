@@ -14,7 +14,10 @@ import {
   InsertAnalysisCache,
   portfolio,
   Portfolio,
-  InsertPortfolio
+  InsertPortfolio,
+  portfolioHistory,
+  PortfolioHistory,
+  InsertPortfolioHistory
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -220,4 +223,50 @@ export async function deleteFromPortfolio(id: number, userId: number): Promise<v
       eq(portfolio.userId, userId)
     )
   );
+}
+
+// Portfolio history functions
+export async function getPortfolioHistory(userId: number, days?: number): Promise<PortfolioHistory[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const query = db.select().from(portfolioHistory)
+    .where(eq(portfolioHistory.userId, userId))
+    .orderBy(desc(portfolioHistory.recordDate));
+  
+  const results = days ? await query.limit(days) : await query;
+  
+  // 反轉順序，使最早的記錄在前
+  return results.reverse();
+}
+
+export async function addPortfolioHistory(data: InsertPortfolioHistory): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 檢查當天是否已有記錄
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const existing = await db.select().from(portfolioHistory).where(
+    and(
+      eq(portfolioHistory.userId, data.userId),
+      eq(portfolioHistory.recordDate, data.recordDate)
+    )
+  ).limit(1);
+  
+  if (existing.length > 0) {
+    // 更新現有記錄
+    await db.update(portfolioHistory)
+      .set({
+        totalValue: data.totalValue,
+        totalCost: data.totalCost,
+        totalGainLoss: data.totalGainLoss,
+        gainLossPercent: data.gainLossPercent,
+      })
+      .where(eq(portfolioHistory.id, existing[0].id));
+  } else {
+    // 插入新記錄
+    await db.insert(portfolioHistory).values(data);
+  }
 }
