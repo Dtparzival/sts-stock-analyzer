@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, RefreshCw, Download } from "lucide-react";
+import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
@@ -79,12 +79,11 @@ export default function StockDetail() {
       }
       
       return {
-        timestamp,
         date: dateStr,
-        price: price || 0,
-        volume: volumes[index] || 0,
+        price: price ? parseFloat(price.toFixed(2)) : null,
+        volume: volumes[index] ? Math.round(volumes[index] / 1000000) : 0,
       };
-    }).filter((item: any) => item.price > 0);
+    }).filter((item: any) => item.price !== null);
   };
 
   const meta = (stockData as any)?.chart?.result?.[0]?.meta;
@@ -113,7 +112,6 @@ export default function StockDetail() {
       const result = await getAIAnalysis.mutateAsync({
         symbol,
         companyName,
-        currentPrice,
       });
       setAnalysis(result.analysis);
       if (result.fromCache) {
@@ -144,54 +142,6 @@ export default function StockDetail() {
     }
   };
 
-  const handleDownloadPDF = async (type: 'analysis' | 'prediction') => {
-    try {
-      const content = type === 'analysis' ? analysis : prediction;
-      const title = type === 'analysis' ? 'AI 投資分析' : '未來趨勢預測';
-      
-      // 創建一個隱藏的 div 來渲染 Markdown
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.className = 'prose prose-invert max-w-none p-8';
-      tempDiv.innerHTML = `
-        <h1>${symbol} - ${companyName}</h1>
-        <h2>${title}</h2>
-        <div>${content}</div>
-        <p style="margin-top: 40px; font-size: 12px; color: #888;">生成時間：${new Date().toLocaleString('zh-TW')}</p>
-      `;
-      document.body.appendChild(tempDiv);
-
-      // 使用 html2canvas 和 jsPDF 生成 PDF
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      
-      const canvas = await html2canvas(tempDiv, {
-        scale: 2,
-        backgroundColor: '#1a1a1a',
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const imgWidth = 210; // A4 寬度
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`${symbol}_${title}_${new Date().getTime()}.pdf`);
-      
-      document.body.removeChild(tempDiv);
-      toast.success('PDF 下載成功');
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      toast.error('PDF 生成失敗');
-    }
-  };
-
   if (loadingStock) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -203,14 +153,14 @@ export default function StockDetail() {
   if (!(stockData as any)?.chart?.result?.[0]) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-12">
-          <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
+        <div className="container mx-auto px-4 py-8">
+          <Button variant="ghost" onClick={() => setLocation("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回首頁
           </Button>
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground">找不到股票代碼：{symbol}</p>
+          <Card className="mt-8">
+            <CardContent className="text-center py-12">
+              <p className="text-lg text-muted-foreground">找不到股票代碼 {symbol} 的資料</p>
             </CardContent>
           </Card>
         </div>
@@ -218,93 +168,105 @@ export default function StockDetail() {
     );
   }
 
+  const chartData = formatChartData(stockData);
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-8">
+        {/* 返回按鈕 */}
         <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           返回首頁
         </Button>
 
-        {/* 股票標題 */}
+        {/* 股票標題和收藏按鈕 */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-4xl font-bold mb-2">{companyName}</h1>
-            <p className="text-xl text-muted-foreground">{symbol}</p>
+            <p className="text-2xl text-muted-foreground">{symbol}</p>
           </div>
-          {user && (
-            <Button
-              variant="outline"
-              onClick={handleWatchlistToggle}
-              disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
-            >
-              {watchlistCheck?.isInWatchlist ? (
-                <>
-                  <StarOff className="h-4 w-4 mr-2" />
-                  取消收藏
-                </>
-              ) : (
-                <>
-                  <Star className="h-4 w-4 mr-2" />
-                  加入收藏
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleWatchlistToggle}
+            disabled={!user}
+          >
+            {watchlistCheck?.isInWatchlist ? (
+              <>
+                <StarOff className="h-5 w-5 mr-2" />
+                取消收藏
+              </>
+            ) : (
+              <>
+                <Star className="h-5 w-5 mr-2" />
+                加入收藏
+              </>
+            )}
+          </Button>
         </div>
 
-        {/* 價格資訊 */}
+        {/* 價格資訊卡片 */}
         <Card className="mb-6">
-          <CardContent className="py-6">
-            <div className="flex items-end gap-4">
-              <div className="text-5xl font-bold">${currentPrice?.toFixed(2)}</div>
-              <div className={`flex items-center gap-2 text-2xl ${priceChange >= 0 ? "price-up" : "price-down"}`}>
-                {priceChange >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
-                <span>
-                  {priceChange >= 0 ? "+" : ""}
-                  {priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
-                <p className="text-sm text-muted-foreground">開盤價</p>
-                <p className="text-lg font-semibold">${meta?.regularMarketOpen?.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground mb-1">當前價格</p>
+                <p className="text-3xl font-bold">${currentPrice?.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">最高價</p>
-                <p className="text-lg font-semibold">${meta?.regularMarketDayHigh?.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground mb-1">漲跌</p>
+                <div className="flex items-center gap-2">
+                  {priceChange >= 0 ? (
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-red-500" />
+                  )}
+                  <p className={`text-2xl font-bold ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
+                  </p>
+                </div>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">最低價</p>
-                <p className="text-lg font-semibold">${meta?.regularMarketDayLow?.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground mb-1">開盤價</p>
+                <p className="text-2xl font-semibold">${meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">成交量</p>
-                <p className="text-lg font-semibold">{meta?.regularMarketVolume?.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mb-1">昨收價</p>
+                <p className="text-2xl font-semibold">${previousClose?.toFixed(2) || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">最高價</p>
+                <p className="text-2xl font-semibold">${meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">最低價</p>
+                <p className="text-2xl font-semibold">${meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">成交量</p>
+                <p className="text-2xl font-semibold">{meta?.regularMarketVolume?.toLocaleString() || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">市值</p>
+                <p className="text-2xl font-semibold">
+                  {meta?.marketCap ? `$${(meta.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* 股價走勢圖 */}
-        <div className="mb-6">
-          <StockChart
-            symbol={symbol}
-            data={formatChartData(stockData)}
-            isLoading={loadingStock}
-            onRangeChange={(range, interval) => {
-              setChartRange(range);
-              setChartInterval(interval);
-            }}
-          />
-        </div>
+        <StockChart
+          symbol={symbol}
+          data={chartData}
+        />
 
-        {/* 分析標籤頁 */}
-        <Tabs defaultValue="analysis" className="space-y-6">
+        {/* 分析和預測標籤頁 */}
+        <Tabs defaultValue="analysis" className="mt-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="analysis">投資分析</TabsTrigger>
-            <TabsTrigger value="prediction">趨勢預測</TabsTrigger>
+            <TabsTrigger value="analysis">AI 投資分析</TabsTrigger>
+            <TabsTrigger value="prediction">未來趨勢預測</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analysis">
@@ -312,7 +274,7 @@ export default function StockDetail() {
               <CardHeader>
                 <CardTitle>AI 投資分析</CardTitle>
                 <CardDescription>
-                  基於公司基本面、技術面和市場環境的綜合分析
+                  基於公司基本面、技術面和市場情緒的綜合分析
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -321,7 +283,7 @@ export default function StockDetail() {
                     <Button onClick={handleGetAnalysis} disabled={isAnalyzing} size="lg">
                       {isAnalyzing ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                           分析中...
                         </>
                       ) : (
@@ -331,17 +293,7 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={handleGetAnalysis} disabled={isAnalyzing}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        重新生成
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF('analysis')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        下載 PDF
-                      </Button>
-                    </div>
-                    <div className="prose prose-invert max-w-none">
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{analysis}</Streamdown>
                     </div>
                   </div>
@@ -355,7 +307,7 @@ export default function StockDetail() {
               <CardHeader>
                 <CardTitle>未來趨勢預測</CardTitle>
                 <CardDescription>
-                  基於技術指標和市場情緒的短中期趨勢預測
+                  基於歷史數據和市場趨勢的未來走勢預測
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -364,7 +316,7 @@ export default function StockDetail() {
                     <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg">
                       {isPredicting ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                           預測中...
                         </>
                       ) : (
@@ -374,17 +326,7 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={handleGetPrediction} disabled={isPredicting}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        重新生成
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF('prediction')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        下載 PDF
-                      </Button>
-                    </div>
-                    <div className="prose prose-invert max-w-none">
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{prediction}</Streamdown>
                     </div>
                   </div>
