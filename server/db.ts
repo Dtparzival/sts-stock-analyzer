@@ -1,4 +1,4 @@
-import { eq, desc, and, gt } from "drizzle-orm";
+import { eq, desc, and, gt, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -200,6 +200,31 @@ export async function clearAllSearchHistory(userId: number): Promise<void> {
   if (!db) throw new Error("Database not available");
   
   await db.delete(searchHistory).where(eq(searchHistory.userId, userId));
+}
+
+export async function getTopStocks(userId: number, limit: number = 10): Promise<Array<{ symbol: string; companyName: string | null; count: number }>> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // 使用 GROUP BY 統計每個股票的搜尋次數
+  const result = await db
+    .select({
+      symbol: searchHistory.symbol,
+      companyName: searchHistory.companyName,
+      count: count(searchHistory.id),
+    })
+    .from(searchHistory)
+    .where(eq(searchHistory.userId, userId))
+    .groupBy(searchHistory.symbol, searchHistory.companyName)
+    .orderBy(desc(count(searchHistory.id)))
+    .limit(limit);
+  
+  // 轉換 count 為 number 類型
+  return result.map(row => ({
+    symbol: row.symbol,
+    companyName: row.companyName,
+    count: Number(row.count),
+  }));
 }
 
 // Analysis cache functions

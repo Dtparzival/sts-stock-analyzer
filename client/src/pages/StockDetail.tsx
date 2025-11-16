@@ -22,8 +22,6 @@ export default function StockDetail() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [chartRange, setChartRange] = useState("1mo");
   const [chartInterval, setChartInterval] = useState("1d");
-  const [isLiveUpdating, setIsLiveUpdating] = useState(false);
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: stockData, isLoading: loadingStock, error: stockError, refetch: refetchStockData } = trpc.stock.getStockData.useQuery(
     { symbol, range: chartRange, interval: chartInterval },
@@ -49,32 +47,6 @@ export default function StockDetail() {
   // 判斷是否在交易時間內
   const market = getMarketFromSymbol(symbol);
   const marketOpen = isMarketOpen(market);
-
-  // 盤中自動刷新功能（每 60 秒刷新一次）
-  useEffect(() => {
-    if (!symbol || !marketOpen) {
-      setIsLiveUpdating(false);
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-      }
-      return;
-    }
-
-    setIsLiveUpdating(true);
-    
-    // 設定定時刷新（每 60 秒）
-    refreshIntervalRef.current = setInterval(() => {
-      refetchStockData();
-    }, 60000); // 60秒
-
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-      }
-    };
-  }, [symbol, marketOpen, refetchStockData]);
 
   const { data: watchlistCheck } = trpc.watchlist.check.useQuery(
     { symbol },
@@ -256,12 +228,6 @@ export default function StockDetail() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-4xl font-bold">{companyName}</h1>
-              {isLiveUpdating && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-green-700 dark:text-green-400">盤中即時報價</span>
-                </div>
-              )}
             </div>
             <p className="text-2xl text-muted-foreground">{symbol}</p>
           </div>

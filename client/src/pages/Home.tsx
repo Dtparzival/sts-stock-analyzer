@@ -17,6 +17,12 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<MarketType>('US');
   
+  // 獲取用戶最近查看的股票（用於推薦）
+  const { data: recentHistory } = trpc.history.list.useQuery(
+    { limit: 8 },
+    { enabled: !!user }
+  );
+  
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       toast.success("登出成功");
@@ -146,6 +152,29 @@ export default function Home() {
               </Button>
             </div>
           </form>
+          
+          {/* 為您推薦區塊 */}
+          {user && recentHistory && recentHistory.length > 0 && (
+            <div className="mt-6 max-w-2xl mx-auto">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-muted-foreground">為您推薦（最近查看）</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recentHistory.slice(0, 8).map((item) => (
+                  <Button
+                    key={item.id}
+                    variant="outline"
+                    size="sm"
+                    className="hover:bg-primary/10 hover:border-primary"
+                    onClick={() => setLocation(`/stock/${item.symbol}`)}
+                  >
+                    {item.symbol}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 功能特色 */}

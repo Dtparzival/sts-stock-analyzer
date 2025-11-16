@@ -32,6 +32,11 @@ export default function SearchHistory() {
     { enabled: !!user }
   );
   
+  const { data: topStocks, isLoading: loadingTopStocks } = trpc.history.getTopStocks.useQuery(
+    { limit: 10 },
+    { enabled: !!user }
+  );
+  
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -158,6 +163,42 @@ export default function SearchHistory() {
             </Button>
           </div>
         </div>
+
+        {/* 熱門追蹤區塊 */}
+        {topStocks && topStocks.length > 0 && (
+          <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardContent className="py-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <span className="text-2xl">🔥</span>
+                熱門追蹤
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {topStocks.map((stock, index) => (
+                  <div
+                    key={stock.symbol}
+                    className="flex items-center justify-between p-3 bg-background rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => setLocation(`/stock/${stock.symbol}`)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-bold text-muted-foreground w-6">
+                        #{index + 1}
+                      </span>
+                      <div>
+                        <div className="font-bold">{stock.symbol}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {stock.companyName || stock.symbol}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="font-semibold">
+                      {stock.count} 次
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-12">

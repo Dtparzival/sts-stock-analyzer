@@ -536,6 +536,15 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         await db.clearAllSearchHistory(ctx.user.id);
         return { success: true };
       }),
+    
+    // 獲取最常查看的股票排行榜
+    getTopStocks: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional().default(10),
+      }))
+      .query(async ({ input, ctx }) => {
+        return db.getTopStocks(ctx.user.id, input.limit);
+      }),
   }),
 
   portfolio: router({
