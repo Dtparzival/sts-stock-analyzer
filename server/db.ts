@@ -165,6 +165,25 @@ export async function getUserSearchHistory(userId: number, limit: number = 20): 
     .limit(limit);
 }
 
+export async function deleteSearchHistory(userId: number, id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(searchHistory).where(
+    and(
+      eq(searchHistory.id, id),
+      eq(searchHistory.userId, userId)
+    )
+  );
+}
+
+export async function clearAllSearchHistory(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(searchHistory).where(eq(searchHistory.userId, userId));
+}
+
 // Analysis cache functions
 export async function getAnalysisCache(symbol: string, analysisType: string): Promise<AnalysisCache | undefined> {
   const db = await getDb();

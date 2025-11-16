@@ -519,6 +519,23 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
       .query(async ({ input, ctx }) => {
         return db.getUserSearchHistory(ctx.user.id, input.limit);
       }),
+    
+    // 刪除單筆搜尋記錄
+    deleteOne: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteSearchHistory(ctx.user.id, input.id);
+        return { success: true };
+      }),
+    
+    // 清空所有搜尋記錄
+    deleteAll: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await db.clearAllSearchHistory(ctx.user.id);
+        return { success: true };
+      }),
   }),
 
   portfolio: router({
