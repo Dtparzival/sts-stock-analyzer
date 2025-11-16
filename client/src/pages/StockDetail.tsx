@@ -127,12 +127,25 @@ export default function StockDetail() {
   const handleGetPrediction = async () => {
     setIsPredicting(true);
     try {
-      const result = await getTrendPrediction.mutateAsync({
+      // 準備原始數據格式（包含 close, high, low, volume）
+      const result = (stockData as any)?.chart?.result?.[0];
+      const timestamps = result?.timestamp || [];
+      const quotes = result?.indicators?.quote?.[0] || {};
+      const rawHistoricalData = timestamps.map((timestamp: number, index: number) => ({
+        date: new Date(timestamp * 1000).toISOString(),
+        close: quotes.close?.[index] || 0,
+        high: quotes.high?.[index] || 0,
+        low: quotes.low?.[index] || 0,
+        volume: quotes.volume?.[index] || 0,
+      })).filter((item: any) => item.close > 0);
+
+      const predictionResult = await getTrendPrediction.mutateAsync({
         symbol,
         companyName,
+        historicalData: rawHistoricalData, // 傳遞完整的歷史數據
       });
-      setPrediction(result.prediction);
-      if (result.fromCache) {
+      setPrediction(predictionResult.prediction);
+      if (predictionResult.fromCache) {
         toast.info("顯示緩存的預測結果");
       }
     } catch (error) {

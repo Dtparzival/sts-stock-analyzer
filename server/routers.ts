@@ -242,12 +242,40 @@ ${currentPrice ? `當前價格: $${currentPrice}` : ''}
           month: 'long'
         });
         
+        // 準備歷史數據摘要（最近30天的數據）
+        let dataContext = '';
+        if (historicalData && Array.isArray(historicalData) && historicalData.length > 0) {
+          const recentData = historicalData.slice(-30); // 取最近30天
+          const latestPrice = recentData[recentData.length - 1];
+          const oldestPrice = recentData[0];
+          const priceChange = latestPrice.close - oldestPrice.close;
+          const priceChangePercent = ((priceChange / oldestPrice.close) * 100).toFixed(2);
+          
+          dataContext = `
+
+**❗️ 實際市場數據（截至 ${currentDate}）：**
+- **當前實際股價：$${latestPrice.close.toFixed(2)}** ← 這是真實的最新價格，不是模擬數據
+- 最近30天張跌：${priceChange > 0 ? '+' : ''}$${priceChange.toFixed(2)} (${priceChangePercent}%)
+- 30天最高價：$${Math.max(...recentData.map((d: any) => d.high)).toFixed(2)}
+- 30天最低價：$${Math.min(...recentData.map((d: any) => d.low)).toFixed(2)}
+- 平均成交量：${(recentData.reduce((sum: number, d: any) => sum + d.volume, 0) / recentData.length / 1000000).toFixed(2)}M
+
+**⚠️ 嚴重警告：**
+- 以上是真實的市場數據，不是模擬或假設
+- 所有預測分析必須以 $${latestPrice.close.toFixed(2)} 這個當前價格為基準
+- 禁止使用任何模擬數據或假設價格進行分析`;
+        }
+        
         const prompt = `你是一位專業的股票市場分析師，專長於趨勢預測和技術分析。
 
-**重要：請以今天（${currentDate}）為起算點，進行未來趨勢預測。**
+**重要指示：**
+1. 請以今天（${currentDate}）為起算點，進行未來趨勢預測
+2. **嚴格禁止使用模擬數據或假設數據**
+3. **必須基於以下提供的實際市場數據進行分析**
+4. 所有價格預測都應該以當前實際股價為基準
 
 股票代碼: ${symbol}
-${companyName ? `公司名稱: ${companyName}` : ''}
+${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
 
 請提供以下預測分析：
 
@@ -289,9 +317,9 @@ ${companyName ? `公司名稱: ${companyName}` : ''}
           ? response.choices[0].message.content 
           : "無法生成預測";
         
-        // 緩存預測結果（12小時）
+        // 緩存預測結果（4小時）
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 12);
+        expiresAt.setHours(expiresAt.getHours() + 4);
         
         await db.setAnalysisCache({
           symbol,
