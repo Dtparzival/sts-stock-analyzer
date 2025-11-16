@@ -88,6 +88,8 @@ export default function Portfolio() {
   };
 
   // 獲取當前股價
+  const utils = trpc.useUtils();
+  
   useEffect(() => {
     if (portfolio.length === 0) return;
 
@@ -96,13 +98,14 @@ export default function Portfolio() {
       
       for (const item of portfolio) {
         try {
-          const response = await fetch(
-            `/api/trpc/stock.getStockData?input=${encodeURIComponent(JSON.stringify({ symbol: item.symbol, range: "1d", interval: "1d" }))}`
-          );
-          const data = await response.json();
+          const data = await utils.stock.getStockData.fetch({
+            symbol: item.symbol,
+            range: "1d",
+            interval: "1d"
+          }) as any;
           
-          if (data.result?.data?.chart?.result?.[0]?.meta?.regularMarketPrice) {
-            prices[item.symbol] = data.result.data.chart.result[0].meta.regularMarketPrice;
+          if (data?.chart?.result?.[0]?.meta?.regularMarketPrice) {
+            prices[item.symbol] = data.chart.result[0].meta.regularMarketPrice;
           }
         } catch (error) {
           console.error(`Failed to fetch price for ${item.symbol}:`, error);
@@ -113,7 +116,7 @@ export default function Portfolio() {
     };
 
     fetchPrices();
-  }, [portfolio]);
+  }, [portfolio, utils]);
 
   // 計算統計數據
   const calculateStats = () => {
