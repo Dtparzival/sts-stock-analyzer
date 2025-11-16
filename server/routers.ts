@@ -7,6 +7,7 @@ import { callDataApi } from "./_core/dataApi";
 import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
+import { stockDataCache } from "./stockDataCache";
 
 export const appRouter = router({
   system: systemRouter,
@@ -49,6 +50,9 @@ export const appRouter = router({
         // 根據股票代碼判斷市場區域
         const region = symbol.includes('.TW') || symbol.includes('.TWO') ? 'TW' : 'US';
         
+        // 生成緩存參數
+        const cacheParams = { symbol, region, range, interval };
+        
         // 處理自訂日期範圍 (timestamp 格式: "startTimestamp-endTimestamp")
         let period1: string | undefined;
         let period2: string | undefined;
@@ -62,30 +66,57 @@ export const appRouter = router({
         
         // 記錄搜尋歷史（如果用戶已登入）
         if (ctx.user) {
-          try {
-            const chartData = await callDataApi("YahooFinance/get_stock_chart", {
-              query: {
-                symbol,
-                region,
-                interval: '1d',
-                range: '1d',
-                includeAdjustedClose: 'true',
-              },
-            }) as any;
-            
-            let companyName = symbol;
-            if (chartData?.chart?.result?.[0]?.meta?.longName) {
-              companyName = chartData.chart.result[0].meta.longName;
+          // 異步處理搜尋歷史，不阻塞主請求
+          (async () => {
+            try {
+              // 先檢查緩存中是否有公司名稱
+              const companyNameCacheKey = { symbol, region, type: 'companyName' };
+              let companyName = stockDataCache.get('company_name', companyNameCacheKey);
+              
+              if (!companyName) {
+                // 嘗試從 API 獲取公司名稱
+                try {
+                  const chartData = await callDataApi("YahooFinance/get_stock_chart", {
+                    query: {
+                      symbol,
+                      region,
+                      interval: '1d',
+                      range: '1d',
+                      includeAdjustedClose: 'true',
+                    },
+                  }) as any;
+                  
+                  companyName = symbol;
+                  if (chartData?.chart?.result?.[0]?.meta?.longName) {
+                    companyName = chartData.chart.result[0].meta.longName;
+                  }
+                  
+                  // 緩存公司名稱（24 小時）
+                  stockDataCache.set('company_name', companyNameCacheKey, companyName, 24 * 60 * 60 * 1000);
+                } catch (apiError: any) {
+                  // 如果 API 失敗，使用股票代碼作為公司名稱
+                  console.warn('[Search History] Failed to fetch company name:', apiError.message);
+                  companyName = symbol;
+                }
+              }
+              
+              if (ctx.user) {
+                await db.addSearchHistory({
+                  userId: ctx.user.id,
+                  symbol,
+                  companyName: companyName as string,
+                });
+              }
+            } catch (error) {
+              console.error("[Search History] Failed to add:", error);
             }
-            
-            await db.addSearchHistory({
-              userId: ctx.user.id,
-              symbol,
-              companyName,
-            });
-          } catch (error) {
-            console.error("Failed to add search history:", error);
-          }
+          })();
+        }
+        
+        // 檢查緩存
+        const cachedData = stockDataCache.get('get_stock_chart', cacheParams);
+        if (cachedData) {
+          return cachedData;
         }
         
         const queryParams: any = {
@@ -104,11 +135,29 @@ export const appRouter = router({
           queryParams.range = range;
         }
         
-        const data = await callDataApi("YahooFinance/get_stock_chart", {
-          query: queryParams,
-        });
-        
-        return data;
+        try {
+          const data = await callDataApi("YahooFinance/get_stock_chart", {
+            query: queryParams,
+          });
+          
+          // 儲存到緩存（5 分鐘）
+          stockDataCache.set('get_stock_chart', cacheParams, data, 5 * 60 * 1000);
+          
+          return data;
+        } catch (error: any) {
+          // 如果是 429 錯誤，嘗試返回緩存數據（即使過期）
+          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+            console.warn('[Stock API] Rate limit hit, attempting to use stale cache');
+            const staleData = stockDataCache.get('get_stock_chart', cacheParams);
+            if (staleData) {
+              console.log('[Stock API] Returning stale cached data');
+              return staleData;
+            }
+            // 如果沒有緩存數據，拋出友好的錯誤訊息
+            throw new Error('資料服務暫時繁忙，請稍後再試。我們已實作緩存機制，第二次請求會更快。');
+          }
+          throw error;
+        }
       }),
 
     // 獲取股票分析洞察
@@ -119,11 +168,32 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const { symbol } = input;
         
-        const data = await callDataApi("YahooFinance/get_stock_insights", {
-          query: { symbol },
-        });
+        // 檢查緩存
+        const cacheParams = { symbol };
+        const cachedData = stockDataCache.get('get_stock_insights', cacheParams);
+        if (cachedData) {
+          return cachedData;
+        }
         
-        return data;
+        try {
+          const data = await callDataApi("YahooFinance/get_stock_insights", {
+            query: { symbol },
+          });
+          
+          // 緩存 10 分鐘
+          stockDataCache.set('get_stock_insights', cacheParams, data, 10 * 60 * 1000);
+          
+          return data;
+        } catch (error: any) {
+          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+            console.warn('[Stock API] Rate limit hit for insights');
+            const staleData = stockDataCache.get('get_stock_insights', cacheParams);
+            if (staleData) {
+              return staleData;
+            }
+          }
+          throw error;
+        }
       }),
 
     // 獲取股東資訊
@@ -134,15 +204,36 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const { symbol } = input;
         
-        const data = await callDataApi("YahooFinance/get_stock_holders", {
-          query: {
-            symbol,
-            region: 'US',
-            lang: 'en-US',
-          },
-        });
+        // 檢查緩存
+        const cacheParams = { symbol, region: 'US', lang: 'en-US' };
+        const cachedData = stockDataCache.get('get_stock_holders', cacheParams);
+        if (cachedData) {
+          return cachedData;
+        }
         
-        return data;
+        try {
+          const data = await callDataApi("YahooFinance/get_stock_holders", {
+            query: {
+              symbol,
+              region: 'US',
+              lang: 'en-US',
+            },
+          });
+          
+          // 緩存 1 小時（股東資訊變化較少）
+          stockDataCache.set('get_stock_holders', cacheParams, data, 60 * 60 * 1000);
+          
+          return data;
+        } catch (error: any) {
+          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+            console.warn('[Stock API] Rate limit hit for holders');
+            const staleData = stockDataCache.get('get_stock_holders', cacheParams);
+            if (staleData) {
+              return staleData;
+            }
+          }
+          throw error;
+        }
       }),
 
     // AI 投資分析
