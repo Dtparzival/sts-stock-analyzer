@@ -528,6 +528,115 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         return { success: true };
       }),
 
+    // AI 智能分析投資組合
+    getAIAnalysis: protectedProcedure
+      .input(z.object({
+        currentPrices: z.record(z.string(), z.number()), // 當前股價
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { currentPrices } = input;
+        const holdings = await db.getUserPortfolio(ctx.user.id);
+        
+        if (holdings.length === 0) {
+          return {
+            analysis: "您的投資組合為空，無法進行分析。請先添加持倉。",
+            fromCache: false,
+          };
+        }
+        
+        // 準備持倉數據
+        const portfolioData = holdings.map(h => {
+          const purchasePrice = h.purchasePrice / 100;
+          const currentPrice = currentPrices[h.symbol] || purchasePrice;
+          const cost = purchasePrice * h.shares;
+          const value = currentPrice * h.shares;
+          const gainLoss = value - cost;
+          const gainLossPercent = (gainLoss / cost) * 100;
+          
+          return {
+            symbol: h.symbol,
+            companyName: h.companyName || h.symbol,
+            shares: h.shares,
+            purchasePrice,
+            currentPrice,
+            cost,
+            value,
+            gainLoss,
+            gainLossPercent,
+            percentage: 0, // 將在下面計算
+          };
+        });
+        
+        // 計算總市值和比例
+        const totalValue = portfolioData.reduce((sum, h) => sum + h.value, 0);
+        portfolioData.forEach(h => {
+          h.percentage = (h.value / totalValue) * 100;
+        });
+        
+        // 計算風險指標
+        const maxConcentration = Math.max(...portfolioData.map(h => h.percentage));
+        const numHoldings = holdings.length;
+        
+        // 計算市場分布
+        const twStocks = portfolioData.filter(h => h.symbol.endsWith('.TW'));
+        const usStocks = portfolioData.filter(h => !h.symbol.endsWith('.TW'));
+        const twPercentage = twStocks.reduce((sum, h) => sum + h.percentage, 0);
+        const usPercentage = usStocks.reduce((sum, h) => sum + h.percentage, 0);
+        
+        // 準備 AI 分析的 prompt
+        const prompt = `你是一位專業的投資組合分析師，請根據以下投資組合數據提供全面的風險評估和優化建議。
+
+**投資組合概況：**
+- 持倉數量：${numHoldings} 支股票
+- 總市值：$${totalValue.toFixed(2)}
+- 最大個股集中度：${maxConcentration.toFixed(2)}%
+- 市場分布：美股 ${usPercentage.toFixed(1)}% / 台股 ${twPercentage.toFixed(1)}%
+
+**詳細持倉：**
+${portfolioData.map(h => `
+- **${h.symbol}** (${h.companyName})
+  - 持倉比例：${h.percentage.toFixed(2)}%
+  - 持股數：${h.shares}
+  - 購買價：$${h.purchasePrice.toFixed(2)}
+  - 當前價：$${h.currentPrice.toFixed(2)}
+  - 市值：$${h.value.toFixed(2)}
+  - 損益：${h.gainLoss >= 0 ? '+' : ''}$${h.gainLoss.toFixed(2)} (${h.gainLossPercent >= 0 ? '+' : ''}${h.gainLossPercent.toFixed(2)}%)
+`).join('')}
+
+請提供以下分析：
+
+## 1. 風險評估
+- 整體風險等級（低/中/高）
+- 集中度風險分析
+- 市場分散程度評估
+- 波動性風險評估
+
+## 2. 資產配置分析
+- 行業分布分析（根據股票代碼推測行業）
+- 市場配置合理性（美股 vs 台股）
+- 個股權重分析
+
+## 3. 優化建議
+- 具體的調整建議（增持/減持/新增標的）
+- 再平衡建議（目標配置比例）
+- 風險降低策略
+
+請用繁體中文回答，並使用 Markdown 格式。分析要具體、實用，並提供可執行的建議。`;
+        
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "你是一位專業的投資組合分析師，擅長風險管理和資產配置。" },
+            { role: "user", content: prompt },
+          ],
+        });
+        
+        const analysis = typeof response.choices[0].message.content === 'string'
+          ? response.choices[0].message.content
+          : "無法生成分析";
+        
+        return { analysis, fromCache: false };
+      }),
+
     // 獲取持倉分析數據
     getAnalysis: protectedProcedure.query(async ({ ctx }) => {
       const holdings = await db.getUserPortfolio(ctx.user.id);

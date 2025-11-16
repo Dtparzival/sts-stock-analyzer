@@ -16,6 +16,7 @@ import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChar
 import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashboard";
 import { getMarketFromSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
+import { Streamdown } from "streamdown";
 
 type Currency = 'USD' | 'TWD';
 
@@ -25,6 +26,8 @@ export default function Portfolio() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [currency, setCurrency] = useState<Currency>('USD'); // 預設顯示美元
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // 獲取即時匯率
   const { data: exchangeRateData } = trpc.exchangeRate.getUSDToTWD.useQuery();
@@ -65,6 +68,33 @@ export default function Portfolio() {
       toast.error(`刪除失敗: ${error.message}`);
     },
   });
+
+  const aiAnalysisMutation = trpc.portfolio.getAIAnalysis.useMutation({
+    onSuccess: (data) => {
+      setAiAnalysis(data.analysis);
+      setIsAnalyzing(false);
+      toast.success("AI 分析完成");
+    },
+    onError: (error) => {
+      toast.error(`AI 分析失敗: ${error.message}`);
+      setIsAnalyzing(false);
+    },
+  });
+
+  const handleAIAnalysis = () => {
+    if (portfolio.length === 0) {
+      toast.error("投資組合為空，無法進行分析");
+      return;
+    }
+
+    if (Object.keys(stockPrices).length === 0) {
+      toast.error("正在獲取股價數據，請稍後再試");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    aiAnalysisMutation.mutate({ currentPrices: stockPrices });
+  };
 
   const resetForm = () => {
     setFormData({
@@ -288,13 +318,32 @@ export default function Portfolio() {
               </div>
             </div>
             
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  添加持倉
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleAIAnalysis}
+                disabled={isAnalyzing || portfolio.length === 0}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    分析中...
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    AI 智能分析
+                  </>
+                )}
+              </Button>
+              
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    添加持倉
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>添加新持倉</DialogTitle>
@@ -378,6 +427,7 @@ export default function Portfolio() {
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
       </header>
@@ -398,6 +448,24 @@ export default function Portfolio() {
               riskMetrics={analysisData.riskMetrics}
             />
           </div>
+        )}
+
+        {/* AI 分析結果 */}
+        {aiAnalysis && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                AI 智能分析報告
+              </CardTitle>
+              <CardDescription>基於您的持倉組合提供的風險評估和優化建議</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <Streamdown>{aiAnalysis}</Streamdown>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* 統計卡片 */}
