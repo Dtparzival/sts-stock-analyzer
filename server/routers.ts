@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { callDataApi } from "./_core/dataApi";
+import { withRateLimit } from "./apiQueue";
 import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
@@ -159,15 +160,15 @@ export const appRouter = router({
               if (!companyName) {
                 // 嘗試從 API 獲取公司名稱
                 try {
-                  const chartData = await callDataApi("YahooFinance/get_stock_chart", {
-                    query: {
-                      symbol,
+                const chartData = await withRateLimit(() => callDataApi("YahooFinance/get_stock_chart", {
+                  query: {
+                    symbol,
                       region,
                       interval: '1d',
                       range: '1d',
                       includeAdjustedClose: 'true',
                     },
-                  }) as any;
+                  })) as any;
                   
                   companyName = symbol;
                   if (chartData?.chart?.result?.[0]?.meta?.longName) {
@@ -227,9 +228,9 @@ export const appRouter = router({
         }
         
         try {
-          const data = await callDataApi("YahooFinance/get_stock_chart", {
+          const data = await withRateLimit(() => callDataApi("YahooFinance/get_stock_chart", {
             query: queryParams,
-          });
+          }));
           
           // 儲存到資料庫緩存（30 分鐘）
           const now = new Date();
@@ -276,9 +277,9 @@ export const appRouter = router({
         }
         
         try {
-          const data = await callDataApi("YahooFinance/get_stock_insights", {
+          const data = await withRateLimit(() => callDataApi("YahooFinance/get_stock_insights", {
             query: { symbol },
-          });
+          }));
           
           // 儲存到資料庫緩存（10 分鐘）
           await dbCache.setCache('get_stock_insights', cacheParams, data, 10 * 60 * 1000);
@@ -312,13 +313,13 @@ export const appRouter = router({
         }
         
         try {
-          const data = await callDataApi("YahooFinance/get_stock_holders", {
+          const data = await withRateLimit(() => callDataApi("YahooFinance/get_stock_holders", {
             query: {
               symbol,
               region: 'US',
               lang: 'en-US',
             },
-          });
+          }));
           
           // 儲存到資料庫緩存（1 小時，股東資訊變化較少）
           await dbCache.setCache('get_stock_holders', cacheParams, data, 60 * 60 * 1000);
