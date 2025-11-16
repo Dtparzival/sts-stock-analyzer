@@ -31,6 +31,9 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         let { symbol, range, interval } = input;
         
+        // 根據股票代碼判斷市場區域
+        const region = symbol.includes('.TW') || symbol.includes('.TWO') ? 'TW' : 'US';
+        
         // 處理自訂日期範圍 (timestamp 格式: "startTimestamp-endTimestamp")
         let period1: string | undefined;
         let period2: string | undefined;
@@ -48,7 +51,7 @@ export const appRouter = router({
             const chartData = await callDataApi("YahooFinance/get_stock_chart", {
               query: {
                 symbol,
-                region: 'US',
+                region,
                 interval: '1d',
                 range: '1d',
                 includeAdjustedClose: 'true',
@@ -72,7 +75,7 @@ export const appRouter = router({
         
         const queryParams: any = {
           symbol,
-          region: 'US',
+          region,
           interval,
           includeAdjustedClose: 'true',
           events: 'div,split',

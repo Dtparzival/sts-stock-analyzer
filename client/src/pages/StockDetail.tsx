@@ -9,6 +9,7 @@ import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import StockChart from "@/components/StockChart";
+import { getMarketFromSymbol, MARKETS } from "@shared/markets";
 
 export default function StockDetail() {
   const [, params] = useRoute("/stock/:symbol");
@@ -92,6 +93,10 @@ export default function StockDetail() {
   const previousClose = meta?.chartPreviousClose;
   const priceChange = currentPrice && previousClose ? currentPrice - previousClose : 0;
   const priceChangePercent = previousClose ? (priceChange / previousClose) * 100 : 0;
+  
+  // 根據股票代碼判斷市場並獲取貨幣符號
+  const market = getMarketFromSymbol(symbol);
+  const currencySymbol = MARKETS[market].currencySymbol;
 
   const handleWatchlistToggle = () => {
     if (!user) {
@@ -224,7 +229,7 @@ export default function StockDetail() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">當前價格</p>
-                <p className="text-3xl font-bold">${currentPrice?.toFixed(2)}</p>
+                <p className="text-3xl font-bold">{currencySymbol}{currentPrice?.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">漲跌</p>
@@ -235,25 +240,25 @@ export default function StockDetail() {
                     <TrendingDown className="h-5 w-5 text-red-500" />
                   )}
                   <p className={`text-2xl font-bold ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
+                    {priceChange >= 0 ? '+' : ''}{currencySymbol}{priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
                   </p>
                 </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">開盤價</p>
-                <p className="text-2xl font-semibold">${meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
+                <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">昨收價</p>
-                <p className="text-2xl font-semibold">${previousClose?.toFixed(2) || 'N/A'}</p>
+                <p className="text-2xl font-semibold">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">最高價</p>
-                <p className="text-2xl font-semibold">${meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
+                <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">最低價</p>
-                <p className="text-2xl font-semibold">${meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
+                <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">成交量</p>

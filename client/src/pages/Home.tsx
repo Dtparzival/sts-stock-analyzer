@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { MARKETS, HOT_STOCKS, type MarketType } from "@shared/markets";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
@@ -14,6 +15,7 @@ export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMarket, setSelectedMarket] = useState<MarketType>('US');
   
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -103,8 +105,28 @@ export default function Home() {
             STS 投資分析平台
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            透過 AI 驅動的深度分析，掌握美股市場趨勢，做出更明智的投資決策
+            透過 AI 驅動的深度分析，掌握{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，做出更明智的投資決策
           </p>
+
+          {/* 市場切換器 */}
+          <div className="flex justify-center gap-2 mb-8">
+            <Button
+              variant={selectedMarket === 'US' ? 'default' : 'outline'}
+              onClick={() => setSelectedMarket('US')}
+              className="gap-2"
+            >
+              <Globe className="h-4 w-4" />
+              美股市場
+            </Button>
+            <Button
+              variant={selectedMarket === 'TW' ? 'default' : 'outline'}
+              onClick={() => setSelectedMarket('TW')}
+              className="gap-2"
+            >
+              <Globe className="h-4 w-4" />
+              台股市場
+            </Button>
+          </div>
 
           {/* 搜尋框 */}
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
@@ -113,7 +135,7 @@ export default function Home() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="輸入股票代碼（例如：AAPL, TSLA, GOOGL）"
+                  placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL, TSLA, GOOGL）" : "輸入股票代碼（例如：2330.TW, 2317.TW, 2454.TW）"}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 h-12 text-lg"
@@ -163,16 +185,17 @@ export default function Home() {
 
         {/* 熱門股票 */}
         <div className="mb-16">
-          <h3 className="text-2xl font-bold mb-6">熱門美股</h3>
+          <h3 className="text-2xl font-bold mb-6">熱門{selectedMarket === 'US' ? '美股' : '台股'}</h3>
           <div className="grid md:grid-cols-4 gap-4">
-            {["AAPL", "MSFT", "GOOGL", "TSLA", "AMZN", "NVDA", "META", "NFLX"].map((symbol) => (
+            {HOT_STOCKS[selectedMarket].map((stock) => (
               <Button
-                key={symbol}
+                key={stock.symbol}
                 variant="outline"
-                className="h-16 text-lg font-semibold hover:bg-primary/10 hover:border-primary"
-                onClick={() => setLocation(`/stock/${symbol}`)}
+                className="h-16 flex flex-col items-center justify-center hover:bg-primary/10 hover:border-primary"
+                onClick={() => setLocation(`/stock/${stock.symbol}`)}
               >
-                {symbol}
+                <span className="text-lg font-semibold">{stock.symbol}</span>
+                <span className="text-xs text-muted-foreground">{stock.name}</span>
               </Button>
             ))}
           </div>
