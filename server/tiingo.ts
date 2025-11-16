@@ -53,12 +53,13 @@ interface TiingoMeta {
 }
 
 /**
- * 獲取股票即時報價
+ * 獲取股票即時報價（使用 End-of-Day API 的最新價格）
  * @param symbol 股票代碼（例如：AAPL）
  */
 export async function getTiingoQuote(symbol: string): Promise<TiingoQuote | null> {
   try {
-    const url = `${TIINGO_BASE_URL}/iex/${symbol}?token=${ENV.tiingoApiToken}`;
+    // 使用 End-of-Day API 的 prices endpoint 獲取最新價格
+    const url = `${TIINGO_BASE_URL}/tiingo/daily/${symbol}/prices?token=${ENV.tiingoApiToken}`;
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +78,29 @@ export async function getTiingoQuote(symbol: string): Promise<TiingoQuote | null
       return null;
     }
 
-    return data[0] as TiingoQuote;
+    // End-of-Day API 返回的數據格式不同，需要轉換
+    const latestData = data[data.length - 1]; // 獲取最新的一筆數據
+    const prevData = data.length > 1 ? data[data.length - 2] : latestData; // 獲取前一天的數據
+    
+    return {
+      ticker: symbol,
+      timestamp: latestData.date,
+      last: latestData.close,
+      lastSize: 0,
+      lastSaleTimestamp: latestData.date,
+      lastTrade: latestData.date,
+      open: latestData.open,
+      high: latestData.high,
+      low: latestData.low,
+      mid: (latestData.high + latestData.low) / 2,
+      volume: latestData.volume,
+      bidSize: 0,
+      bidPrice: 0,
+      askSize: 0,
+      askPrice: 0,
+      prevClose: prevData.close,
+      tngoLast: latestData.close,
+    } as TiingoQuote;
   } catch (error) {
     console.error(`[Tiingo] Failed to fetch quote for ${symbol}:`, error);
     return null;

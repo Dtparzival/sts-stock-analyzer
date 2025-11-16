@@ -387,3 +387,11 @@
 - [x] 修改 stock.getStockData API，美股使用 Tiingo 替代 TwelveData
 - [x] 測試美股資料獲取功能
 - [x] 測試美股歷史價格圖表顯示
+
+## 修正問題：Tiingo API 返回 500 錯誤
+
+- [x] 調查 Tiingo API 錯誤原因（無法獲取股票報價）
+- [x] 檢查 Tiingo API 文檔和正確的 endpoint
+- [x] 修正 Tiingo API 的 URL 和參數（改用 End-of-Day API）
+- [x] 測試修正後的 API 調用
+- [x] 驗證 TSLA 和其他美股資料獲取功能
