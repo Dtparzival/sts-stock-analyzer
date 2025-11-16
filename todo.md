@@ -294,3 +294,24 @@
 
 **說明：**
 緩存機制已實作完成，但由於 Yahoo Finance API 的速率限制非常嚴格，第一次請求仍可能觸發 429 錯誤。第二次請求相同股票時，會從緩存返回數據，不會再觸發 API 請求。建議等待 5-10 分鐘讓 API 速率限制重置後再試。
+
+## 新增需求：資料庫緩存系統和 UI 改進
+
+### 資料庫緩存系統
+- [x] 設計 stockDataCache 資料庫表結構（cacheKey, apiEndpoint, data, createdAt, expiresAt）
+- [x] 實作資料庫緩存服務模組（dbStockDataCache.ts）
+- [x] 將 getStockData API 整合資料庫緩存
+- [x] 將 getStockInsights API 整合資料庫緩存
+- [x] 將 getStockHolders API 整合資料庫緩存
+- [x] 將搜尋歷史記錄的公司名稱緩存整合資料庫
+- [x] 實作自動清理過期緩存的機制（cleanup 方法）
+- [x] 移除舊的記憶體緩存模組（stockDataCache.ts）
+
+### UI 改進
+- [x] 為股票詳情頁面添加載入狀態提示
+- [x] 為 API 請求失敗添加友好錯誤提示（Toast 通知）
+- [x] 添加「使用緩存數據」的提示（fromCache 標記）
+- [x] 改進 AI 分析和趨勢預測的錯誤提示
+
+**說明：**
+資料庫緩存系統已實作完成，所有股票數據現在會儲存到資料庫，實現跨服務器重啟的持久化緩存。緩存有效期為 5 分鐘，當 API 速率限制觸發時，會嘗試返回過期緩存數據。UI 提示已改進，當 API 請求失敗時會顯示明確的錯誤訊息。由於 Yahoo Finance API 的速率限制非常嚴格，建議等待 10-15 分鐘讓 API 速率限制完全重置後再試。

@@ -25,10 +25,26 @@ export default function StockDetail() {
   const [isLiveUpdating, setIsLiveUpdating] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: stockData, isLoading: loadingStock, refetch: refetchStockData } = trpc.stock.getStockData.useQuery(
+  const { data: stockData, isLoading: loadingStock, error: stockError, refetch: refetchStockData } = trpc.stock.getStockData.useQuery(
     { symbol, range: chartRange, interval: chartInterval },
-    { enabled: !!symbol }
+    { 
+      enabled: !!symbol,
+      retry: 1, // 只重試一次
+    }
   );
+
+  // 處理 API 錯誤
+  useEffect(() => {
+    if (stockError) {
+      if (stockError.message?.includes('資料服務暫時繁忙')) {
+        toast.error('資料服務暫時繁忙，請稍後再試。第二次請求會使用緩存數據。', {
+          duration: 5000,
+        });
+      } else {
+        toast.error(`無法載入股票數據：${stockError.message}`);
+      }
+    }
+  }, [stockError]);
 
   // 判斷是否在交易時間內
   const market = getMarketFromSymbol(symbol);
@@ -154,8 +170,11 @@ export default function StockDetail() {
       if (result.fromCache) {
         toast.info("顯示緩存的分析結果");
       }
-    } catch (error) {
-      toast.error("獲取分析失敗");
+    } catch (error: any) {
+      console.error('AI 分析錯誤:', error);
+      toast.error(error.message || '獲取 AI 分析失敗，請稍後再試', {
+        duration: 5000,
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -185,8 +204,11 @@ export default function StockDetail() {
       if (predictionResult.fromCache) {
         toast.info("顯示緩存的預測結果");
       }
-    } catch (error) {
-      toast.error("獲取預測失敗");
+    } catch (error: any) {
+      console.error('趨勢預測錯誤:', error);
+      toast.error(error.message || '獲取趨勢預測失敗，請稍後再試', {
+        duration: 5000,
+      });
     } finally {
       setIsPredicting(false);
     }

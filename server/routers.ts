@@ -7,7 +7,7 @@ import { callDataApi } from "./_core/dataApi";
 import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
-import { stockDataCache } from "./stockDataCache";
+import * as dbCache from './dbStockDataCache';
 
 export const appRouter = router({
   system: systemRouter,
@@ -69,9 +69,9 @@ export const appRouter = router({
           // 異步處理搜尋歷史，不阻塞主請求
           (async () => {
             try {
-              // 先檢查緩存中是否有公司名稱
+              // 先檢查資料庫緩存中是否有公司名稱
               const companyNameCacheKey = { symbol, region, type: 'companyName' };
-              let companyName = stockDataCache.get('company_name', companyNameCacheKey);
+              let companyName = await dbCache.getCache('company_name', companyNameCacheKey);
               
               if (!companyName) {
                 // 嘗試從 API 獲取公司名稱
@@ -91,8 +91,8 @@ export const appRouter = router({
                     companyName = chartData.chart.result[0].meta.longName;
                   }
                   
-                  // 緩存公司名稱（24 小時）
-                  stockDataCache.set('company_name', companyNameCacheKey, companyName, 24 * 60 * 60 * 1000);
+                  // 儲存公司名稱到資料庫緩存（24 小時）
+                  await dbCache.setCache('company_name', companyNameCacheKey, companyName, 24 * 60 * 60 * 1000);
                 } catch (apiError: any) {
                   // 如果 API 失敗，使用股票代碼作為公司名稱
                   console.warn('[Search History] Failed to fetch company name:', apiError.message);
@@ -113,8 +113,8 @@ export const appRouter = router({
           })();
         }
         
-        // 檢查緩存
-        const cachedData = stockDataCache.get('get_stock_chart', cacheParams);
+        // 檢查資料庫緩存
+        const cachedData = await dbCache.getCache('get_stock_chart', cacheParams);
         if (cachedData) {
           return cachedData;
         }
@@ -140,15 +140,15 @@ export const appRouter = router({
             query: queryParams,
           });
           
-          // 儲存到緩存（5 分鐘）
-          stockDataCache.set('get_stock_chart', cacheParams, data, 5 * 60 * 1000);
+          // 儲存到資料庫緩存（5 分鐘）
+          await dbCache.setCache('get_stock_chart', cacheParams, data, 5 * 60 * 1000);
           
           return data;
         } catch (error: any) {
           // 如果是 429 錯誤，嘗試返回緩存數據（即使過期）
           if (error.message?.includes('429') || error.message?.includes('rate limit')) {
             console.warn('[Stock API] Rate limit hit, attempting to use stale cache');
-            const staleData = stockDataCache.get('get_stock_chart', cacheParams);
+            const staleData = await dbCache.getStaleCache('get_stock_chart', cacheParams);
             if (staleData) {
               console.log('[Stock API] Returning stale cached data');
               return staleData;
@@ -168,9 +168,9 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const { symbol } = input;
         
-        // 檢查緩存
+        // 檢查資料庫緩存
         const cacheParams = { symbol };
-        const cachedData = stockDataCache.get('get_stock_insights', cacheParams);
+        const cachedData = await dbCache.getCache('get_stock_insights', cacheParams);
         if (cachedData) {
           return cachedData;
         }
@@ -180,14 +180,14 @@ export const appRouter = router({
             query: { symbol },
           });
           
-          // 緩存 10 分鐘
-          stockDataCache.set('get_stock_insights', cacheParams, data, 10 * 60 * 1000);
+          // 儲存到資料庫緩存（10 分鐘）
+          await dbCache.setCache('get_stock_insights', cacheParams, data, 10 * 60 * 1000);
           
           return data;
         } catch (error: any) {
           if (error.message?.includes('429') || error.message?.includes('rate limit')) {
             console.warn('[Stock API] Rate limit hit for insights');
-            const staleData = stockDataCache.get('get_stock_insights', cacheParams);
+            const staleData = await dbCache.getStaleCache('get_stock_insights', cacheParams);
             if (staleData) {
               return staleData;
             }
@@ -204,9 +204,9 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const { symbol } = input;
         
-        // 檢查緩存
+        // 檢查資料庫緩存
         const cacheParams = { symbol, region: 'US', lang: 'en-US' };
-        const cachedData = stockDataCache.get('get_stock_holders', cacheParams);
+        const cachedData = await dbCache.getCache('get_stock_holders', cacheParams);
         if (cachedData) {
           return cachedData;
         }
@@ -220,14 +220,14 @@ export const appRouter = router({
             },
           });
           
-          // 緩存 1 小時（股東資訊變化較少）
-          stockDataCache.set('get_stock_holders', cacheParams, data, 60 * 60 * 1000);
+          // 儲存到資料庫緩存（1 小時，股東資訊變化較少）
+          await dbCache.setCache('get_stock_holders', cacheParams, data, 60 * 60 * 1000);
           
           return data;
         } catch (error: any) {
           if (error.message?.includes('429') || error.message?.includes('rate limit')) {
             console.warn('[Stock API] Rate limit hit for holders');
-            const staleData = stockDataCache.get('get_stock_holders', cacheParams);
+            const staleData = await dbCache.getStaleCache('get_stock_holders', cacheParams);
             if (staleData) {
               return staleData;
             }

@@ -113,3 +113,23 @@ export const portfolioHistory = mysqlTable("portfolioHistory", {
 
 export type PortfolioHistory = typeof portfolioHistory.$inferSelect;
 export type InsertPortfolioHistory = typeof portfolioHistory.$inferInsert;
+
+/**
+ * 股票數據緩存表
+ * 用於持久化存儲 API 請求結果，減少對外部 API 的請求頻率
+ */
+export const stockDataCache = mysqlTable("stockDataCache", {
+  id: int("id").autoincrement().primaryKey(),
+  cacheKey: varchar("cacheKey", { length: 255 }).notNull().unique(), // 緩存鍵（API endpoint + 參數的 hash）
+  apiEndpoint: varchar("apiEndpoint", { length: 100 }).notNull(), // API 端點名稱
+  data: text("data").notNull(), // JSON 格式的緩存數據
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(), // 過期時間
+}, (table) => ({
+  cacheKeyIdx: index("cacheKey_idx").on(table.cacheKey),
+  expiresAtIdx: index("expiresAt_idx").on(table.expiresAt),
+  apiEndpointIdx: index("apiEndpoint_idx").on(table.apiEndpoint),
+}));
+
+export type StockDataCache = typeof stockDataCache.$inferSelect;
+export type InsertStockDataCache = typeof stockDataCache.$inferInsert;
