@@ -403,3 +403,12 @@
 - [x] 根據官方文檔修正 API Token 傳遞方式
 - [x] 測試修正後的 API 調用
 - [x] 驗證 TSLA 和其他美股資料獲取功能
+
+## 修正問題：Tiingo API 仍然無法獲取股票數據
+
+- [x] 檢查當前 Tiingo API 的實作邏輯
+- [x] 檢查 getTiingoQuote 函數的數據處理
+- [x] 檢查 getTiingoHistoricalPrices 函數的數據處理
+- [x] 根據官方文檔修正 API endpoint 和參數
+- [x] 測試修正後的 API 調用（遇到 API 速率限制）
+- [ ] 等待 API 速率限制重置後驗證功能

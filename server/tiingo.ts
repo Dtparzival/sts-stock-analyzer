@@ -58,8 +58,15 @@ interface TiingoMeta {
  */
 export async function getTiingoQuote(symbol: string): Promise<TiingoQuote | null> {
   try {
-    // 使用 End-of-Day API 的 prices endpoint 獲取最新價格
-    const url = `${TIINGO_BASE_URL}/tiingo/daily/${symbol}/prices?token=${ENV.tiingoApiToken}`;
+    // 使用 End-of-Day API 的 prices endpoint 獲取最近 5 天的數據，以確保能獲取前一天的收盤價
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 5);
+    
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    const url = `${TIINGO_BASE_URL}/tiingo/daily/${symbol}/prices?startDate=${startDateStr}&endDate=${endDateStr}&token=${ENV.tiingoApiToken}`;
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
