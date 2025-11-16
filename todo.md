@@ -356,3 +356,14 @@
 - [x] 在首頁搜尋框下方添加「為您推薦」區塊
 - [x] 顯示 5-8 支推薦股票（基於搜尋歷史的相關股票）
 - [x] 實作推薦演算法（顯示最近查看的股票）
+
+## 新增需求：改用 TwelveData API 作為美股資料來源
+
+- [x] 添加 TwelveData API 環境變數配置（TWELVEDATA_BASE_URL, TWELVEDATA_TOKEN）
+- [x] 創建 TwelveData API 整合模組（server/twelvedata.ts）
+- [x] 實作 TwelveData API 調用函數（獲取股票報價、歷史數據等）
+- [x] 修改 stock.getStockData API 使用 TwelveData 替代 Yahoo Finance
+- [x] 處理 TwelveData API 的數據格式轉換
+- [x] 保留台股使用 Yahoo Finance API
+- [x] 測試美股資料獲取功能
+- [x] 測試歷史價格圖表顯示

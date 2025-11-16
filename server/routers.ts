@@ -8,6 +8,132 @@ import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 import * as dbCache from './dbStockDataCache';
+import { getTwelveDataQuote, getTwelveDataTimeSeries, convertTwelveDataQuoteToStockData, convertTwelveDataTimeSeriesToChartData } from './twelvedata';
+
+/**
+ * 使用 TwelveData API 獲取美股數據，轉換為 Yahoo Finance 格式
+ */
+async function getTwelveDataStockData(symbol: string, range: string, interval: string, ctx: any) {
+  // 將 range 轉換為 TwelveData 的 outputsize
+  const rangeToOutputSize: Record<string, number> = {
+    '1d': 1,
+    '5d': 5,
+    '1mo': 30,
+    '3mo': 90,
+    '6mo': 180,
+    '1y': 365,
+    '2y': 730,
+    '5y': 1825,
+    'max': 5000,
+  };
+  
+  // 將 interval 轉換為 TwelveData 的格式
+  const intervalMapping: Record<string, string> = {
+    '1m': '1min',
+    '5m': '5min',
+    '15m': '15min',
+    '30m': '30min',
+    '1h': '1h',
+    '1d': '1day',
+    '1wk': '1week',
+    '1mo': '1month',
+  };
+  
+  const outputsize = rangeToOutputSize[range] || 30;
+  const twelveDataInterval = intervalMapping[interval] || '1day';
+  
+  try {
+    // 獲取即時報價和時間序列數據
+    const [quote, timeSeries] = await Promise.all([
+      getTwelveDataQuote(symbol),
+      getTwelveDataTimeSeries(symbol, twelveDataInterval, outputsize),
+    ]);
+    
+    if (!quote || !timeSeries) {
+      throw new Error('無法獲取股票數據');
+    }
+    
+    // 記錄搜尋歷史
+    if (ctx.user) {
+      (async () => {
+        try {
+          await db.addSearchHistory({
+            userId: ctx.user.id,
+            symbol,
+            companyName: quote.name,
+          });
+        } catch (error) {
+          console.error("[Search History] Failed to add:", error);
+        }
+      })();
+    }
+    
+    // 轉換為 Yahoo Finance 格式
+    const stockData = convertTwelveDataQuoteToStockData(quote);
+    const chartData = convertTwelveDataTimeSeriesToChartData(timeSeries);
+    
+    // 构建與 Yahoo Finance 相同的返回格式
+    return {
+      chart: {
+        result: [
+          {
+            meta: {
+              currency: quote.currency,
+              symbol: quote.symbol,
+              exchangeName: quote.exchange,
+              fullExchangeName: quote.exchange,
+              instrumentType: "EQUITY",
+              firstTradeDate: null,
+              regularMarketTime: Math.floor(new Date(quote.datetime).getTime() / 1000),
+              hasPrePostMarketData: false,
+              gmtoffset: -18000,
+              timezone: "EST",
+              exchangeTimezoneName: "America/New_York",
+              regularMarketPrice: stockData.currentPrice,
+              fiftyTwoWeekHigh: stockData.fiftyTwoWeekHigh,
+              fiftyTwoWeekLow: stockData.fiftyTwoWeekLow,
+              regularMarketDayHigh: stockData.dayHigh,
+              regularMarketDayLow: stockData.dayLow,
+              regularMarketVolume: stockData.volume,
+              longName: quote.name,
+              shortName: quote.name,
+              chartPreviousClose: stockData.previousClose,
+              previousClose: stockData.previousClose,
+              scale: 3,
+              priceHint: 2,
+              currentTradingPeriod: null,
+              tradingPeriods: null,
+              dataGranularity: interval,
+              range: range,
+              validRanges: ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "max"],
+            },
+            timestamp: chartData.map(d => Math.floor(new Date(d.date).getTime() / 1000)),
+            indicators: {
+              quote: [
+                {
+                  open: chartData.map(d => d.open),
+                  high: chartData.map(d => d.high),
+                  low: chartData.map(d => d.low),
+                  close: chartData.map(d => d.close),
+                  volume: chartData.map(d => d.volume),
+                },
+              ],
+              adjclose: [
+                {
+                  adjclose: chartData.map(d => d.close),
+                },
+              ],
+            },
+          },
+        ],
+        error: null,
+      },
+    };
+  } catch (error: any) {
+    console.error('[TwelveData] Error fetching stock data:', error);
+    throw new Error(`無法獲取 ${symbol} 的股票數據：${error.message}`);
+  }
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -49,6 +175,11 @@ export const appRouter = router({
         
         // 根據股票代碼判斷市場區域
         const region = symbol.includes('.TW') || symbol.includes('.TWO') ? 'TW' : 'US';
+        
+        // 美股使用 TwelveData API
+        if (region === 'US') {
+          return await getTwelveDataStockData(symbol, range, interval, ctx);
+        }
         
         // 生成緩存參數
         const cacheParams = { symbol, region, range, interval };
