@@ -89,6 +89,80 @@ export function cleanTWSymbol(symbol: string): string {
 }
 
 /**
+ * 台股中文名稱映射表（部分常見股票）
+ * 可以根據需要擴充更多股票
+ */
+export const TW_STOCK_NAMES: Record<string, string> = {
+  '2330': '台積電',
+  '2317': '鴻海',
+  '2454': '聯發科',
+  '2412': '中華電',
+  '2882': '國泰金',
+  '2891': '中信金',
+  '2303': '聯電',
+  '2308': '台達電',
+  '2881': '富邦金',
+  '2886': '兆豐金',
+  '2884': '玉山金',
+  '2892': '第一金',
+  '2002': '中鋼',
+  '2912': '統一超',
+  '1301': '台塑',
+  '1303': '南亞',
+  '2357': '華碩',
+  '3008': '大立光',
+  '2382': '廣達',
+  '2395': '研華',
+  '6505': '台塑化',
+  '2801': '彰銀',
+  '2880': '華南金',
+  '2887': '台新金',
+  '2890': '永豐金',
+  '2885': '元大金',
+  '2883': '開發金',
+  '5880': '合庫',
+  '2379': '瑞昂',
+  '2377': '微星',
+  '2409': '友達',
+  '2408': '南亞科',
+  '3045': '台灣大',
+  '2301': '光寶科',
+  '2327': '國巨',
+  '2345': '智邦',
+  '2347': '聯強',
+  '3711': '日月光',
+  '2603': '長榮',
+  '2609': '陽明',
+  '2615': '萬海',
+  '2618': '長興',
+};
+
+/**
+ * 根據中文名稱搜尋台股代碼
+ * 支援部分匹配（例如輸入「台積」可以匹配到「台積電」）
+ */
+export function searchTWStockByName(query: string): Array<{ symbol: string; name: string }> {
+  const results: Array<{ symbol: string; name: string }> = [];
+  const normalizedQuery = query.trim().toLowerCase();
+  
+  for (const [symbol, name] of Object.entries(TW_STOCK_NAMES)) {
+    if (name.toLowerCase().includes(normalizedQuery)) {
+      results.push({ symbol, name });
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * 獲取台股中文名稱
+ */
+export function getTWStockName(symbol: string): string | undefined {
+  const cleanSymbol = cleanTWSymbol(symbol);
+  return TW_STOCK_NAMES[cleanSymbol];
+}
+
+/**
  * 獲取台股代碼的完整格式（帶 .TW 後綴）
  * 用於 API 請求
  */

@@ -6,7 +6,7 @@ import { APP_TITLE, getLoginUrl } from "@/const";
 import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { MARKETS, HOT_STOCKS, type MarketType } from "@shared/markets";
+import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName } from "@shared/markets";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
@@ -16,6 +16,8 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMarket, setSelectedMarket] = useState<MarketType>('US');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<Array<{ symbol: string; name: string }>>([]);
   
   // 獲取用戶最近查看的股票（用於推薦）
   const { data: recentHistory } = trpc.history.list.useQuery(
@@ -40,8 +42,42 @@ export default function Home() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      // 如果是台股市場且輸入中文，嘗試匹配中文名稱
+      if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(searchQuery)) {
+        const results = searchTWStockByName(searchQuery);
+        if (results.length > 0) {
+          // 使用第一個匹配結果
+          setLocation(`/stock/${results[0].symbol}`);
+          setSearchQuery('');
+          setShowSuggestions(false);
+          return;
+        }
+      }
       setLocation(`/stock/${searchQuery.trim().toUpperCase()}`);
+      setSearchQuery('');
+      setShowSuggestions(false);
     }
+  };
+  
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // 如果是台股市場且輸入中文，顯示建議
+    if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(value)) {
+      const results = searchTWStockByName(value);
+      setSuggestions(results.slice(0, 5)); // 最多顯示 5 個建議
+      setShowSuggestions(results.length > 0);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
+  };
+  
+  const handleSuggestionClick = (symbol: string) => {
+    setLocation(`/stock/${symbol}`);
+    setSearchQuery('');
+    setShowSuggestions(false);
   };
 
   return (
@@ -141,11 +177,36 @@ export default function Home() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL, TSLA, GOOGL）" : "輸入股票代碼（例如：2330, 2317, 2454）"}
+                  placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL, TSLA, GOOGL）" : "輸入股票代碼或中文名稱（例如：2330, 台積電）"}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchInputChange}
+                  onFocus={() => {
+                    if (suggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // 延遲隱藏，讓點擊建議有時間觸發
+                    setTimeout(() => setShowSuggestions(false), 200);
+                  }}
                   className="pl-10 h-12 text-lg"
                 />
+                {/* 自動完成建議 */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.symbol}
+                        type="button"
+                        onClick={() => handleSuggestionClick(suggestion.symbol)}
+                        className="w-full px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between"
+                      >
+                        <span className="font-medium">{suggestion.symbol}</span>
+                        <span className="text-sm text-muted-foreground">{suggestion.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <Button type="submit" size="lg" className="px-8" style={{height: '48px'}}>
                 搜尋

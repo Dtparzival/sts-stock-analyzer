@@ -62,7 +62,16 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
       throw new Error('無法轉換股票數據');
     }
     
-    return result;
+    // 添加時間戳元數據
+    const now = new Date();
+    return {
+      ...result,
+      _metadata: {
+        lastUpdated: now,
+        isFromCache: false, // TWSE API 無緩存機制
+        expiresAt: now, // 立即過期（每次都獲取最新數據）
+      }
+    };
   } catch (error: any) {
     console.error('[TWSE] Error fetching stock data:', error);
     throw new Error(`無法獲取 ${symbol} 的股票數據：${error.message}`);
@@ -188,9 +197,17 @@ export const appRouter = router({
         }
         
         // 檢查資料庫緩存
-        const cachedData = await dbCache.getCache('get_stock_chart', cacheParams);
-        if (cachedData) {
-          return cachedData;
+        const cacheResult = await dbCache.getCacheWithMetadata('get_stock_chart', cacheParams);
+        if (cacheResult) {
+          // 返回緩存數據並附帶時間戳
+          return {
+            ...cacheResult.data,
+            _metadata: {
+              lastUpdated: cacheResult.createdAt,
+              isFromCache: true,
+              expiresAt: cacheResult.expiresAt,
+            }
+          };
         }
         
         const queryParams: any = {
@@ -215,9 +232,18 @@ export const appRouter = router({
           });
           
           // 儲存到資料庫緩存（30 分鐘）
+          const now = new Date();
           await dbCache.setCache('get_stock_chart', cacheParams, data, 30 * 60 * 1000);
           
-          return data;
+          // 返回數據並附帶時間戳
+          return {
+            ...(data as object),
+            _metadata: {
+              lastUpdated: now,
+              isFromCache: false,
+              expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
+            }
+          };
         } catch (error: any) {
           // 如果是 429 錯誤，嘗試返回緩存數據（即使過期）
           if (error.message?.includes('429') || error.message?.includes('rate limit')) {

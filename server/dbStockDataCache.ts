@@ -20,6 +20,46 @@ function generateCacheKey(apiEndpoint: string, params: Record<string, any>): str
 /**
  * 從資料庫獲取緩存數據
  */
+/**
+ * 從資料庫獲取緩存數據（附帶元數據）
+ */
+export async function getCacheWithMetadata(apiEndpoint: string, params: Record<string, any>): Promise<{ data: any; createdAt: Date; expiresAt: Date } | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const cacheKey = generateCacheKey(apiEndpoint, params);
+  
+  try {
+    const result = await db
+      .select()
+      .from(stockDataCache)
+      .where(eq(stockDataCache.cacheKey, cacheKey))
+      .limit(1);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    const cache = result[0];
+    
+    // 檢查是否過期
+    if (cache.expiresAt < new Date()) {
+      console.log(`[DB Cache] Cache expired for ${apiEndpoint}`);
+      return null;
+    }
+
+    console.log(`[DB Cache] Cache hit for ${apiEndpoint}`);
+    return {
+      data: JSON.parse(cache.data),
+      createdAt: cache.createdAt,
+      expiresAt: cache.expiresAt,
+    };
+  } catch (error) {
+    console.error(`[DB Cache] Error getting cache for ${apiEndpoint}:`, error);
+    return null;
+  }
+}
+
 export async function getCache(apiEndpoint: string, params: Record<string, any>): Promise<any | null> {
   const db = await getDb();
   if (!db) return null;

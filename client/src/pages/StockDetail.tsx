@@ -314,6 +314,48 @@ export default function StockDetail() {
                 </p>
               </div>
             </div>
+            
+            {/* 數據更新時間戳 */}
+            {(stockData as any)?._metadata && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">數據更新時間:</span>
+                    <span>
+                      {new Date((stockData as any)._metadata.lastUpdated).toLocaleString('zh-TW', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  {(stockData as any)._metadata.isFromCache && (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                      <span>使用緩存數據</span>
+                    </div>
+                  )}
+                  {!(stockData as any)._metadata.isFromCache && (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                      <span>即時數據</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">緩存過期時間:</span>
+                    <span>
+                      {new Date((stockData as any)._metadata.expiresAt).toLocaleString('zh-TW', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
