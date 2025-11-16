@@ -547,12 +547,34 @@ export default function Portfolio() {
                     {portfolio.map((item) => {
                       const purchasePrice = item.purchasePrice / 100;
                       const currentPrice = stockPrices[item.symbol] || purchasePrice;
-                      const costBasis = purchasePrice * item.shares;
-                      const marketValue = currentPrice * item.shares;
+                      const market = getMarketFromSymbol(item.symbol);
+                      
+                      // 根據股票市場和當前選擇的貨幣進行轉換
+                      let displayPurchasePrice = purchasePrice;
+                      let displayCurrentPrice = currentPrice;
+                      
+                      if (currency === 'TWD') {
+                        // 如果選擇顯示台幣
+                        if (market === 'US') {
+                          // 美股需要轉換為台幣
+                          displayPurchasePrice = purchasePrice * usdToTwdRate;
+                          displayCurrentPrice = currentPrice * usdToTwdRate;
+                        }
+                        // 台股不需轉換
+                      } else {
+                        // 如果選擇顯示美元
+                        if (market === 'TW') {
+                          // 台股需要轉換為美元
+                          displayPurchasePrice = purchasePrice * twdToUsdRate;
+                          displayCurrentPrice = currentPrice * twdToUsdRate;
+                        }
+                        // 美股不需轉換
+                      }
+                      
+                      const costBasis = displayPurchasePrice * item.shares;
+                      const marketValue = displayCurrentPrice * item.shares;
                       const gainLoss = marketValue - costBasis;
                       const gainLossPercent = (gainLoss / costBasis) * 100;
-                      const market = getMarketFromSymbol(item.symbol);
-                      const currencySymbol = market === 'TW' ? 'NT$' : '$';
 
                       return (
                         <TableRow key={item.id}>
@@ -571,18 +593,18 @@ export default function Portfolio() {
                           </TableCell>
                           <TableCell>{item.companyName || '-'}</TableCell>
                           <TableCell className="text-right">{item.shares}</TableCell>
-                          <TableCell className="text-right">{currencySymbol}{purchasePrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{getCurrencySymbol()}{displayPurchasePrice.toFixed(2)}</TableCell>
                           <TableCell className="text-right">
                             {stockPrices[item.symbol] ? (
-                              `${currencySymbol}${currentPrice.toFixed(2)}`
+                              `${getCurrencySymbol()}${displayCurrentPrice.toFixed(2)}`
                             ) : (
                               <Loader2 className="h-4 w-4 animate-spin inline" />
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{currencySymbol}{costBasis.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">{currencySymbol}{marketValue.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{getCurrencySymbol()}{costBasis.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{getCurrencySymbol()}{marketValue.toFixed(2)}</TableCell>
                           <TableCell className={`text-right ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {gainLoss >= 0 ? '+' : ''}{currencySymbol}{gainLoss.toFixed(2)}
+                            {gainLoss >= 0 ? '+' : ''}{getCurrencySymbol()}{gainLoss.toFixed(2)}
                           </TableCell>
                           <TableCell className={`text-right ${gainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%
