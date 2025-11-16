@@ -152,6 +152,24 @@ export async function addSearchHistory(data: InsertSearchHistory): Promise<void>
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // 檢查是否在最近 5 分鐘內已經記錄過相同的股票
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const recentRecords = await db.select().from(searchHistory)
+    .where(
+      and(
+        eq(searchHistory.userId, data.userId),
+        eq(searchHistory.symbol, data.symbol),
+        gt(searchHistory.searchedAt, fiveMinutesAgo)
+      )
+    )
+    .limit(1);
+  
+  // 如果最近 5 分鐘內已經有相同記錄，則不重複插入
+  if (recentRecords.length > 0) {
+    console.log(`[Search History] Skipping duplicate record for ${data.symbol} (recent record found)`);
+    return;
+  }
+  
   await db.insert(searchHistory).values(data);
 }
 
