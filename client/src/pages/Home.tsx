@@ -169,7 +169,7 @@ export default function Home() {
             <CardContent className="text-center py-12">
               <h3 className="text-3xl font-bold mb-4">開始您的投資之旅</h3>
               <p className="text-lg text-muted-foreground mb-6">
-                登入以解鎖完整功能：收藏股票、管理投資組合、查看分析歷史
+                登入以解鎖完整功能：收藏股票、管理投資組合、查看分析趨勢
               </p>
               <Button size="lg" asChild>
                 <a href={getLoginUrl()}>立即登入</a>
