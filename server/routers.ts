@@ -9,8 +9,8 @@ import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 import * as dbCache from './dbStockDataCache';
 // import { convertTiingoToYahooFormat } from './tiingo'; // 不再使用 Tiingo API
+// import { convertAlphaVantageToYahooFormat } from './alphaVantage'; // 不再使用 Alpha Vantage API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
-import { convertAlphaVantageToYahooFormat } from './alphaVantage';
 
 /**
  * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
@@ -117,34 +117,7 @@ export const appRouter = router({
           return await getTWSEStockData(symbol, range, ctx);
         }
         
-        // 美股使用 Alpha Vantage API
-        if (region === 'US') {
-          try {
-            const result = await convertAlphaVantageToYahooFormat(symbol, range);
-            
-            // 記錄搜尋歷史
-            if (ctx.user && result.chart.result[0]?.meta) {
-              const meta = result.chart.result[0].meta;
-              const userId = ctx.user.id;
-              (async () => {
-                try {
-                  await db.addSearchHistory({
-                    userId,
-                    symbol,
-                    companyName: meta.longName || symbol,
-                  });
-                } catch (error) {
-                  console.error("[Search History] Failed to add:", error);
-                }
-              })();
-            }
-            
-            return result;
-          } catch (error: any) {
-            console.error('[Alpha Vantage] Error fetching stock data:', error);
-            throw new Error(`無法獲取 ${symbol} 的股票數據：${error.message}`);
-          }
-        }
+        // 美股使用 Yahoo Finance API（通過 callDataApi）
         
         // 生成緩存參數
         const cacheParams = { symbol, region, range, interval };
@@ -236,8 +209,8 @@ export const appRouter = router({
             query: queryParams,
           });
           
-          // 儲存到資料庫緩存（5 分鐘）
-          await dbCache.setCache('get_stock_chart', cacheParams, data, 5 * 60 * 1000);
+          // 儲存到資料庫緩存（30 分鐘）
+          await dbCache.setCache('get_stock_chart', cacheParams, data, 30 * 60 * 1000);
           
           return data;
         } catch (error: any) {
@@ -250,7 +223,7 @@ export const appRouter = router({
               return staleData;
             }
             // 如果沒有緩存數據，拋出友好的錯誤訊息
-            throw new Error('資料服務暫時繁忙，請稍後再試。我們已實作緩存機制，第二次請求會更快。');
+            throw new Error('股票數據服務暫時繁忙（API 速率限制），請稍後再試。系統已啟用 30 分鐘緩存機制，再次查詢會更快。');
           }
           throw error;
         }

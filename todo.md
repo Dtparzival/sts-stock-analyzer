@@ -454,3 +454,21 @@
 - [x] 修改 stock.getStockData API 使用 Alpha Vantage
 - [x] 測試美股資料獲取功能（TSLA, AAPL, GOOGL）
 - [x] 驗證所有功能正常運作
+
+## 新增需求：改回使用 Yahoo Finance API（第二次）
+
+- [x] 移除 Alpha Vantage API 調用邏輯
+- [x] 修改 stock.getStockData API，美股改回使用 Yahoo Finance（通過 callDataApi）
+- [x] 確保使用正確的緩存機制和降級策略
+- [ ] 測試美股資料獲取功能（TSLA, AAPL, GOOGL）
+- [ ] 驗證所有股票查詢功能正常運作
+
+## 新增需求：實作強化的緩存機制避免 API 速率限制
+
+- [x] 延長緩存時間從 5 分鐘到 30 分鐘
+- [x] 實作降級策略：API 失敗時返回過期緩存數據（已存在）
+- [x] 優化錯誤提示：告知用戶正在使用緩存機制
+- [x] 測試緩存功能（確保緩存正確儲存和讀取）- 確認降級策略正常運作
+- [ ] 等待 API 速率限制重置（30-60 分鐘）
+- [ ] 驗證 Yahoo Finance API 正常運作
+- [ ] 測試美股資料獲取功能（TSLA, AAPL, GOOGL）
