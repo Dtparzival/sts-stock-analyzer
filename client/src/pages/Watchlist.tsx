@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, Star } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
-import { getMarketFromSymbol } from "@shared/markets";
+import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
 
@@ -120,7 +120,9 @@ export default function Watchlist() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-bold">{item.symbol}</h3>
+                        <h3 className="text-xl font-bold">
+                          {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
+                        </h3>
                         <Badge variant="outline" className="text-xs">
                           {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
                         </Badge>

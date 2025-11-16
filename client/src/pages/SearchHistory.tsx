@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, History, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
-import { getMarketFromSymbol } from "@shared/markets";
+import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
 import {
@@ -184,7 +184,9 @@ export default function SearchHistory() {
                         #{index + 1}
                       </span>
                       <div>
-                        <div className="font-bold">{stock.symbol}</div>
+                        <div className="font-bold">
+                          {getMarketFromSymbol(stock.symbol) === 'TW' ? cleanTWSymbol(stock.symbol) : stock.symbol}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           {stock.companyName || stock.symbol}
                         </div>
@@ -227,7 +229,9 @@ export default function SearchHistory() {
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <span className="font-bold text-lg">{item.symbol}</span>
+                      <span className="font-bold text-lg">
+                        {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
+                      </span>
                       <Badge variant="outline" className="text-xs">
                         {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
                       </Badge>

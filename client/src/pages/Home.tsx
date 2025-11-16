@@ -141,7 +141,7 @@ export default function Home() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL, TSLA, GOOGL）" : "輸入股票代碼（例如：2330.TW, 2317.TW, 2454.TW）"}
+                  placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL, TSLA, GOOGL）" : "輸入股票代碼（例如：2330, 2317, 2454）"}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 h-12 text-lg"

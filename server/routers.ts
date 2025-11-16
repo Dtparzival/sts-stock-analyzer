@@ -109,12 +109,17 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         let { symbol, range, interval } = input;
         
-        // 根據股票代碼判斷市場區域
-        const region = symbol.includes('.TW') || symbol.includes('.TWO') ? 'TW' : 'US';
+        // 從 shared/markets.ts 引入工具函數
+        const { getMarketFromSymbol, getFullTWSymbol } = await import('../shared/markets');
         
-        // 台股使用 TWSE API
+        // 根據股票代碼判斷市場區域
+        const market = getMarketFromSymbol(symbol);
+        const region = market === 'TW' ? 'TW' : 'US';
+        
+        // 台股使用 TWSE API（自動添加 .TW 後綴）
         if (region === 'TW') {
-          return await getTWSEStockData(symbol, range, ctx);
+          const fullSymbol = getFullTWSymbol(symbol);
+          return await getTWSEStockData(fullSymbol, range, ctx);
         }
         
         // 美股使用 Yahoo Finance API（通過 callDataApi）

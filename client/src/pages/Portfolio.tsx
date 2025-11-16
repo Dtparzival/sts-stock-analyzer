@@ -14,7 +14,7 @@ import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart";
 import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashboard";
-import { getMarketFromSymbol } from "@shared/markets";
+import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { Streamdown } from "streamdown";
 
@@ -584,7 +584,7 @@ export default function Portfolio() {
                                 onClick={() => setLocation(`/stock/${item.symbol}`)}
                                 className="text-primary hover:underline"
                               >
-                                {item.symbol}
+                                {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
                               </button>
                               <Badge variant="outline" className="text-xs">
                                 {market === 'TW' ? '台股' : '美股'}

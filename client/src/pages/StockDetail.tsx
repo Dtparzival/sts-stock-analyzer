@@ -9,7 +9,7 @@ import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import StockChart from "@/components/StockChart";
-import { getMarketFromSymbol, MARKETS } from "@shared/markets";
+import { getMarketFromSymbol, cleanTWSymbol, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
 
 export default function StockDetail() {
@@ -109,7 +109,17 @@ export default function StockDetail() {
   };
 
   const meta = (stockData as any)?.chart?.result?.[0]?.meta;
-  const companyName = meta?.longName || symbol;
+  const stockMarket = getMarketFromSymbol(symbol);
+  const displaySymbol = stockMarket === 'TW' ? cleanTWSymbol(symbol) : symbol;
+  
+  // 獲取中文名稱（台股）
+  let companyName = meta?.longName || symbol;
+  if (stockMarket === 'TW') {
+    const twStock = HOT_STOCKS.TW.find(s => s.symbol === displaySymbol);
+    if (twStock) {
+      companyName = twStock.name;
+    }
+  }
   const currentPrice = meta?.regularMarketPrice;
   const previousClose = meta?.chartPreviousClose;
   const priceChange = currentPrice && previousClose ? currentPrice - previousClose : 0;
@@ -229,7 +239,12 @@ export default function StockDetail() {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-4xl font-bold">{companyName}</h1>
             </div>
-            <p className="text-2xl text-muted-foreground">{symbol}</p>
+            <p className="text-2xl text-muted-foreground">
+              {displaySymbol}
+              {stockMarket === 'TW' && companyName !== displaySymbol && (
+                <span className="ml-2 text-lg">({companyName})</span>
+              )}
+            </p>
           </div>
           <Button
             variant="outline"
