@@ -377,3 +377,13 @@
 - [x] 處理股票代碼格式轉換（2330.TW -> 2330）
 - [x] 測試台股資料獲取功能
 - [x] 測試台股歷史價格圖表顯示
+
+## 新增需求：改用 Tiingo API 作為美股資料來源
+
+- [x] 添加 Tiingo API 環境變數配置（TIINGO_API_TOKEN）
+- [x] 創建 Tiingo API 整合模組（server/tiingo.ts）
+- [x] 實作 Tiingo API 調用函數（獲取股票報價、歷史數據等）
+- [x] 處理 Tiingo API 的數據格式轉換為 Yahoo Finance 格式
+- [x] 修改 stock.getStockData API，美股使用 Tiingo 替代 TwelveData
+- [x] 測試美股資料獲取功能
+- [x] 測試美股歷史價格圖表顯示
