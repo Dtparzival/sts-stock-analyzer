@@ -367,3 +367,13 @@
 - [x] 保留台股使用 Yahoo Finance API
 - [x] 測試美股資料獲取功能
 - [x] 測試歷史價格圖表顯示
+
+## 新增需求：改用 TWSE OpenAPI 作為台股資料來源
+
+- [x] 創建 TWSE API 整合模組（server/twse.ts）
+- [x] 實作 TWSE API 調用函數（獲取每日收盤行情、歷史數據等）
+- [x] 處理 TWSE API 的數據格式轉換為 Yahoo Finance 格式
+- [x] 修改 stock.getStockData API，台股使用 TWSE 替代 Yahoo Finance
+- [x] 處理股票代碼格式轉換（2330.TW -> 2330）
+- [x] 測試台股資料獲取功能
+- [x] 測試台股歷史價格圖表顯示

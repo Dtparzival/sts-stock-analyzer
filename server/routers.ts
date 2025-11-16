@@ -9,6 +9,64 @@ import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 import * as dbCache from './dbStockDataCache';
 import { getTwelveDataQuote, getTwelveDataTimeSeries, convertTwelveDataQuoteToStockData, convertTwelveDataTimeSeriesToChartData } from './twelvedata';
+import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
+
+/**
+ * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
+ */
+async function getTWSEStockData(symbol: string, range: string, ctx: any) {
+  // 將 range 轉換為 TWSE 的月份數
+  const rangeToMonths: Record<string, number> = {
+    '1d': 1,
+    '5d': 1,
+    '1mo': 1,
+    '3mo': 3,
+    '6mo': 6,
+    '1y': 12,
+    '2y': 12, // TWSE API 最多只能獲取 12 個月
+    '5y': 12,
+    'max': 12,
+  };
+  
+  const months = rangeToMonths[range] || 1;
+  const stockNo = convertSymbolToTWSE(symbol);
+  
+  try {
+    // 獲取 TWSE 數據
+    const twseData = await getTWSEStockHistory(stockNo, months);
+    
+    if (!twseData || twseData.length === 0) {
+      throw new Error('無法獲取股票數據');
+    }
+    
+    // 記錄搜尋歷史
+    if (ctx.user) {
+      (async () => {
+        try {
+          await db.addSearchHistory({
+            userId: ctx.user.id,
+            symbol,
+            companyName: symbol, // TWSE API 不提供公司名稱，使用股票代碼
+          });
+        } catch (error) {
+          console.error("[Search History] Failed to add:", error);
+        }
+      })();
+    }
+    
+    // 轉換為 Yahoo Finance 格式
+    const result = convertTWSEToYahooFormat(stockNo, twseData);
+    
+    if (!result) {
+      throw new Error('無法轉換股票數據');
+    }
+    
+    return result;
+  } catch (error: any) {
+    console.error('[TWSE] Error fetching stock data:', error);
+    throw new Error(`無法獲取 ${symbol} 的股票數據：${error.message}`);
+  }
+}
 
 /**
  * 使用 TwelveData API 獲取美股數據，轉換為 Yahoo Finance 格式
@@ -179,6 +237,11 @@ export const appRouter = router({
         // 美股使用 TwelveData API
         if (region === 'US') {
           return await getTwelveDataStockData(symbol, range, interval, ctx);
+        }
+        
+        // 台股使用 TWSE API
+        if (region === 'TW') {
+          return await getTWSEStockData(symbol, range, ctx);
         }
         
         // 生成緩存參數
