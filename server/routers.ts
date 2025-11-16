@@ -8,8 +8,9 @@ import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 import * as dbCache from './dbStockDataCache';
-import { convertTiingoToYahooFormat } from './tiingo';
+// import { convertTiingoToYahooFormat } from './tiingo'; // 不再使用 Tiingo API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
+import { convertAlphaVantageToYahooFormat } from './alphaVantage';
 
 /**
  * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
@@ -68,36 +69,7 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
   }
 }
 
-/**
- * 使用 Tiingo API 獲取美股數據，轉換為 Yahoo Finance 格式
- */
-async function getTiingoStockData(symbol: string, range: string, ctx: any) {
-  try {
-    // 使用 Tiingo API 獲取數據
-    const result = await convertTiingoToYahooFormat(symbol, range);
-    
-    // 記錄搜尋歷史
-    if (ctx.user && result.chart.result[0]?.meta) {
-      const meta = result.chart.result[0].meta;
-      (async () => {
-        try {
-          await db.addSearchHistory({
-            userId: ctx.user.id,
-            symbol,
-            companyName: meta.longName || symbol,
-          });
-        } catch (error) {
-          console.error("[Search History] Failed to add:", error);
-        }
-      })();
-    }
-    
-    return result;
-  } catch (error: any) {
-    console.error('[Tiingo] Error fetching stock data:', error);
-    throw new Error(`無法獲取 ${symbol} 的股票數據：${error.message}`);
-  }
-}
+// getTiingoStockData 函數已移除，美股改用 Yahoo Finance API
 
 export const appRouter = router({
   system: systemRouter,
@@ -140,14 +112,38 @@ export const appRouter = router({
         // 根據股票代碼判斷市場區域
         const region = symbol.includes('.TW') || symbol.includes('.TWO') ? 'TW' : 'US';
         
-        // 美股使用 Tiingo API
-        if (region === 'US') {
-          return await getTiingoStockData(symbol, range, ctx);
-        }
-        
         // 台股使用 TWSE API
         if (region === 'TW') {
           return await getTWSEStockData(symbol, range, ctx);
+        }
+        
+        // 美股使用 Alpha Vantage API
+        if (region === 'US') {
+          try {
+            const result = await convertAlphaVantageToYahooFormat(symbol, range);
+            
+            // 記錄搜尋歷史
+            if (ctx.user && result.chart.result[0]?.meta) {
+              const meta = result.chart.result[0].meta;
+              const userId = ctx.user.id;
+              (async () => {
+                try {
+                  await db.addSearchHistory({
+                    userId,
+                    symbol,
+                    companyName: meta.longName || symbol,
+                  });
+                } catch (error) {
+                  console.error("[Search History] Failed to add:", error);
+                }
+              })();
+            }
+            
+            return result;
+          } catch (error: any) {
+            console.error('[Alpha Vantage] Error fetching stock data:', error);
+            throw new Error(`無法獲取 ${symbol} 的股票數據：${error.message}`);
+          }
         }
         
         // 生成緩存參數

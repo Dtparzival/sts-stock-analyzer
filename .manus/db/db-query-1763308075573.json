@@ -1,0 +1,9 @@
+{
+  "query": "SELECT cacheKey, apiEndpoint, createdAt, expiresAt FROM stockDataCache WHERE cacheKey LIKE '%TSLA%' ORDER BY createdAt DESC LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT cacheKey, apiEndpoint, createdAt, expiresAt FROM stockDataCache WHERE cacheKey LIKE '%TSLA%' ORDER BY createdAt DESC LIMIT 5",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1814
+}

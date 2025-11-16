@@ -432,3 +432,25 @@
 - [x] 修正 API 調用邏輯，優化為只需 2 個 API 請求（historical + meta）
 - [x] 測試修正後的功能（TSLA, AAPL, GOOGL 等美股）
 - [x] 驗證所有美股數據獲取功能正常運作
+
+## 新增需求：改回使用 Yahoo Finance API 作為美股資料來源
+
+- [x] 修改 stock.getStockData API，美股改回使用 Yahoo Finance
+- [x] 移除 Tiingo API 相關調用邏輯
+- [x] 保留台股使用 TWSE API
+- [ ] 測試美股資料獲取功能（TSLA, AAPL, GOOGL）- 觸發 Yahoo Finance API 429 速率限制
+- [ ] 測試台股資料獲取功能（2330.TW）
+- [ ] 驗證所有股票查詢功能正常運作
+
+## 新增需求：整合 Alpha Vantage API 作為美股數據來源
+
+- [x] 評估 Alpha Vantage API 的可行性（免費額度、速率限制、功能範圍）
+- [x] 獲取 Alpha Vantage API Key
+- [x] 創建 Alpha Vantage API 整合模組（server/alphaVantage.ts）
+- [x] 實作股票報價獲取功能（GLOBAL_QUOTE）
+- [x] 實作歷史價格獲取功能（TIME_SERIES_DAILY）
+- [x] 實作公司資訊獲取功能（COMPANY_OVERVIEW）
+- [x] 將數據轉換為 Yahoo Finance 格式
+- [x] 修改 stock.getStockData API 使用 Alpha Vantage
+- [x] 測試美股資料獲取功能（TSLA, AAPL, GOOGL）
+- [x] 驗證所有功能正常運作
