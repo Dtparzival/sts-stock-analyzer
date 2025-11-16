@@ -395,3 +395,11 @@
 - [x] 修正 Tiingo API 的 URL 和參數（改用 End-of-Day API）
 - [x] 測試修正後的 API 調用
 - [x] 驗證 TSLA 和其他美股資料獲取功能
+
+## 修正問題：Tiingo API 認證失敗
+
+- [x] 檢查當前 Tiingo API 的認證實作
+- [x] 確認 API Token 的傳遞方式（URL 參數 vs Headers）
+- [x] 根據官方文檔修正 API Token 傳遞方式
+- [x] 測試修正後的 API 調用
+- [x] 驗證 TSLA 和其他美股資料獲取功能
