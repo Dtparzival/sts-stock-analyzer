@@ -6,6 +6,7 @@ import { z } from "zod";
 import { callDataApi } from "./_core/dataApi";
 import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
+import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 
 export const appRouter = router({
   system: systemRouter,
@@ -18,6 +19,20 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+  }),
+
+  exchangeRate: router({
+    // 獲取 USD 到 TWD 的即時匯率
+    getUSDToTWD: publicProcedure
+      .query(async () => {
+        const rate = await getUSDToTWDRate();
+        const updateTime = getExchangeRateUpdateTime();
+        
+        return {
+          rate,
+          updateTime,
+        };
+      }),
   }),
 
   stock: router({

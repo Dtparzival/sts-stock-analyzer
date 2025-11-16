@@ -19,16 +19,17 @@ import { Badge } from "@/components/ui/badge";
 
 type Currency = 'USD' | 'TWD';
 
-// 台幣/美元匯率（使用固定匯率，實際應用中可以接入即時匯率 API）
-const TWD_TO_USD_RATE = 0.032; // 1 TWD = 0.032 USD
-const USD_TO_TWD_RATE = 31.5;  // 1 USD = 31.5 TWD
-
 export default function Portfolio() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [currency, setCurrency] = useState<Currency>('USD'); // 預設顯示美元
+
+  // 獲取即時匯率
+  const { data: exchangeRateData } = trpc.exchangeRate.getUSDToTWD.useQuery();
+  const usdToTwdRate = exchangeRateData?.rate || 31.5; // 如果 API 失敗，使用備用匯率
+  const twdToUsdRate = 1 / usdToTwdRate;
 
   // 表單狀態
   const [formData, setFormData] = useState({
@@ -140,8 +141,8 @@ export default function Portfolio() {
       const currentPrice = stockPrices[item.symbol] || purchasePrice;
       
       // 如果是台股，價格是台幣，需要轉換為美元
-      const purchasePriceUSD = market === 'TW' ? purchasePrice * TWD_TO_USD_RATE : purchasePrice;
-      const currentPriceUSD = market === 'TW' ? currentPrice * TWD_TO_USD_RATE : currentPrice;
+      const purchasePriceUSD = market === 'TW' ? purchasePrice * twdToUsdRate : purchasePrice;
+      const currentPriceUSD = market === 'TW' ? currentPrice * twdToUsdRate : currentPrice;
       
       totalInvestment += purchasePriceUSD * item.shares;
       totalCurrentValue += currentPriceUSD * item.shares;
@@ -162,7 +163,7 @@ export default function Portfolio() {
 
   // 根據選擇的貨幣轉換統計數據
   const convertCurrency = (value: number) => {
-    return currency === 'TWD' ? value * USD_TO_TWD_RATE : value;
+    return currency === 'TWD' ? value * usdToTwdRate : value;
   };
 
   // 獲取貨幣符號
@@ -257,21 +258,33 @@ export default function Portfolio() {
               <h1 className="text-2xl font-bold">投資組合</h1>
               
               {/* 貨幣切換按鈕 */}
-              <div className="flex gap-2 ml-4">
-                <Button
-                  variant={currency === 'USD' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrency('USD')}
-                >
-                  USD ($)
-                </Button>
-                <Button
-                  variant={currency === 'TWD' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrency('TWD')}
-                >
-                  TWD (NT$)
-                </Button>
+              <div className="flex flex-col gap-1 ml-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant={currency === 'USD' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrency('USD')}
+                  >
+                    USD ($)
+                  </Button>
+                  <Button
+                    variant={currency === 'TWD' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrency('TWD')}
+                  >
+                    TWD (NT$)
+                  </Button>
+                </div>
+                {exchangeRateData && (
+                  <div className="text-xs text-muted-foreground">
+                    匯率: 1 USD = {usdToTwdRate.toFixed(4)} TWD
+                    {exchangeRateData.updateTime && (
+                      <span className="ml-2">
+                        (更新於 {new Date(exchangeRateData.updateTime).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })})
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             
