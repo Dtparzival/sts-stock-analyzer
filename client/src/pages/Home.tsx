@@ -182,7 +182,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border mt-20">
         <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
-          <p>© 2024 {APP_TITLE}. 數據來源：Yahoo Finance</p>
+          <p>© 2025 {APP_TITLE}. 數據來源：Yahoo Finance</p>
           <p className="text-sm mt-2">
             本平台僅供參考，不構成投資建議。投資有風險，請謹慎決策。
           </p>
