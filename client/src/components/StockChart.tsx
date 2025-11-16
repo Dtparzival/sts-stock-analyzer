@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Area,
   AreaChart,
@@ -29,6 +29,7 @@ interface StockChartProps {
   onRangeChange?: (range: string, interval: string) => void;
   data?: ChartDataPoint[];
   isLoading?: boolean;
+  currentRange?: string;
 }
 
 const timeRanges = [
@@ -45,11 +46,24 @@ export default function StockChart({
   onRangeChange,
   data = [],
   isLoading = false,
+  currentRange = "1mo",
 }: StockChartProps) {
-  const [selectedRange, setSelectedRange] = useState("1mo");
+  const [selectedRange, setSelectedRange] = useState(currentRange);
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
   const [isCustomRange, setIsCustomRange] = useState(false);
+
+  // 同步父組件傳入的 currentRange
+  useEffect(() => {
+    // 如果 currentRange 包含 "-" 表示是自訂範圍
+    if (currentRange.includes("-")) {
+      setIsCustomRange(true);
+      setSelectedRange("custom");
+    } else {
+      setIsCustomRange(false);
+      setSelectedRange(currentRange);
+    }
+  }, [currentRange]);
 
   const handleRangeChange = (range: string, interval: string) => {
     setSelectedRange(range);

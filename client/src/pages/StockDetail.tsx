@@ -261,6 +261,7 @@ export default function StockDetail() {
           symbol={symbol}
           data={chartData}
           isLoading={loadingStock}
+          currentRange={chartRange}
           onRangeChange={(range, interval) => {
             setChartRange(range);
             setChartInterval(interval);
