@@ -7,15 +7,26 @@ import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
+import { useState, useMemo } from "react";
+
+type MarketFilter = 'all' | 'US' | 'TW';
 
 export default function SearchHistory() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
 
   const { data: history, isLoading } = trpc.history.list.useQuery(
     { limit: 50 },
     { enabled: !!user }
   );
+
+  // 篩選搜尋歷史
+  const filteredHistory = useMemo(() => {
+    if (!history) return [];
+    if (marketFilter === 'all') return history;
+    return history.filter(item => getMarketFromSymbol(item.symbol) === marketFilter);
+  }, [history, marketFilter]);
 
   if (loading) {
     return (
@@ -50,9 +61,36 @@ export default function SearchHistory() {
           返回首頁
         </Button>
 
-        <div className="flex items-center gap-3 mb-6">
-          <History className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">搜尋歷史</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <History className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">搜尋歷史</h1>
+          </div>
+          
+          {/* 市場篩選器 */}
+          <div className="flex gap-2">
+            <Button
+              variant={marketFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMarketFilter('all')}
+            >
+              全部
+            </Button>
+            <Button
+              variant={marketFilter === 'US' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMarketFilter('US')}
+            >
+              美股
+            </Button>
+            <Button
+              variant={marketFilter === 'TW' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMarketFilter('TW')}
+            >
+              台股
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -65,9 +103,15 @@ export default function SearchHistory() {
               <p className="text-lg text-muted-foreground">尚無搜尋記錄</p>
             </CardContent>
           </Card>
+        ) : filteredHistory.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-lg text-muted-foreground">沒有符合篩選條件的搜尋記錄</p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-2">
-            {history.map((item) => (
+            {filteredHistory.map((item) => (
               <Card
                 key={item.id}
                 className="cursor-pointer hover:border-primary/50 transition-colors"

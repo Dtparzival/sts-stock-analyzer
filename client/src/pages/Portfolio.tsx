@@ -17,11 +17,18 @@ import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashbo
 import { getMarketFromSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 
+type Currency = 'USD' | 'TWD';
+
+// 台幣/美元匯率（使用固定匯率，實際應用中可以接入即時匯率 API）
+const TWD_TO_USD_RATE = 0.032; // 1 TWD = 0.032 USD
+const USD_TO_TWD_RATE = 31.5;  // 1 USD = 31.5 TWD
+
 export default function Portfolio() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
+  const [currency, setCurrency] = useState<Currency>('USD'); // 預設顯示美元
 
   // 表單狀態
   const [formData, setFormData] = useState({
@@ -122,17 +129,22 @@ export default function Portfolio() {
     fetchPrices();
   }, [portfolio, utils]);
 
-  // 計算統計數據
+  // 計算統計數據（以美元為基準）
   const calculateStats = () => {
     let totalInvestment = 0;
     let totalCurrentValue = 0;
 
     portfolio.forEach((item) => {
-      const purchasePrice = item.purchasePrice / 100; // 轉換回美元
+      const market = getMarketFromSymbol(item.symbol);
+      const purchasePrice = item.purchasePrice / 100; // 轉換回原始價格
       const currentPrice = stockPrices[item.symbol] || purchasePrice;
       
-      totalInvestment += purchasePrice * item.shares;
-      totalCurrentValue += currentPrice * item.shares;
+      // 如果是台股，價格是台幣，需要轉換為美元
+      const purchasePriceUSD = market === 'TW' ? purchasePrice * TWD_TO_USD_RATE : purchasePrice;
+      const currentPriceUSD = market === 'TW' ? currentPrice * TWD_TO_USD_RATE : currentPrice;
+      
+      totalInvestment += purchasePriceUSD * item.shares;
+      totalCurrentValue += currentPriceUSD * item.shares;
     });
 
     const totalGainLoss = totalCurrentValue - totalInvestment;
@@ -146,6 +158,16 @@ export default function Portfolio() {
       totalGainLoss,
       totalGainLossPercent,
     };
+  };
+
+  // 根據選擇的貨幣轉換統計數據
+  const convertCurrency = (value: number) => {
+    return currency === 'TWD' ? value * USD_TO_TWD_RATE : value;
+  };
+
+  // 獲取貨幣符號
+  const getCurrencySymbol = () => {
+    return currency === 'TWD' ? 'NT$' : '$';
   };
 
   const stats = calculateStats();
@@ -233,6 +255,24 @@ export default function Portfolio() {
                 返回首頁
               </Button>
               <h1 className="text-2xl font-bold">投資組合</h1>
+              
+              {/* 貨幣切換按鈕 */}
+              <div className="flex gap-2 ml-4">
+                <Button
+                  variant={currency === 'USD' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrency('USD')}
+                >
+                  USD ($)
+                </Button>
+                <Button
+                  variant={currency === 'TWD' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrency('TWD')}
+                >
+                  TWD (NT$)
+                </Button>
+              </div>
             </div>
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -353,7 +393,7 @@ export default function Portfolio() {
             <CardHeader className="pb-3">
               <CardDescription>總投資金額</CardDescription>
               <CardTitle className="text-2xl">
-                ${stats.totalInvestment.toFixed(2)}
+                {getCurrencySymbol()}{convertCurrency(stats.totalInvestment).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -362,7 +402,7 @@ export default function Portfolio() {
             <CardHeader className="pb-3">
               <CardDescription>當前總價值</CardDescription>
               <CardTitle className="text-2xl">
-                ${stats.totalCurrentValue.toFixed(2)}
+                {getCurrencySymbol()}{convertCurrency(stats.totalCurrentValue).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -372,7 +412,7 @@ export default function Portfolio() {
               <CardDescription>總損益</CardDescription>
               <CardTitle className={`text-2xl flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {stats.totalGainLoss >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-                ${Math.abs(stats.totalGainLoss).toFixed(2)}
+                {stats.totalGainLoss >= 0 ? '+' : '-'}{getCurrencySymbol()}{Math.abs(convertCurrency(stats.totalGainLoss)).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
