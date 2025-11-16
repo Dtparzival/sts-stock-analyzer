@@ -43,32 +43,47 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold">{APP_TITLE}</h1>
+              <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+              <h1 className="text-lg md:text-2xl font-bold truncate max-w-[120px] md:max-w-none">{APP_TITLE}</h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 md:gap-4">
               {loading ? (
                 <div className="h-10 w-20 bg-muted animate-pulse rounded" />
               ) : user ? (
                 <>
-                  <Button variant="ghost" onClick={() => setLocation("/watchlist")}>
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/watchlist")} className="hidden sm:flex">
                     <Star className="h-4 w-4 mr-2" />
                     收藏
                   </Button>
-                  <Button variant="ghost" onClick={() => setLocation("/portfolio")}>
+                  <Button variant="ghost" size="icon" onClick={() => setLocation("/watchlist")} className="sm:hidden">
+                    <Star className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/portfolio")} className="hidden sm:flex">
                     <Wallet className="h-4 w-4 mr-2" />
                     投資組合
                   </Button>
-                  <Button variant="ghost" onClick={() => setLocation("/history")}>
+                  <Button variant="ghost" size="icon" onClick={() => setLocation("/portfolio")} className="sm:hidden">
+                    <Wallet className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/history")} className="hidden sm:flex">
                     <History className="h-4 w-4 mr-2" />
                     歷史
                   </Button>
-                  <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" onClick={() => setLocation("/history")} className="sm:hidden">
+                    <History className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="hidden md:flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">{user.name || user.email}</span>
                     <Button variant="ghost" size="sm" onClick={handleLogout}>
                       <LogOut className="h-4 w-4" />
                     </Button>
                   </div>
+                  <Button variant="ghost" size="icon" onClick={handleLogout} className="md:hidden">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
                 </>
               ) : (
                 <Button asChild>
