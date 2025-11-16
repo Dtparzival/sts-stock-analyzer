@@ -5,6 +5,8 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, Star } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
+import { getMarketFromSymbol } from "@shared/markets";
+import { Badge } from "@/components/ui/badge";
 
 export default function Watchlist() {
   const { user, loading } = useAuth();
@@ -72,8 +74,13 @@ export default function Watchlist() {
               >
                 <CardContent className="py-6">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold mb-1">{item.symbol}</h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-bold">{item.symbol}</h3>
+                        <Badge variant="outline" className="text-xs">
+                          {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
+                        </Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground">{item.companyName || item.symbol}</p>
                     </div>
                     <Star className="h-5 w-5 text-primary fill-primary" />

@@ -14,6 +14,8 @@ import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart";
 import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashboard";
+import { getMarketFromSymbol } from "@shared/markets";
+import { Badge } from "@/components/ui/badge";
 
 export default function Portfolio() {
   const { user, loading: authLoading } = useAuth();
@@ -428,31 +430,38 @@ export default function Portfolio() {
                       const marketValue = currentPrice * item.shares;
                       const gainLoss = marketValue - costBasis;
                       const gainLossPercent = (gainLoss / costBasis) * 100;
+                      const market = getMarketFromSymbol(item.symbol);
+                      const currencySymbol = market === 'TW' ? 'NT$' : '$';
 
                       return (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">
-                            <button
-                              onClick={() => setLocation(`/stock/${item.symbol}`)}
-                              className="text-primary hover:underline"
-                            >
-                              {item.symbol}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setLocation(`/stock/${item.symbol}`)}
+                                className="text-primary hover:underline"
+                              >
+                                {item.symbol}
+                              </button>
+                              <Badge variant="outline" className="text-xs">
+                                {market === 'TW' ? '台股' : '美股'}
+                              </Badge>
+                            </div>
                           </TableCell>
                           <TableCell>{item.companyName || '-'}</TableCell>
                           <TableCell className="text-right">{item.shares}</TableCell>
-                          <TableCell className="text-right">${purchasePrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{currencySymbol}{purchasePrice.toFixed(2)}</TableCell>
                           <TableCell className="text-right">
                             {stockPrices[item.symbol] ? (
-                              `$${currentPrice.toFixed(2)}`
+                              `${currencySymbol}${currentPrice.toFixed(2)}`
                             ) : (
                               <Loader2 className="h-4 w-4 animate-spin inline" />
                             )}
                           </TableCell>
-                          <TableCell className="text-right">${costBasis.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">${marketValue.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{currencySymbol}{costBasis.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{currencySymbol}{marketValue.toFixed(2)}</TableCell>
                           <TableCell className={`text-right ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)}
+                            {gainLoss >= 0 ? '+' : ''}{currencySymbol}{gainLoss.toFixed(2)}
                           </TableCell>
                           <TableCell className={`text-right ${gainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {gainLossPercent >= 0 ? '+' : ''}{gainLossPercent.toFixed(2)}%
