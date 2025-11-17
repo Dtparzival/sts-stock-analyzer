@@ -55,16 +55,50 @@ export default function StockDetail() {
 
   const utils = trpc.useUtils();
   const addToWatchlist = trpc.watchlist.add.useMutation({
+    onMutate: async () => {
+      // 樂觀更新：立即更新 UI
+      await utils.watchlist.check.cancel({ symbol });
+      const previousData = utils.watchlist.check.getData({ symbol });
+      utils.watchlist.check.setData({ symbol }, { isInWatchlist: true });
+      return { previousData };
+    },
+    onError: (error, variables, context) => {
+      // 回滾樂觀更新
+      if (context?.previousData) {
+        utils.watchlist.check.setData({ symbol }, context.previousData);
+      }
+      toast.error("添加到收藏失敗，請稍後再試");
+    },
     onSuccess: () => {
       toast.success("已添加到收藏");
+    },
+    onSettled: () => {
+      // 確保數據同步
       utils.watchlist.check.invalidate({ symbol });
       utils.watchlist.list.invalidate();
     },
   });
 
   const removeFromWatchlist = trpc.watchlist.remove.useMutation({
+    onMutate: async () => {
+      // 樂觀更新：立即更新 UI
+      await utils.watchlist.check.cancel({ symbol });
+      const previousData = utils.watchlist.check.getData({ symbol });
+      utils.watchlist.check.setData({ symbol }, { isInWatchlist: false });
+      return { previousData };
+    },
+    onError: (error, variables, context) => {
+      // 回滾樂觀更新
+      if (context?.previousData) {
+        utils.watchlist.check.setData({ symbol }, context.previousData);
+      }
+      toast.error("移除收藏失敗，請稍後再試");
+    },
     onSuccess: () => {
       toast.success("已從收藏中移除");
+    },
+    onSettled: () => {
+      // 確保數據同步
       utils.watchlist.check.invalidate({ symbol });
       utils.watchlist.list.invalidate();
     },

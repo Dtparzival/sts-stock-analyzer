@@ -2,12 +2,13 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Star } from "lucide-react";
+import { ArrowLeft, Loader2, Star, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 
 type MarketFilter = 'all' | 'US' | 'TW';
 
@@ -19,6 +20,38 @@ export default function Watchlist() {
   const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
     enabled: !!user,
   });
+
+  const utils = trpc.useUtils();
+  const removeFromWatchlist = trpc.watchlist.remove.useMutation({
+    onMutate: async ({ symbol }) => {
+      // 樂觀更新：立即從列表中移除
+      await utils.watchlist.list.cancel();
+      const previousData = utils.watchlist.list.getData();
+      utils.watchlist.list.setData(undefined, (old) => 
+        old ? old.filter(item => item.symbol !== symbol) : []
+      );
+      return { previousData };
+    },
+    onError: (error, variables, context) => {
+      // 回滾樂觀更新
+      if (context?.previousData) {
+        utils.watchlist.list.setData(undefined, context.previousData);
+      }
+      toast.error("移除收藏失敗，請稍後再試");
+    },
+    onSuccess: () => {
+      toast.success("已從收藏中移除");
+    },
+    onSettled: () => {
+      // 確保數據同步
+      utils.watchlist.list.invalidate();
+    },
+  });
+
+  const handleRemove = (e: React.MouseEvent, symbol: string) => {
+    e.stopPropagation(); // 阻止事件冒泡，不觸發卡片點擊
+    removeFromWatchlist.mutate({ symbol });
+  };
 
   // 篩選收藏列表
   const filteredWatchlist = useMemo(() => {
@@ -113,7 +146,7 @@ export default function Watchlist() {
             {filteredWatchlist.map((item) => (
               <Card
                 key={item.id}
-                className="cursor-pointer hover:border-primary/50 transition-colors"
+                className="cursor-pointer hover:border-primary/50 transition-colors relative group"
                 onClick={() => setLocation(`/stock/${item.symbol}`)}
               >
                 <CardContent className="py-6">
@@ -129,7 +162,17 @@ export default function Watchlist() {
                       </div>
                       <p className="text-sm text-muted-foreground">{item.companyName || item.symbol}</p>
                     </div>
-                    <Star className="h-5 w-5 text-primary fill-primary" />
+                    <div className="flex items-center gap-2">
+                      <Star className="h-5 w-5 text-primary fill-primary" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleRemove(e, item.symbol)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-4">
                     添加於 {new Date(item.addedAt).toLocaleDateString("zh-TW")}

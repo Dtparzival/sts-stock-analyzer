@@ -118,6 +118,13 @@ export async function addToWatchlist(data: InsertWatchlist): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // 檢查是否已存在（冒等性）
+  const exists = await isInWatchlist(data.userId, data.symbol);
+  if (exists) {
+    console.log(`[Watchlist] Stock ${data.symbol} already in watchlist for user ${data.userId}`);
+    return; // 已存在，直接返回成功
+  }
+  
   await db.insert(watchlist).values(data);
 }
 
