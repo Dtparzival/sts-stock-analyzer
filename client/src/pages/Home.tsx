@@ -6,7 +6,7 @@ import { APP_TITLE, getLoginUrl } from "@/const";
 import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName } from "@shared/markets";
+import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
@@ -222,20 +222,37 @@ export default function Home() {
                 <span className="text-sm font-medium text-muted-foreground">為您推薦（最近查看）</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {recentHistory.slice(0, 8).map((item) => (
-                  <Button
-                    key={item.id}
-                    variant="outline"
-                    size="sm"
-                    className="hover:bg-primary/10 hover:border-primary flex flex-col items-center py-3 h-auto"
-                    onClick={() => setLocation(`/stock/${item.symbol}`)}
-                  >
-                    <span className="font-semibold text-base">{item.symbol}</span>
-                    {item.companyName && (
-                      <span className="text-xs text-muted-foreground mt-0.5">{item.companyName}</span>
-                    )}
-                  </Button>
-                ))}
+                {recentHistory.slice(0, 8).map((item) => {
+                  // 處理顯示名稱：優先使用 companyName，如果是舊格式的台股代碼，則從備用映射表獲取
+                  let displaySymbol = item.symbol;
+                  let displayName = item.companyName;
+                  
+                  const market = getMarketFromSymbol(item.symbol);
+                  if (market === 'TW') {
+                    const cleanSymbol = cleanTWSymbol(item.symbol);
+                    displaySymbol = cleanSymbol;
+                    
+                    // 如果 companyName 是舊格式（等於 symbol 或包含 .TW），則從備用映射表獲取
+                    if (!displayName || displayName === item.symbol || displayName.includes('.TW')) {
+                      displayName = TW_STOCK_NAMES[cleanSymbol] || null;
+                    }
+                  }
+                  
+                  return (
+                    <Button
+                      key={item.id}
+                      variant="outline"
+                      size="sm"
+                      className="hover:bg-primary/10 hover:border-primary flex flex-col items-center py-3 h-auto"
+                      onClick={() => setLocation(`/stock/${item.symbol}`)}
+                    >
+                      <span className="font-semibold text-base">{displaySymbol}</span>
+                      {displayName && (
+                        <span className="text-xs text-muted-foreground mt-0.5">{displayName}</span>
+                      )}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           )}
