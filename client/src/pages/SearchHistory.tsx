@@ -228,14 +228,16 @@ export default function SearchHistory() {
               >
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="font-bold text-lg">
-                        {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
-                      </span>
-                      <Badge variant="outline" className="text-xs">
-                        {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
-                      </Badge>
-                      <span className="text-muted-foreground">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">
+                          {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
+                        </Badge>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
                         {item.companyName || item.symbol}
                       </span>
                     </div>

@@ -89,8 +89,8 @@ export function cleanTWSymbol(symbol: string): string {
 }
 
 /**
- * 台股中文名稱映射表（部分常見股票）
- * 可以根據需要擴充更多股票
+ * 台股中文名稱映射表（備用，當 TWSE API 不可用時使用）
+ * 主要功能已移至 server/twseStockList.ts，使用 TWSE OpenAPI 獲取完整的股票列表
  */
 export const TW_STOCK_NAMES: Record<string, string> = {
   '2330': '台積電',

@@ -237,13 +237,10 @@ export default function StockDetail() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold">{companyName}</h1>
+              <h1 className="text-4xl font-bold">{displaySymbol}</h1>
             </div>
             <p className="text-2xl text-muted-foreground">
-              {displaySymbol}
-              {stockMarket === 'TW' && companyName !== displaySymbol && (
-                <span className="ml-2 text-lg">({companyName})</span>
-              )}
+              {companyName}
             </p>
           </div>
           <Button

@@ -531,8 +531,7 @@ export default function Portfolio() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>股票代碼</TableHead>
-                      <TableHead>公司名稱</TableHead>
+                      <TableHead>股票</TableHead>
                       <TableHead className="text-right">持股數量</TableHead>
                       <TableHead className="text-right">購買價格</TableHead>
                       <TableHead className="text-right">當前價格</TableHead>
@@ -579,19 +578,25 @@ export default function Portfolio() {
                       return (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setLocation(`/stock/${item.symbol}`)}
-                                className="text-primary hover:underline"
-                              >
-                                {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
-                              </button>
-                              <Badge variant="outline" className="text-xs">
-                                {market === 'TW' ? '台股' : '美股'}
-                              </Badge>
-                            </div>
+                            <button
+                              onClick={() => setLocation(`/stock/${item.symbol}`)}
+                              className="text-left"
+                            >
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-primary hover:underline font-semibold">
+                                    {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {market === 'TW' ? '台股' : '美股'}
+                                  </Badge>
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                  {item.companyName || '-'}
+                                </span>
+                              </div>
+                            </button>
                           </TableCell>
-                          <TableCell>{item.companyName || '-'}</TableCell>
                           <TableCell className="text-right">{item.shares}</TableCell>
                           <TableCell className="text-right">{getCurrencySymbol()}{displayPurchasePrice.toFixed(2)}</TableCell>
                           <TableCell className="text-right">

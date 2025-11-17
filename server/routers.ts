@@ -45,10 +45,15 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
     if (ctx.user) {
       (async () => {
         try {
+          // 獲取台股中文名稱
+          const { getTWStockInfo } = await import('./twseStockList');
+          const stockInfo = await getTWStockInfo(stockNo);
+          const companyName = stockInfo ? `${stockNo} ${stockInfo.name}` : stockNo;
+          
           await db.addSearchHistory({
             userId: ctx.user.id,
             symbol,
-            companyName: symbol, // TWSE API 不提供公司名稱，使用股票代碼
+            companyName,
           });
         } catch (error) {
           console.error("[Search History] Failed to add:", error);
@@ -608,6 +613,16 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
       .query(async ({ input, ctx }) => {
         const isInList = await db.isInWatchlist(ctx.user.id, input.symbol);
         return { isInWatchlist: isInList };
+      }),
+    // 搜尋台股（根據中文名稱）
+    searchTWStock: publicProcedure
+      .input(z.object({
+        query: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const { searchTWStockByName } = await import('./twseStockList');
+        const results = await searchTWStockByName(input.query);
+        return results;
       }),
   }),
 

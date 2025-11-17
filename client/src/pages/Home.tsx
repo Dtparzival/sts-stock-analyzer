@@ -199,9 +199,9 @@ export default function Home() {
                         key={suggestion.symbol}
                         type="button"
                         onClick={() => handleSuggestionClick(suggestion.symbol)}
-                        className="w-full px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between"
+                        className="w-full px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground transition-colors flex flex-col items-start"
                       >
-                        <span className="font-medium">{suggestion.symbol}</span>
+                        <span className="font-medium text-base">{suggestion.symbol}</span>
                         <span className="text-sm text-muted-foreground">{suggestion.name}</span>
                       </button>
                     ))}
@@ -227,10 +227,13 @@ export default function Home() {
                     key={item.id}
                     variant="outline"
                     size="sm"
-                    className="hover:bg-primary/10 hover:border-primary"
+                    className="hover:bg-primary/10 hover:border-primary flex flex-col items-center py-3 h-auto"
                     onClick={() => setLocation(`/stock/${item.symbol}`)}
                   >
-                    {item.symbol}
+                    <span className="font-semibold text-base">{item.symbol}</span>
+                    {item.companyName && (
+                      <span className="text-xs text-muted-foreground mt-0.5">{item.companyName}</span>
+                    )}
                   </Button>
                 ))}
               </div>
