@@ -133,3 +133,22 @@ export const stockDataCache = mysqlTable("stockDataCache", {
 
 export type StockDataCache = typeof stockDataCache.$inferSelect;
 export type InsertStockDataCache = typeof stockDataCache.$inferInsert;
+
+/**
+ * TWSE 股票列表緩存
+ * 儲存台灣證券交易所的完整股票列表，減少 API 調用次數
+ */
+export const twseStockList = mysqlTable("twseStockList", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull().unique(), // 股票代碼（例如：2330）
+  name: text("name").notNull(), // 公司全名（例如：台灣積體電路製造股份有限公司）
+  shortName: text("shortName"), // 公司簡稱（例如：台積電）
+  industry: varchar("industry", { length: 100 }), // 產業別
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(), // 最後更新時間
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  updatedAtIdx: index("updatedAt_idx").on(table.updatedAt),
+}));
+
+export type TwseStockList = typeof twseStockList.$inferSelect;
+export type InsertTwseStockList = typeof twseStockList.$inferInsert;

@@ -2,6 +2,7 @@
  * TWSE 股票代碼對照表整合模組
  * 
  * 整合台灣證券交易所 OpenAPI，提供完整的上市公司代碼與中文名稱對照表
+ * 已整合數據庫緩存，減少 API 調用次數並提升響應速度
  */
 
 interface TWSECompanyData {
@@ -29,82 +30,47 @@ interface StockInfo {
   industry: string;
 }
 
-// 緩存數據
-let cachedStockList: Map<string, StockInfo> | null = null;
+// 引入數據庫緩存服務
+import * as dbCache from './dbTwseStockListCache';
+
+// 記憶體緩存（用於單次請求內的快速存取）
+let memoryCache: Map<string, StockInfo> | null = null;
 let lastFetchTime: number = 0;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 小時
+const MEMORY_CACHE_DURATION = 5 * 60 * 1000; // 5 分鐘
+
+// fetchTWSEStockList 已移至 dbTwseStockListCache.ts
 
 /**
- * 從 TWSE OpenAPI 獲取完整的上市公司基本資料
- */
-async function fetchTWSEStockList(): Promise<TWSECompanyData[]> {
-  try {
-    console.log("[TWSE Stock List] Fetching stock list from TWSE OpenAPI...");
-    
-    const response = await fetch("https://openapi.twse.com.tw/v1/opendata/t187ap03_L", {
-      headers: {
-        "Accept": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`TWSE API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data: TWSECompanyData[] = await response.json();
-    console.log(`[TWSE Stock List] Successfully fetched ${data.length} companies`);
-    
-    return data;
-  } catch (error) {
-    console.error("[TWSE Stock List] Error fetching stock list:", error);
-    throw error;
-  }
-}
-
-/**
- * 初始化或更新緩存的股票列表
+ * 初始化或更新股票列表（整合數據庫緩存）
  */
 async function initializeStockList(): Promise<Map<string, StockInfo>> {
   const now = Date.now();
   
-  // 如果緩存存在且未過期，直接返回
-  if (cachedStockList && (now - lastFetchTime) < CACHE_DURATION) {
-    console.log("[TWSE Stock List] Using cached stock list");
-    return cachedStockList;
+  // 1. 如果記憶體緩存存在且未過期，直接返回
+  if (memoryCache && (now - lastFetchTime) < MEMORY_CACHE_DURATION) {
+    console.log("[TWSE Stock List] Using memory cache");
+    return memoryCache;
   }
 
-  console.log("[TWSE Stock List] Initializing stock list...");
+  console.log("[TWSE Stock List] Loading from database cache...");
   
   try {
-    const companies = await fetchTWSEStockList();
-    const stockMap = new Map<string, StockInfo>();
-
-    for (const company of companies) {
-      // 過濾掉無效的代碼（例如空字符串或非數字代碼）
-      if (!company.公司代號 || !/^\d{4}$/.test(company.公司代號)) {
-        continue;
-      }
-
-      stockMap.set(company.公司代號, {
-        symbol: company.公司代號,
-        name: company.公司名稱 || "",
-        shortName: company.公司簡稱 || company.公司名稱 || "",
-        industry: company.產業別 || "",
-      });
-    }
-
-    cachedStockList = stockMap;
+    // 2. 從數據庫緩存獲取股票列表（會自動管理緩存更新）
+    const stockMap = await dbCache.getStockList();
+    
+    // 3. 更新記憶體緩存
+    memoryCache = stockMap;
     lastFetchTime = now;
     
-    console.log(`[TWSE Stock List] Initialized with ${stockMap.size} stocks`);
+    console.log(`[TWSE Stock List] Loaded ${stockMap.size} stocks`);
     return stockMap;
   } catch (error) {
-    console.error("[TWSE Stock List] Failed to initialize stock list:", error);
+    console.error("[TWSE Stock List] Failed to load stock list:", error);
     
-    // 如果有舊的緩存，返回舊緩存
-    if (cachedStockList) {
-      console.log("[TWSE Stock List] Using stale cache due to fetch error");
-      return cachedStockList;
+    // 如果有舊的記憶體緩存，返回舊緩存
+    if (memoryCache) {
+      console.log("[TWSE Stock List] Using stale memory cache due to error");
+      return memoryCache;
     }
     
     // 否則返回空 Map
@@ -149,7 +115,7 @@ export async function getAllTWStocks(): Promise<StockInfo[]> {
  * 清除緩存（用於測試或強制更新）
  */
 export function clearCache(): void {
-  cachedStockList = null;
+  memoryCache = null;
   lastFetchTime = 0;
-  console.log("[TWSE Stock List] Cache cleared");
+  console.log("[TWSE Stock List] Memory cache cleared");
 }
