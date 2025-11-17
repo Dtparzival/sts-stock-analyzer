@@ -1143,3 +1143,25 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 3. ✓ **代號搜尋不受影響**：輸入 `2330` 仍然能正常工作
 4. ✓ **美股不受影響**：美股搜尋功能保持不變
 5. ✓ **收藏狀態正確**：從中文名稱搜尋進入詳情頁時，能正確顯示收藏狀態
+
+## 後續優化：代碼重構和測試
+
+### 1. 重構 TW_STOCK_NAMES 映射表
+
+- [x] 將 TW_STOCK_NAMES 的 key 從純數字（`'2330'`）改為完整格式（`'2330.TW'`）
+- [x] 修正 searchTWStockByName 函數，移除重複添加 .TW 後綴的邏輯
+- [x] 測試中文名稱搜尋功能（確保返回 `2330.TW` 格式）
+- [x] 驗證所有使用 TW_STOCK_NAMES 的地方都能正常運作
+- [x] 修正空字串查詢的邏輯錯誤（返回空陣列而非所有股票）
+
+### 2. 添加單元測試
+
+- [x] 安裝測試框架（Vitest 或 Jest）
+- [x] 為 searchTWStockByName 函數添加單元測試
+- [x] 為 getMarketFromSymbol 函數添加單元測試
+- [x] 為 cleanTWSymbol 函數添加單元測試
+- [x] 為 getFullTWSymbol 函數添加單元測試
+- [x] 為 getTWStockName 函數添加單元測試
+- [x] 為 TW_STOCK_NAMES 映射表添加驗證測試
+- [x] 執行測試並確保所有測試通過（27 個測試全部通過）
+- [x] 添加測試腳本到 package.json（已存在）
