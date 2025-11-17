@@ -1008,3 +1008,76 @@ TW: [
 1. ✓ **統一 symbol 格式**：所有台股代號現在都使用 `.TW` 後綴格式
 2. ✓ **修正熱門台股**：HOT_STOCKS 的台股 symbol 已更新為完整格式
 3. ✓ **支援所有場景**：從搜尋、熱門股票、收藏列表等任何入口進入詳情頁，都能正確顯示收藏狀態
+
+## 修正台股搜尋時 symbol 格式處理問題
+
+### 問題描述
+用戶反饋：從首頁搜尋列輸入台股代號或名稱進入詳情頁時，顯示未收藏（但實際已收藏）。美股沒有此問題。
+
+### 待辦事項
+
+- [x] 檢查首頁搜尋列的台股處理邏輯（第 42-65 行）
+- [x] 診斷台股搜尋時是否缺少 .TW 後綴
+- [x] 修正搜尋邏輯，確保台股代號添加 .TW 後綴
+- [x] 測試台股搜尋功能（輸入代號和中文名稱）
+- [x] 驗證美股搜尋功能不受影響
+
+### 問題診斷與解決
+
+**根本原因：搜尋時缺少 .TW 後綴**
+
+原始的搜尋邏輯（第 56 行）：
+```typescript
+setLocation(`/stock/${searchQuery.trim().toUpperCase()}`);
+```
+
+當用戶在台股市場輸入 `2330` 時：
+- URL 變成 `/stock/2330`（沒有 `.TW` 後綴）
+- 但資料庫中儲存的是 `2330.TW`
+- 結果：查詢時找不到匹配，顯示未收藏
+
+**解決方案：**
+
+修正 `client/src/pages/Home.tsx` 的 `handleSearch` 函數，當 `selectedMarket === 'TW'` 時自動添加 `.TW` 後綴：
+
+```typescript
+const handleSearch = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (searchQuery.trim()) {
+    // 如果是台股市場且輸入中文，嘗試匹配中文名稱
+    if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(searchQuery)) {
+      const results = searchTWStockByName(searchQuery);
+      if (results.length > 0) {
+        setLocation(`/stock/${results[0].symbol}`);
+        setSearchQuery('');
+        setShowSuggestions(false);
+        return;
+      }
+    }
+    // 如果是台股市場，自動添加 .TW 後綴
+    let symbol = searchQuery.trim().toUpperCase();
+    if (selectedMarket === 'TW' && !symbol.endsWith('.TW') && !symbol.endsWith('.TWO')) {
+      symbol = `${symbol}.TW`;
+    }
+    setLocation(`/stock/${symbol}`);
+    setSearchQuery('');
+    setShowSuggestions(false);
+  }
+};
+```
+
+### 實作結果
+
+- [x] 修正搜尋邏輯，添加自動 .TW 後綴功能
+- [x] 測試編譯成功
+- [x] 驗證台股搜尋功能（輸入 `2330` 會自動轉換為 `/stock/2330.TW`）
+- [x] 驗證美股搜尋功能不受影響
+
+### 總結
+
+已徹底解決台股搜尋時 symbol 格式處理問題：
+
+1. ✓ **自動添加 .TW 後綴**：當用戶在台股市場搜尋時，系統會自動添加 `.TW` 後綴
+2. ✓ **支援所有搜尋方式**：輸入代號（`2330`）或中文名稱（`台積電`）都能正確導航
+3. ✓ **美股不受影響**：美股搜尋功能保持不變
+4. ✓ **收藏狀態正確**：從搜尋列進入詳情頁時，能正確顯示收藏狀態

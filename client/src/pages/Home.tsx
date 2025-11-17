@@ -53,7 +53,12 @@ export default function Home() {
           return;
         }
       }
-      setLocation(`/stock/${searchQuery.trim().toUpperCase()}`);
+      // 如果是台股市場，自動添加 .TW 後綴
+      let symbol = searchQuery.trim().toUpperCase();
+      if (selectedMarket === 'TW' && !symbol.endsWith('.TW') && !symbol.endsWith('.TWO')) {
+        symbol = `${symbol}.TW`;
+      }
+      setLocation(`/stock/${symbol}`);
       setSearchQuery('');
       setShowSuggestions(false);
     }
