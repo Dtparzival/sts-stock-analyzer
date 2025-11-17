@@ -167,8 +167,9 @@ export default function Watchlist() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                         onClick={(e) => handleRemove(e, item.symbol)}
+                        title="移除收藏"
                       >
                         <X className="h-4 w-4" />
                       </Button>

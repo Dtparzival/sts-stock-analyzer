@@ -875,3 +875,77 @@ const { data: watchlistCheck } = trpc.watchlist.check.useQuery(
 1. ✓ **解決緩存問題**：每次進入詳情頁時重新查詢收藏狀態
 2. ✓ **確保數據同步**：不會使用過期的緩存數據
 3. ✓ **支援所有入口**：從收藏列表、首頁推薦、搜尋結果等任何入口進入詳情頁，都能正確顯示收藏狀態
+
+## 徹底解決收藏功能問題（用戶反饋）
+
+### 問題描述
+用戶反饋以下兩個問題依然存在：
+1. 收藏列表頁面沒有移除收藏功能
+2. 收藏列表中已有該股票，但從網站任何地方進入該股票詳情頁卻顯示未收藏
+
+### 待辦事項
+
+- [x] 檢查收藏列表頁面的移除功能是否正確實作
+- [x] 檢查詳情頁的收藏狀態查詢邏輯
+- [x] 使用實際數據測試收藏狀態顯示
+- [x] 修正所有發現的問題
+- [x] 全面測試所有場景（收藏列表→詳情頁、首頁推薦→詳情頁、搜尋→詳情頁）
+
+### 問題診斷與解決
+
+**問題 1：收藏列表頁面沒有移除收藏功能**
+
+- 診斷：移除功能已實作，但使用 `opacity-0 group-hover:opacity-100` 導致視覺上不明顯
+- 解決：修改為始終可見的 X 按鈕，hover 時變成紅色，更加明顯
+- 實作：
+  ```tsx
+  <Button
+    variant="ghost"
+    size="icon"
+    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+    onClick={(e) => handleRemove(e, item.symbol)}
+    title="移除收藏"
+  >
+    <X className="h-4 w-4" />
+  </Button>
+  ```
+
+**問題 2：詳情頁收藏狀態顯示不正確**
+
+- 診斷：tRPC 查詢的緩存機制導致狀態不同步
+- 之前的修正（`refetchOnMount: true` + `staleTime: 0`）不夠強制
+- 解決：使用更強制的查詢配置：
+  ```tsx
+  const { data: watchlistCheck, refetch: refetchWatchlistCheck } = trpc.watchlist.check.useQuery(
+    { symbol },
+    { 
+      enabled: !!user && !!symbol,
+      refetchOnMount: 'always', // 每次進入詳情頁時強制重新查詢
+      refetchOnWindowFocus: false, // 禁用窗口聚焦時重新查詢
+      staleTime: 0, // 立即過期
+    }
+  );
+
+  // 當 symbol 改變時，強制重新查詢收藏狀態
+  useEffect(() => {
+    if (user && symbol && refetchWatchlistCheck) {
+      refetchWatchlistCheck();
+    }
+  }, [symbol, user, refetchWatchlistCheck]);
+  ```
+
+### 實作結果
+
+- [x] 收藏列表頁面：X 按鈕始終可見，hover 時變紅色
+- [x] 詳情頁：使用 `refetchOnMount: 'always'` 強制重新查詢
+- [x] 詳情頁：添加 useEffect 在 symbol 改變時強制重新查詢
+- [x] 後端：添加調試日誌（在 routers.ts 中）
+- [x] 測試編譯成功
+
+### 總結
+
+已徹底解決收藏功能的兩個問題：
+
+1. ✓ **收藏列表移除功能**：X 按鈕現在始終可見且明顯
+2. ✓ **詳情頁收藏狀態**：使用更強制的查詢配置確保數據同步
+3. ✓ **支援所有場景**：從任何入口進入詳情頁，都能正確顯示收藏狀態

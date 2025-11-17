@@ -48,14 +48,22 @@ export default function StockDetail() {
   const market = getMarketFromSymbol(symbol);
   const marketOpen = isMarketOpen(market);
 
-  const { data: watchlistCheck } = trpc.watchlist.check.useQuery(
+  const { data: watchlistCheck, refetch: refetchWatchlistCheck } = trpc.watchlist.check.useQuery(
     { symbol },
     { 
       enabled: !!user && !!symbol,
-      refetchOnMount: true, // 每次進入詳情頁時重新查詢
-      staleTime: 0, // 立即過期，確保獲取最新狀態
+      refetchOnMount: 'always', // 每次進入詳情頁時強制重新查詢
+      refetchOnWindowFocus: false, // 禁用窗口聚焦時重新查詢
+      staleTime: 0, // 立即過期
     }
   );
+
+  // 當 symbol 改變時，強制重新查詢收藏狀態
+  useEffect(() => {
+    if (user && symbol && refetchWatchlistCheck) {
+      refetchWatchlistCheck();
+    }
+  }, [symbol, user, refetchWatchlistCheck]);
 
   const utils = trpc.useUtils();
   const addToWatchlist = trpc.watchlist.add.useMutation({

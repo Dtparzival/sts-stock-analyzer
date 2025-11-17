@@ -614,7 +614,9 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         symbol: z.string(),
       }))
       .query(async ({ input, ctx }) => {
+        console.log('[watchlist.check] userId:', ctx.user.id, 'symbol:', input.symbol);
         const isInList = await db.isInWatchlist(ctx.user.id, input.symbol);
+        console.log('[watchlist.check] isInList:', isInList);
         return { isInWatchlist: isInList };
       }),
     // 搜尋台股（根據中文名稱）
