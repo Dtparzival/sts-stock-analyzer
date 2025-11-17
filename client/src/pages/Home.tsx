@@ -223,17 +223,17 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {recentHistory.slice(0, 8).map((item) => {
-                  // 處理顯示名稱：優先使用 companyName，如果是舊格式的台股代碼，則從備用映射表獲取
+                  // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                   let displaySymbol = item.symbol;
-                  let displayName = item.companyName;
+                  let displayName = item.shortName || item.companyName;
                   
                   const market = getMarketFromSymbol(item.symbol);
                   if (market === 'TW') {
                     const cleanSymbol = cleanTWSymbol(item.symbol);
                     displaySymbol = cleanSymbol;
                     
-                    // 如果 companyName 是舊格式（等於 symbol 或包含 .TW），則從備用映射表獲取
-                    if (!displayName || displayName === item.symbol || displayName.includes('.TW')) {
+                    // 如果沒有 shortName 且 companyName 是舊格式，則從備用映射表獲取
+                    if (!item.shortName && (!displayName || displayName === item.symbol || displayName.includes('.TW'))) {
                       displayName = TW_STOCK_NAMES[cleanSymbol] || null;
                     }
                   }

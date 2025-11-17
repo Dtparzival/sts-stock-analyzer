@@ -43,6 +43,7 @@ export const searchHistory = mysqlTable("searchHistory", {
   userId: int("userId").notNull(),
   symbol: varchar("symbol", { length: 20 }).notNull(),
   companyName: text("companyName"),
+  shortName: text("shortName"), // 公司簡稱（例如：台積電）
   searchedAt: timestamp("searchedAt").defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index("userId_idx").on(table.userId),

@@ -49,11 +49,13 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
           const { getTWStockInfo } = await import('./twseStockList');
           const stockInfo = await getTWStockInfo(stockNo);
           const companyName = stockInfo ? `${stockNo} ${stockInfo.name}` : stockNo;
+          const shortName = stockInfo?.shortName || stockInfo?.name || null;
           
           await db.addSearchHistory({
             userId: ctx.user.id,
             symbol,
             companyName,
+            shortName,
           });
         } catch (error) {
           console.error("[Search History] Failed to add:", error);
@@ -194,6 +196,7 @@ export const appRouter = router({
                   userId: ctx.user.id,
                   symbol,
                   companyName: companyName as string,
+                  shortName: companyName as string, // 美股使用 companyName 作為 shortName
                 });
               }
             } catch (error) {

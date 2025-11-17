@@ -177,10 +177,28 @@ export async function getUserSearchHistory(userId: number, limit: number = 20): 
   const db = await getDb();
   if (!db) return [];
   
-  return db.select().from(searchHistory)
+  // 獲取所有搜尋歷史（按時間降序）
+  const allHistory = await db.select().from(searchHistory)
     .where(eq(searchHistory.userId, userId))
-    .orderBy(desc(searchHistory.searchedAt))
-    .limit(limit);
+    .orderBy(desc(searchHistory.searchedAt));
+  
+  // 去重：每個股票只保留最新一筆
+  const seenSymbols = new Set<string>();
+  const uniqueHistory: SearchHistory[] = [];
+  
+  for (const record of allHistory) {
+    if (!seenSymbols.has(record.symbol)) {
+      seenSymbols.add(record.symbol);
+      uniqueHistory.push(record);
+      
+      // 達到限制數量後停止
+      if (uniqueHistory.length >= limit) {
+        break;
+      }
+    }
+  }
+  
+  return uniqueHistory;
 }
 
 export async function deleteSearchHistory(userId: number, id: number): Promise<void> {

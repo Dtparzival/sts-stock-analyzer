@@ -1,0 +1,1 @@
+ALTER TABLE `searchHistory` ADD `shortName` text;
