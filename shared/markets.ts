@@ -53,14 +53,14 @@ export const HOT_STOCKS: Record<MarketType, HotStock[]> = {
     { symbol: 'NFLX', name: 'Netflix, Inc.', market: 'US' },
   ],
   TW: [
-    { symbol: '2330', name: '台積電', market: 'TW' },
-    { symbol: '2317', name: '鴻海', market: 'TW' },
-    { symbol: '2454', name: '聯發科', market: 'TW' },
-    { symbol: '2412', name: '中華電', market: 'TW' },
-    { symbol: '2882', name: '國泰金', market: 'TW' },
-    { symbol: '2891', name: '中信金', market: 'TW' },
-    { symbol: '2303', name: '聯電', market: 'TW' },
-    { symbol: '2308', name: '台達電', market: 'TW' },
+    { symbol: '2330.TW', name: '台積電', market: 'TW' },
+    { symbol: '2317.TW', name: '鴻海', market: 'TW' },
+    { symbol: '2454.TW', name: '聯發科', market: 'TW' },
+    { symbol: '2412.TW', name: '中華電', market: 'TW' },
+    { symbol: '2882.TW', name: '國泰金', market: 'TW' },
+    { symbol: '2891.TW', name: '中信金', market: 'TW' },
+    { symbol: '2303.TW', name: '聯電', market: 'TW' },
+    { symbol: '2308.TW', name: '台達電', market: 'TW' },
   ],
 };
 
