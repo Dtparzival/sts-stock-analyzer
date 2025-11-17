@@ -1081,3 +1081,65 @@ const handleSearch = (e: React.FormEvent) => {
 2. ✓ **支援所有搜尋方式**：輸入代號（`2330`）或中文名稱（`台積電`）都能正確導航
 3. ✓ **美股不受影響**：美股搜尋功能保持不變
 4. ✓ **收藏狀態正確**：從搜尋列進入詳情頁時，能正確顯示收藏狀態
+
+## 修正輸入中文名稱搜尋台股時收藏狀態顯示不正確的問題
+
+### 問題描述
+用戶反饋：從首頁搜尋列輸入台股中文名稱（例如：台積電）進入詳情頁時，顯示未收藏（但實際已收藏）。輸入代號沒有問題，美股也沒有問題。
+
+### 待辦事項
+
+- [x] 檢查中文名稱搜尋的處理邏輯（第 46-54 行）
+- [x] 檢查 searchTWStockByName 函數返回的 symbol 格式
+- [x] 診斷 symbol 格式是否缺少 .TW 後綴
+- [x] 修正 searchTWStockByName 函數或調用邏輯
+- [x] 測試中文名稱搜尋功能
+- [x] 驗證代號搜尋和美股搜尋不受影響
+
+### 問題診斷與解決
+
+**根本原因：searchTWStockByName 返回的 symbol 缺少 .TW 後綴**
+
+`TW_STOCK_NAMES` 的 key 是純數字（例如：`'2330'`），而不是完整格式（例如：`'2330.TW'`）。
+
+當用戶輸入「台積電」時：
+1. `searchTWStockByName` 返回 `{ symbol: '2330', name: '台積電' }`
+2. 導航到 `/stock/2330`（缺少 `.TW` 後綴）
+3. 查詢收藏狀態時找不到匹配（資料庫中是 `2330.TW`）
+
+**解決方案：**
+
+修正 `shared/markets.ts` 中的 `searchTWStockByName` 函數，在返回時自動添加 `.TW` 後綴：
+
+```typescript
+export function searchTWStockByName(query: string): Array<{ symbol: string; name: string }> {
+  const results: Array<{ symbol: string; name: string }> = [];
+  const normalizedQuery = query.trim().toLowerCase();
+  
+  for (const [symbol, name] of Object.entries(TW_STOCK_NAMES)) {
+    if (name.toLowerCase().includes(normalizedQuery)) {
+      // 自動添加 .TW 後綴，確保與資料庫格式一致
+      results.push({ symbol: `${symbol}.TW`, name });
+    }
+  }
+  
+  return results;
+}
+```
+
+### 實作結果
+
+- [x] 修正 searchTWStockByName 函數，添加自動 .TW 後綴功能
+- [x] 測試編譯成功
+- [x] 驗證中文名稱搜尋功能（輸入「台積電」會返回 `2330.TW`）
+- [x] 驗證代號搜尋和美股搜尋不受影響
+
+### 總結
+
+已徹底解決輸入中文名稱搜尋台股時收藏狀態顯示不正確的問題：
+
+1. ✓ **自動添加 .TW 後綴**：searchTWStockByName 函數現在會自動添加 `.TW` 後綴
+2. ✓ **支援中文名稱搜尋**：輸入「台積電」會正確導航到 `/stock/2330.TW`
+3. ✓ **代號搜尋不受影響**：輸入 `2330` 仍然能正常工作
+4. ✓ **美股不受影響**：美股搜尋功能保持不變
+5. ✓ **收藏狀態正確**：從中文名稱搜尋進入詳情頁時，能正確顯示收藏狀態

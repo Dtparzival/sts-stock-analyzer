@@ -201,7 +201,8 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
   
   for (const [symbol, name] of Object.entries(TW_STOCK_NAMES)) {
     if (name.toLowerCase().includes(normalizedQuery)) {
-      results.push({ symbol, name });
+      // 自動添加 .TW 後綴，確保與資料庫格式一致
+      results.push({ symbol: `${symbol}.TW`, name });
     }
   }
   
