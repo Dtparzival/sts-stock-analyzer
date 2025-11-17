@@ -50,7 +50,11 @@ export default function StockDetail() {
 
   const { data: watchlistCheck } = trpc.watchlist.check.useQuery(
     { symbol },
-    { enabled: !!user && !!symbol }
+    { 
+      enabled: !!user && !!symbol,
+      refetchOnMount: true, // 每次進入詳情頁時重新查詢
+      staleTime: 0, // 立即過期，確保獲取最新狀態
+    }
   );
 
   const utils = trpc.useUtils();

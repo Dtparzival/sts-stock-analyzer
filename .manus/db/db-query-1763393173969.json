@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, userId, symbol, companyName, addedAt FROM watchlist LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT id, userId, symbol, companyName, addedAt FROM watchlist LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "60001",
+      "symbol": "TSLA",
+      "companyName": "Tesla, Inc.",
+      "addedAt": "2025-11-15 16:56:22"
+    },
+    {
+      "id": "2",
+      "userId": "60001",
+      "symbol": "TEM",
+      "companyName": "Tempus AI, Inc.",
+      "addedAt": "2025-11-15 16:59:50"
+    },
+    {
+      "id": "30001",
+      "userId": "720001",
+      "symbol": "VOO",
+      "companyName": "Vanguard S&P 500 ETF",
+      "addedAt": "2025-11-16 06:18:57"
+    },
+    {
+      "id": "60002",
+      "userId": "1",
+      "symbol": "2330.TW",
+      "companyName": "Taiwan Semiconductor Manufacturing Company Limited",
+      "addedAt": "2025-11-16 07:12:43"
+    },
+    {
+      "id": "270001",
+      "userId": "60001",
+      "symbol": "2317.TW",
+      "companyName": "鴻海",
+      "addedAt": "2025-11-17 15:15:46"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tsymbol\tcompanyName\taddedAt\n1\t60001\tTSLA\tTesla, Inc.\t2025-11-15 16:56:22\n2\t60001\tTEM\tTempus AI, Inc.\t2025-11-15 16:59:50\n30001\t720001\tVOO\tVanguard S&P 500 ETF\t2025-11-16 06:18:57\n60002\t1\t2330.TW\tTaiwan Semiconductor Manufacturing Company Limited\t2025-11-16 07:12:43\n270001\t60001\t2317.TW\t鴻海\t2025-11-17 15:15:46\n",
+  "stderr": "",
+  "execution_time_ms": 2282
+}
