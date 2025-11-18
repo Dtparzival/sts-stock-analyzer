@@ -1438,3 +1438,26 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 優化持倉明細表格的手機顯示（添加 overflow-x-auto 和 min-width）
 - [x] 隱藏手機上的部分文字（使用 hidden sm:inline）
 - [ ] 測試不同螢幕尺寸的顯示效果
+
+
+## 優化 AI 智能分析報告版面配置
+
+### 需求
+- [ ] 修正「匹率」錯字為「匯率」
+- [ ] 檢查 AI 分析報告的版面配置是否得宜
+- [ ] 優化分析報告在手機上的顯示效果
+
+### 實作計劃
+- [x] 搜尋並修正所有「匹率」錯字為「匹率」
+- [x] 檢查 PortfolioAnalysisDashboard 組件的響應式設計
+- [x] 優化分析報告的排版和間距
+- [x] 優化手機上的文字大小和間距
+- [x] 隱藏手機上的公司名稱和價值，只顯示股票代碼和百分比
+
+### 修改內容
+- [x] 修正 Portfolio.tsx 中的「匹率」錯字
+- [x] 優化 AI 分析報告的 CardHeader 間距 (pb-4)
+- [x] 優化 AI 分析報告的 CardContent 間距 (pt-0)
+- [x] 添加 prose 樣式優化，調整標題大小和列表間距
+- [x] 優化 PortfolioAnalysisDashboard 的持倉分布列表
+- [x] 減少卡片間距從 mb-8 改為 mb-6

@@ -635,16 +635,16 @@ export default function Portfolio() {
 
         {/* AI 分析結果 */}
         {aiAnalysis && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+          <Card className="mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <TrendingUp className="h-5 w-5 flex-shrink-0" />
                 AI 智能分析報告
               </CardTitle>
-              <CardDescription>基於您的持倉組合提供的風險評估和優化建議</CardDescription>
+              <CardDescription className="text-sm">基於您的持倉組合提供的風險評估和優化建議</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none dark:prose-invert">
+            <CardContent className="pt-0">
+              <div className="prose prose-sm max-w-none dark:prose-invert [&>*]:mb-3 [&>h1]:text-lg [&>h2]:text-base [&>h3]:text-sm [&>ul]:pl-4 [&>ol]:pl-4">
                 <Streamdown>{aiAnalysis}</Streamdown>
               </div>
             </CardContent>
@@ -653,7 +653,7 @@ export default function Portfolio() {
 
         {/* 持倉分析儀表板 */}
         {analysisData && portfolio.length > 0 && (
-          <div className="mb-8">
+          <div className="mb-6">
             <PortfolioAnalysisDashboard 
               distribution={analysisData.distribution}
               riskMetrics={analysisData.riskMetrics}

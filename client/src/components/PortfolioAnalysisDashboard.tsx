@@ -88,7 +88,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
   const recommendations = getRecommendations();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* 持倉分布圓餅圖 */}
       <Card>
         <CardHeader>
@@ -131,17 +131,17 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
               
               <div className="mt-4 space-y-2">
                 {distribution.map((item, index) => (
-                  <div key={item.symbol} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
+                  <div key={item.symbol} className="flex items-center justify-between text-xs sm:text-sm gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                       <div 
-                        className="w-3 h-3 rounded-full" 
+                        className="w-3 h-3 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
-                      <span className="font-medium">{item.symbol}</span>
-                      <span className="text-muted-foreground">{item.companyName}</span>
+                      <span className="font-medium flex-shrink-0">{item.symbol}</span>
+                      <span className="text-muted-foreground truncate hidden sm:inline">{item.companyName}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground">${item.value.toLocaleString()}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                      <span className="text-muted-foreground hidden sm:inline">${item.value.toLocaleString()}</span>
                       <span className="font-medium">{item.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
