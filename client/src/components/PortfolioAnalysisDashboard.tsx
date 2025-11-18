@@ -19,7 +19,19 @@ interface PortfolioAnalysisDashboardProps {
   riskMetrics: RiskMetrics;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+// 優化的色彩配置，使用更專業的配色方案
+const COLORS = [
+  '#2563eb', // 深藍
+  '#10b981', // 绿色
+  '#f59e0b', // 橙色
+  '#ef4444', // 紅色
+  '#8b5cf6', // 紫色
+  '#ec4899', // 粉紅
+  '#14b8a6', // 青色
+  '#f97316', // 深橙
+  '#06b6d4', // 天藍
+  '#84cc16', // 萊姆綠
+];
 
 export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: PortfolioAnalysisDashboardProps) {
   // 準備圓餅圖數據
@@ -90,9 +102,12 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* 持倉分布圓餅圖 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>持倉分布</CardTitle>
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+            持倉分布
+          </CardTitle>
           <CardDescription>按市值佔比顯示各股票持倉</CardDescription>
         </CardHeader>
         <CardContent>
@@ -102,47 +117,67 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
             </div>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percentage }) => `${name} ${percentage.toFixed(1)}%`}
-                    outerRadius={100}
+                    labelLine={true}
+                    label={({ name, percentage }) => {
+                      // 只顯示占比大於 5% 的標籤
+                      if (percentage < 5) return '';
+                      return `${name} ${percentage.toFixed(1)}%`;
+                    }}
+                    outerRadius={110}
+                    innerRadius={0}
+                    paddingAngle={2}
                     fill="#8884d8"
                     dataKey="value"
                   >
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[index % COLORS.length]}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => `$${value.toLocaleString()}`}
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, '市值']}
                     contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid #ccc',
+                      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                      border: 'none',
                       borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                      padding: '12px',
                     }}
+                    labelStyle={{ fontWeight: 600, marginBottom: '4px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
               
-              <div className="mt-4 space-y-2">
+              <div className="mt-6 space-y-2">
+                <div className="text-sm font-semibold text-muted-foreground mb-3">持倉明細</div>
                 {distribution.map((item, index) => (
-                  <div key={item.symbol} className="flex items-center justify-between text-xs sm:text-sm gap-2">
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                  <div 
+                    key={item.symbol} 
+                    className="flex items-center justify-between text-xs sm:text-sm gap-2 p-3 rounded-lg border border-border/50 hover:border-border hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                        className="w-4 h-4 rounded-md flex-shrink-0 shadow-sm" 
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
-                      <span className="font-medium flex-shrink-0">{item.symbol}</span>
-                      <span className="text-muted-foreground truncate hidden sm:inline">{item.companyName}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0">
+                        <span className="font-semibold flex-shrink-0">{item.symbol}</span>
+                        <span className="text-muted-foreground text-xs truncate hidden sm:inline">{item.companyName}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                      <span className="text-muted-foreground hidden sm:inline">${item.value.toLocaleString()}</span>
-                      <span className="font-medium">{item.percentage.toFixed(1)}%</span>
+                    <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                      <span className="text-muted-foreground font-medium hidden sm:inline">${item.value.toLocaleString()}</span>
+                      <span className="font-bold text-sm">{item.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
                 ))}
@@ -153,11 +188,14 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
       </Card>
 
       {/* 風險評估與建議 */}
-      <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:gap-6">
         {/* 風險指標 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>風險評估</CardTitle>
+        <Card className="flex-1 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-transparent dark:from-orange-950/20">
+            <CardTitle className="flex items-center gap-2">
+              <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
+              風險評估
+            </CardTitle>
             <CardDescription>投資組合的風險指標分析</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -216,9 +254,12 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
         </Card>
 
         {/* 投資建議 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>投資建議</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-transparent dark:from-green-950/20">
+            <CardTitle className="flex items-center gap-2">
+              <div className="w-1 h-6 bg-green-600 rounded-full"></div>
+              投資建議
+            </CardTitle>
             <CardDescription>基於您的持倉配置提供的建議</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
