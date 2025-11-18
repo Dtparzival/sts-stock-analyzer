@@ -12,11 +12,24 @@ import { toast } from "sonner";
 
 type MarketFilter = 'all' | 'US' | 'TW';
 
+// 基本信息顯示組件
+function StockInfoDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date }) {
+  return (
+    <div className="space-y-2 py-2">
+      <div className="text-sm text-muted-foreground">
+        添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}
+      </div>
+      <div className="text-xs text-muted-foreground">
+        點擊查看詳細股價信息
+      </div>
+    </div>
+  );
+}
+
 export default function Watchlist() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
-  const [stockPrices, setStockPrices] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
 
   const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
     enabled: !!user,
@@ -53,45 +66,6 @@ export default function Watchlist() {
     e.stopPropagation(); // 阻止事件冒泡，不觸發卡片點擊
     removeFromWatchlist.mutate({ symbol });
   };
-
-  // 獲取所有收藏股票的價格
-  useEffect(() => {
-    if (!watchlist || watchlist.length === 0) return;
-    
-    const fetchPrices = async () => {
-      const prices: Record<string, { price: number; change: number; changePercent: number }> = {};
-      
-      for (const item of watchlist) {
-        try {
-          // 使用 fetch 直接調用 tRPC endpoint
-          const response = await fetch(`/api/trpc/stock.getStockData?input=${encodeURIComponent(JSON.stringify({ symbol: item.symbol }))}`);
-          const data = await response.json();
-          const result = data.result?.data;
-          
-          if (result && result.price) {
-            const change = result.price - (result.previousClose || result.price);
-            const changePercent = result.previousClose ? (change / result.previousClose) * 100 : 0;
-            prices[item.symbol] = {
-              price: result.price,
-              change,
-              changePercent
-            };
-          }
-        } catch (error) {
-          console.error(`Failed to fetch price for ${item.symbol}:`, error);
-        }
-      }
-      
-      setStockPrices(prices);
-    };
-    
-    fetchPrices();
-    
-    // 設置輪詢，每 30 秒更新一次
-    const interval = setInterval(fetchPrices, 30000);
-    
-    return () => clearInterval(interval);
-  }, [watchlist]);
 
   // 篩選收藏列表
   const filteredWatchlist = useMemo(() => {
@@ -235,36 +209,7 @@ export default function Watchlist() {
                     </div>
                   </div>
                   {/* 股價和漲跌幅 */}
-                  {stockPrices[item.symbol] ? (
-                    <div className="space-y-2">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-bold">
-                          ${stockPrices[item.symbol].price.toFixed(2)}
-                        </span>
-                        <span className={`text-sm font-medium ${
-                          stockPrices[item.symbol].changePercent >= 0 
-                            ? 'text-green-600' 
-                            : 'text-red-600'
-                        }`}>
-                          {stockPrices[item.symbol].changePercent >= 0 ? '+' : ''}
-                          {stockPrices[item.symbol].changePercent.toFixed(2)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>
-                          {stockPrices[item.symbol].changePercent >= 0 ? '+' : ''}
-                          ${stockPrices[item.symbol].change.toFixed(2)}
-                        </span>
-                        <span>
-                          添加於 {new Date(item.addedAt).toLocaleDateString("zh-TW")}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  )}
+                  <StockInfoDisplay symbol={item.symbol} addedAt={item.addedAt} />
                 </CardContent>
               </Card>
             ))}

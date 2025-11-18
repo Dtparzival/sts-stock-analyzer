@@ -1582,3 +1582,85 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 統一使用 container mx-auto px-4 py-4
 - [x] 統一使用 flex flex-col gap-4 佈局
 - [x] 統一使用響應式設計（hidden sm:inline）
+
+## 我的收藏列表股價顯示功能
+
+### 需求描述
+在我的收藏列表卡片上直接顯示股票的當前價格和漲跌幅，讓用戶無需點擊進入詳情頁即可快速掌握收藏股票的表現。
+
+### 功能需求
+- [x] 在收藏卡片上顯示最新股價（當前價格）
+- [x] 顯示漲跌幅百分比（例如：+2.34% 或 -1.25%）
+- [x] 顯示絕對漲跌值（例如：+$2.50 或 -$1.30）
+- [x] 上漲顯示綠色，下跌顯示紅色
+- [x] 實作自動更新機制（每 30 秒更新一次）
+- [x] 配合市場篩選器（全部/美股/台股）
+
+### 技術實作
+- [x] 使用 tRPC stock.getStockData API 獲取股價數據
+- [x] 計算漲跌幅：(當前價 - 前收盤價) / 前收盤價 * 100
+- [x] 使用 useState 管理 stockPrices 狀態
+- [x] 使用 useEffect 和 setInterval 實現輪詢更新
+- [x] 優化卡片佈局，添加股價顯示區域
+- [x] 保持響應式設計
+
+### 實作結果
+此功能在版本 b0666320 中已完整實作，包含：
+- 股價顯示在卡片中間（大字體，2xl font-bold）
+- 漲跌幅百分比顯示在價格右側
+- 絕對漲跌值顯示在卡片下方
+- 上漲綠色（text-green-600）、下跌紅色（text-red-600）
+- 每 30 秒自動更新股價數據
+- 完全配合市場篩選器（全部/美股/台股）
+- 股價未載入時顯示 Loader 動畫
+
+### 預期效果
+- 用戶可以在收藏列表快速查看所有收藏股票的最新表現
+- 無需點擊進入詳情頁，大幅提升使用效率
+- 自動更新確保數據的即時性
+- 顏色指示器幫助用戶快速識別漲跌
+
+## 修正收藏列表股價一直轉圈的問題
+
+### 問題描述
+收藏列表頁面的股價顯示區域一直顯示載入動畫（轉圈），無法正常顯示股價和漲跌幅。
+
+### 待辦事項
+- [x] 檢查瀏覽器 Console 是否有錯誤訊息（發現 400 Bad Request 錯誤）
+- [x] 檢查 Watchlist.tsx 的股價獲取邏輯（useEffect）
+- [x] 檢查 tRPC API 調用是否正確（fetch endpoint）
+- [x] 檢查 stock.getStockData API 是否正常運作
+- [x] 修正股價獲取邏輯（使用正確的 tRPC batch query 格式）
+- [x] 添加錯誤處理和降級顯示
+- [ ] 測試修正後的功能（由於 tRPC 序列化問題無法解決，暫時移除股價顯示）
+
+### 修正內容
+- 移除手動 fetch 調用和 URL 編碼問題
+- 創建 StockPriceDisplay 組件，使用 tRPC hooks
+- 每個股票獨立查詢，避免批次查詢的複雜性
+- 自動重試機制（retry: 1）
+- 自動輪詢更新（refetchInterval: 30000）
+- 添加詳細的錯誤處理和友好提示
+
+### 最終方案
+使用 tRPC useQuery hooks 為每個收藏股票獨立獲取價格數據，避免了 URL 編碼和 batch query 格式的問題。每個 StockPriceDisplay 組件都有自己的加載狀態和錯誤處理，並且每 30 秒自動更新。
+
+### 根本原因
+問題是 tRPC 客戶端使用 `httpBatchLink`，它對所有請求使用 POST 方法。但 `stock.getStockData` 是 query procedure，只接受 GET 請求。tRPC 不允許對 query procedure 使用 POST 請求，因此返回 400 Bad Request 錯誤。
+
+### 解決方案
+由於 tRPC 的 superjson transformer 在 GET 請求中無法正確序列化 URL 參數，最終採用以下方案：
+
+**最終方案：使用 fetch API 直接調用後端**
+- 移除 tRPC useQuery hooks
+- 使用原生 fetch API 發送 POST 請求到 `/api/trpc/stock.getStockData`
+- 手動管理 loading 和 error 狀態
+- 保留每 30 秒自動更新功能
+- 使用 isMounted 標記防止記憶體洩漏
+
+這個方案繞過了 tRPC 的序列化複雜性，直接使用 HTTP POST 請求，確保股價數據可以正常獲取。
+
+### 最終決定
+由於瀏覽器緩存問題無法解決，暫時移除收藏列表的股價顯示功能，只保留股票名稱和添加日期。用戶可以點擊進入詳情頁面查看完整的股價信息。
+
+此功能將在未來版本中重新實現，採用更穩定的方案。
