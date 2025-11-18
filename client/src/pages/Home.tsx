@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
 import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
 import { trpc } from "@/lib/trpc";
@@ -19,52 +19,11 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Array<{ symbol: string; name: string }>>([]);
   
-  // 股價數據狀態
-  const [stockPrices, setStockPrices] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
-  
   // 獲取用戶最近查看的股票（用於推薦）
   const { data: recentHistory } = trpc.history.list.useQuery(
     { limit: 8 },
     { enabled: !!user }
   );
-  
-  // 獲取所有推薦股票的價格
-  useEffect(() => {
-    if (!recentHistory || recentHistory.length === 0) return;
-    
-    const fetchPrices = async () => {
-      const prices: Record<string, { price: number; change: number; changePercent: number }> = {};
-      
-      for (const item of recentHistory.slice(0, 8)) {
-        try {
-          // 使用 fetch 直接調用 tRPC endpoint
-          const response = await fetch(`/api/trpc/stock.getStockData?input=${encodeURIComponent(JSON.stringify({ symbol: item.symbol }))}`);          const data = await response.json();
-          const result = data.result?.data;
-          
-          if (result && result.price) {
-            const change = result.price - (result.previousClose || result.price);
-            const changePercent = result.previousClose ? (change / result.previousClose) * 100 : 0;
-            prices[item.symbol] = {
-              price: result.price,
-              change,
-              changePercent
-            };
-          }
-        } catch (error) {
-          console.error(`Failed to fetch price for ${item.symbol}:`, error);
-        }
-      }
-      
-      setStockPrices(prices);
-    };
-    
-    fetchPrices();
-    
-    // 設置輪詢，每 30 秒更新一次
-    const interval = setInterval(fetchPrices, 30000);
-    
-    return () => clearInterval(interval);
-  }, [recentHistory]);
   
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -284,37 +243,18 @@ export default function Home() {
                     }
                   }
                   
-                  const priceData = stockPrices[item.symbol];
-                  const isPositive = priceData && priceData.change >= 0;
-                  
                   return (
                     <Button
                       key={item.id}
                       variant="outline"
                       size="sm"
-                      className="hover:bg-primary/10 hover:border-primary flex flex-col items-start py-3 h-auto min-w-[140px]"
+                      className="hover:bg-primary/10 hover:border-primary flex flex-col items-center py-3 h-auto"
                       onClick={() => setLocation(`/stock/${item.symbol}`)}
                     >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="font-semibold text-base">{displaySymbol}</span>
-                        {priceData && (
-                          <span className="text-sm font-semibold">
-                            ${priceData.price.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between w-full">
-                        {displayName && (
-                          <span className="text-xs text-muted-foreground truncate max-w-[70px]">{displayName}</span>
-                        )}
-                        {priceData && (
-                          <span className={`text-xs font-medium ${
-                            isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                          }`}>
-                            {isPositive ? '+' : ''}{priceData.changePercent.toFixed(2)}%
-                          </span>
-                        )}
-                      </div>
+                      <span className="font-semibold text-base">{displaySymbol}</span>
+                      {displayName && (
+                        <span className="text-xs text-muted-foreground mt-0.5">{displayName}</span>
+                      )}
                     </Button>
                   );
                 })}
