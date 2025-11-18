@@ -302,17 +302,24 @@ export default function Home() {
         <div className="mb-16">
           <h3 className="text-2xl font-bold mb-6">熱門{selectedMarket === 'US' ? '美股' : '台股'}</h3>
           <div className="grid md:grid-cols-4 gap-4">
-            {HOT_STOCKS[selectedMarket].map((stock) => (
-              <Button
-                key={stock.symbol}
-                variant="outline"
-                className="h-16 flex flex-col items-center justify-center hover:bg-primary/10 hover:border-primary"
-                onClick={() => setLocation(`/stock/${stock.symbol}`)}
-              >
-                <span className="text-lg font-semibold">{stock.symbol}</span>
-                <span className="text-xs text-muted-foreground">{stock.name}</span>
-              </Button>
-            ))}
+            {HOT_STOCKS[selectedMarket].map((stock) => {
+              // 移除台股代碼中的 .TW 後綴
+              const displaySymbol = selectedMarket === 'TW' 
+                ? cleanTWSymbol(stock.symbol) 
+                : stock.symbol;
+              
+              return (
+                <Button
+                  key={stock.symbol}
+                  variant="outline"
+                  className="h-16 flex flex-col items-center justify-center hover:bg-primary/10 hover:border-primary"
+                  onClick={() => setLocation(`/stock/${stock.symbol}`)}
+                >
+                  <span className="text-lg font-semibold">{displaySymbol}</span>
+                  <span className="text-xs text-muted-foreground">{stock.name}</span>
+                </Button>
+              );
+            })}
           </div>
         </div>
 
