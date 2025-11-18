@@ -9,7 +9,7 @@ import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import StockChart from "@/components/StockChart";
-import { getMarketFromSymbol, cleanTWSymbol, HOT_STOCKS, MARKETS } from "@shared/markets";
+import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
 
 export default function StockDetail() {
@@ -161,9 +161,16 @@ export default function StockDetail() {
   // 獲取中文名稱（台股）
   let companyName = meta?.longName || symbol;
   if (stockMarket === 'TW') {
-    const twStock = HOT_STOCKS.TW.find(s => s.symbol === displaySymbol);
-    if (twStock) {
-      companyName = twStock.name;
+    // 先嘗試從 TW_STOCK_NAMES 映射表獲取中文名稱
+    const twName = getTWStockName(symbol);
+    if (twName) {
+      companyName = twName;
+    } else {
+      // 如果映射表中沒有，再從 HOT_STOCKS 查找
+      const twStock = HOT_STOCKS.TW.find(s => s.symbol === displaySymbol);
+      if (twStock) {
+        companyName = twStock.name;
+      }
     }
   }
   const currentPrice = meta?.regularMarketPrice;

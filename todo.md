@@ -1165,3 +1165,12 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 為 TW_STOCK_NAMES 映射表添加驗證測試
 - [x] 執行測試並確保所有測試通過（27 個測試全部通過）
 - [x] 添加測試腳本到 package.json（已存在）
+
+## 新增問題：收藏列表和股票詳情頁未顯示台股中文名稱
+
+- [x] 診斷問題原因（股票詳情頁只從 HOT_STOCKS 查找，收藏列表顯示舊格式 companyName）
+- [x] 修正股票詳情頁，優先從 TW_STOCK_NAMES 獲取中文名稱
+- [x] 修正收藏列表，添加智能名稱處理邏輯
+- [x] 測試收藏列表顯示（2317 應顯示為「鴻海」）
+- [x] 測試股票詳情頁顯示（2317 應顯示為「鴻海」）
+- [x] 驗證所有台股都能正確顯示中文名稱

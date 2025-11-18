@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, Star, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
-import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
+import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -160,7 +160,26 @@ export default function Watchlist() {
                           {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{item.companyName || item.symbol}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(() => {
+                          const market = getMarketFromSymbol(item.symbol);
+                          if (market === 'TW') {
+                            // 台股：先嘗試從 TW_STOCK_NAMES 獲取中文名稱
+                            const twName = getTWStockName(item.symbol);
+                            if (twName) {
+                              return twName;
+                            }
+                            // 如果 companyName 是新格式（例如：2330 台積電），直接使用
+                            if (item.companyName && !item.companyName.includes('.TW') && !item.companyName.includes('.TWO')) {
+                              return item.companyName;
+                            }
+                            // 如果都沒有，返回 symbol
+                            return item.symbol;
+                          }
+                          // 美股：直接使用 companyName
+                          return item.companyName || item.symbol;
+                        })()}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Star className="h-5 w-5 text-primary fill-primary" />
