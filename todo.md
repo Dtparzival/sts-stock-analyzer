@@ -1342,3 +1342,19 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 手動實作按鈕樣式（保持與原設計一致）
 - [x] 簡化點擊事件處理（移除不必要的 preventDefault/stopPropagation）
 - [ ] 等待用戶測試確認功能正常
+
+
+## 緊急問題：時間範圍按鈕仍然無反應（第三次調查）
+
+### 問題描述
+- [ ] 用戶確認即使改用原生 button 元素後，按鈕仍然無反應
+- [ ] 需要深入調查是否有其他 CSS 覆蓋或事件阻擋問題
+- [ ] 可能的原因：父容器有 pointer-events 設置、z-index 問題、或事件被其他元素攔截
+
+### 調查步驟
+- [x] 檢查完整的 PortfolioPerformanceChart 組件源碼
+- [x] 檢查 Portfolio 頁面是否有 CSS 覆蓋
+- [x] 添加 console.log 調試日誌測試按鈕點擊事件
+- [x] 添加 onMouseDown 事件處理器
+- [x] 添加 inline style (pointerEvents: 'auto', zIndex: 100)
+- [ ] 等待用戶測試並提供 Console 日誌輸出結果

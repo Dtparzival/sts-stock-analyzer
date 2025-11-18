@@ -29,6 +29,11 @@ export function PortfolioPerformanceChart({
 }: PortfolioPerformanceChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
 
+  const handleTimeRangeChange = (range: TimeRange) => {
+    console.log('🔵 按鈕被點擊！時間範圍:', range);
+    setTimeRange(range);
+  };
+
   // 根據時間範圍過濾數據
   const getFilteredData = () => {
     if (!data || data.length === 0) return [];
@@ -67,46 +72,66 @@ export function PortfolioPerformanceChart({
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setTimeRange('7')}
+              onClick={() => handleTimeRangeChange('7')}
+              onMouseDown={(e) => {
+                console.log('🟢 7天按鈕 onMouseDown 觸發');
+                e.stopPropagation();
+              }}
               className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 timeRange === '7'
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border border-input bg-transparent hover:bg-accent'
               }`}
               type="button"
+              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
             >
               7天
             </button>
             <button
-              onClick={() => setTimeRange('30')}
+              onClick={() => handleTimeRangeChange('30')}
+              onMouseDown={(e) => {
+                console.log('🟢 30天按鈕 onMouseDown 觸發');
+                e.stopPropagation();
+              }}
               className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 timeRange === '30'
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border border-input bg-transparent hover:bg-accent'
               }`}
               type="button"
+              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
             >
               30天
             </button>
             <button
-              onClick={() => setTimeRange('90')}
+              onClick={() => handleTimeRangeChange('90')}
+              onMouseDown={(e) => {
+                console.log('🟢 90天按鈕 onMouseDown 觸發');
+                e.stopPropagation();
+              }}
               className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 timeRange === '90'
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border border-input bg-transparent hover:bg-accent'
               }`}
               type="button"
+              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
             >
               90天
             </button>
             <button
-              onClick={() => setTimeRange('all')}
+              onClick={() => handleTimeRangeChange('all')}
+              onMouseDown={(e) => {
+                console.log('🟢 全部按鈕 onMouseDown 觸發');
+                e.stopPropagation();
+              }}
               className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 timeRange === 'all'
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border border-input bg-transparent hover:bg-accent'
               }`}
               type="button"
+              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
             >
               全部
             </button>
