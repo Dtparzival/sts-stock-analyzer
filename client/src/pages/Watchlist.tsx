@@ -7,7 +7,7 @@ import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 
 type MarketFilter = 'all' | 'US' | 'TW';
@@ -16,6 +16,7 @@ export default function Watchlist() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
+  const [stockPrices, setStockPrices] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
 
   const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
     enabled: !!user,
@@ -52,6 +53,45 @@ export default function Watchlist() {
     e.stopPropagation(); // 阻止事件冒泡，不觸發卡片點擊
     removeFromWatchlist.mutate({ symbol });
   };
+
+  // 獲取所有收藏股票的價格
+  useEffect(() => {
+    if (!watchlist || watchlist.length === 0) return;
+    
+    const fetchPrices = async () => {
+      const prices: Record<string, { price: number; change: number; changePercent: number }> = {};
+      
+      for (const item of watchlist) {
+        try {
+          // 使用 fetch 直接調用 tRPC endpoint
+          const response = await fetch(`/api/trpc/stock.getStockData?input=${encodeURIComponent(JSON.stringify({ symbol: item.symbol }))}`);
+          const data = await response.json();
+          const result = data.result?.data;
+          
+          if (result && result.price) {
+            const change = result.price - (result.previousClose || result.price);
+            const changePercent = result.previousClose ? (change / result.previousClose) * 100 : 0;
+            prices[item.symbol] = {
+              price: result.price,
+              change,
+              changePercent
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to fetch price for ${item.symbol}:`, error);
+        }
+      }
+      
+      setStockPrices(prices);
+    };
+    
+    fetchPrices();
+    
+    // 設置輪詢，每 30 秒更新一次
+    const interval = setInterval(fetchPrices, 30000);
+    
+    return () => clearInterval(interval);
+  }, [watchlist]);
 
   // 篩選收藏列表
   const filteredWatchlist = useMemo(() => {
@@ -150,7 +190,7 @@ export default function Watchlist() {
                 onClick={() => setLocation(`/stock/${item.symbol}`)}
               >
                 <CardContent className="py-6">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-xl font-bold">
@@ -160,7 +200,7 @@ export default function Watchlist() {
                           {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate max-w-[180px]">
                         {(() => {
                           const market = getMarketFromSymbol(item.symbol);
                           if (market === 'TW') {
@@ -194,9 +234,37 @@ export default function Watchlist() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-4">
-                    添加於 {new Date(item.addedAt).toLocaleDateString("zh-TW")}
-                  </p>
+                  {/* 股價和漲跌幅 */}
+                  {stockPrices[item.symbol] ? (
+                    <div className="space-y-2">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-bold">
+                          ${stockPrices[item.symbol].price.toFixed(2)}
+                        </span>
+                        <span className={`text-sm font-medium ${
+                          stockPrices[item.symbol].changePercent >= 0 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {stockPrices[item.symbol].changePercent >= 0 ? '+' : ''}
+                          {stockPrices[item.symbol].changePercent.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          {stockPrices[item.symbol].changePercent >= 0 ? '+' : ''}
+                          ${stockPrices[item.symbol].change.toFixed(2)}
+                        </span>
+                        <span>
+                          添加於 {new Date(item.addedAt).toLocaleDateString("zh-TW")}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
