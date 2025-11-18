@@ -124,11 +124,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                     cx="50%"
                     cy="50%"
                     labelLine={true}
-                    label={({ name, percentage }) => {
-                      // 只顯示占比大於 5% 的標籤
-                      if (percentage < 5) return '';
-                      return `${name} ${percentage.toFixed(1)}%`;
-                    }}
+                    label={({ name, percentage }) => `${name} ${percentage.toFixed(1)}%`}
                     outerRadius={110}
                     innerRadius={0}
                     paddingAngle={2}

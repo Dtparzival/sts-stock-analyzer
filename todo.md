@@ -1486,3 +1486,15 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 優化 Tooltip 樣式（陰影、圓角）
 - [x] 持倉列表添加邊框、hover 效果和更好的間距
 - [x] 卡片標題添加游度背景和色块指示器
+
+
+## 修正圓餅圖未顯示 NVDA 標籤的問題
+
+### 問題描述
+- [ ] NVDA 占比 3.8%，小於 5% 閾值，導致標籤未顯示在圓餅圖上
+- [ ] 用戶無法直接從圖表上看到 NVDA 的位置
+
+### 解決方案
+- [x] 移除 5% 閘值限制，顯示所有持倉的標籤
+- [x] 修改 label 函數，移除 if (percentage < 5) 判斷
+- [x] 所有持倉都會顯示在圓餅圖上
