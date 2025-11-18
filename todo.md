@@ -1375,3 +1375,19 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 為 Card 添加 z-index: 1
 - [x] 為 CardHeader 添加 z-index: 10
 - [ ] 等待用戶測試並確認 Console 日誌輸出
+
+
+## 新解決方案：使用下拉選單取代按鈕
+
+### 問題總結
+- [x] 按鈕無反應問題經過多次修復仍無法解決
+- [x] 用戶要求調整成其他呈現方式並維持好的使用者體驗
+- [x] 決定使用下拉選單（Select）取代按鈕
+
+### 實作方案
+- [x] 使用 shadcn Select 組件
+- [x] 保留所有時間範圍選項（最近 7 天、３０ 天、９０ 天、全部）
+- [x] 移除所有調試日誌和 z-index 修復
+- [x] 添加「時間範圍：」標籤提升可讀性
+- [x] 設定下拉選單寬度為 120px
+- [ ] 等待用戶測試確認功能正常

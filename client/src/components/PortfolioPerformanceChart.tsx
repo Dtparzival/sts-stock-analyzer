@@ -1,5 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
@@ -28,11 +29,6 @@ export function PortfolioPerformanceChart({
   periodGainLossPercent = 0,
 }: PortfolioPerformanceChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
-
-  const handleTimeRangeChange = (range: TimeRange) => {
-    console.log('🔵 按鈕被點擊！時間範圍:', range);
-    setTimeRange(range);
-  };
 
   // 根據時間範圍過濾數據
   const getFilteredData = () => {
@@ -63,78 +59,26 @@ export function PortfolioPerformanceChart({
   }));
 
   return (
-    <Card style={{ position: 'relative', zIndex: 1 }}>
-      <CardHeader style={{ position: 'relative', zIndex: 10 }}>
+    <Card>
+      <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-2xl font-bold">投資組合績效</CardTitle>
             <CardDescription className="mt-1">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex gap-2" style={{ position: 'relative', zIndex: 9999 }}>
-            <button
-              onClick={() => handleTimeRangeChange('7')}
-              onMouseDown={(e) => {
-                console.log('🟢 7天按鈕 onMouseDown 觸發');
-                e.stopPropagation();
-              }}
-              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                timeRange === '7'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border border-input bg-transparent hover:bg-accent'
-              }`}
-              type="button"
-              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
-            >
-              7天
-            </button>
-            <button
-              onClick={() => handleTimeRangeChange('30')}
-              onMouseDown={(e) => {
-                console.log('🟢 30天按鈕 onMouseDown 觸發');
-                e.stopPropagation();
-              }}
-              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                timeRange === '30'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border border-input bg-transparent hover:bg-accent'
-              }`}
-              type="button"
-              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
-            >
-              30天
-            </button>
-            <button
-              onClick={() => handleTimeRangeChange('90')}
-              onMouseDown={(e) => {
-                console.log('🟢 90天按鈕 onMouseDown 觸發');
-                e.stopPropagation();
-              }}
-              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                timeRange === '90'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border border-input bg-transparent hover:bg-accent'
-              }`}
-              type="button"
-              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
-            >
-              90天
-            </button>
-            <button
-              onClick={() => handleTimeRangeChange('all')}
-              onMouseDown={(e) => {
-                console.log('🟢 全部按鈕 onMouseDown 觸發');
-                e.stopPropagation();
-              }}
-              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                timeRange === 'all'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border border-input bg-transparent hover:bg-accent'
-              }`}
-              type="button"
-              style={{ pointerEvents: 'auto', zIndex: 100, position: 'relative' }}
-            >
-              全部
-            </button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">時間範圍：</span>
+            <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">最近 7 天</SelectItem>
+                <SelectItem value="30">最近 30 天</SelectItem>
+                <SelectItem value="90">最近 90 天</SelectItem>
+                <SelectItem value="all">全部</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardHeader>
