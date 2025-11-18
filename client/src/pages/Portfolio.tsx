@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
-import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart";
+// import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart"; // 已移除
 import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashboard";
 import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
@@ -278,20 +278,27 @@ export default function Portfolio() {
       {/* 頂部導航 */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation("/")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                返回首頁
-              </Button>
-              <h1 className="text-2xl font-bold">投資組合</h1>
-              
-              {/* 貨幣切換按鈕 */}
-              <div className="flex flex-col gap-1 ml-4">
+          <div className="flex flex-col gap-4">
+            {/* 第一行：標題和返回按鈕 */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/")}
+                  className="flex-shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="ml-2 hidden sm:inline">返回首頁</span>
+                </Button>
+                <h1 className="text-xl sm:text-2xl font-bold">投資組合</h1>
+              </div>
+            </div>
+            
+            {/* 第二行：貨幣切換和操作按鈕 */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              {/* 貨幣切換 */}
+              <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <Button
                     variant={currency === 'USD' ? 'default' : 'outline'}
@@ -310,18 +317,18 @@ export default function Portfolio() {
                 </div>
                 {exchangeRateData && (
                   <div className="text-xs text-muted-foreground">
-                    匯率: 1 USD = {usdToTwdRate.toFixed(4)} TWD
+                    匹率: 1 USD = {usdToTwdRate.toFixed(4)} TWD
                     {exchangeRateData.updateTime && (
-                      <span className="ml-2">
+                      <span className="ml-2 hidden sm:inline">
                         (更新於 {new Date(exchangeRateData.updateTime).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })})
                       </span>
                     )}
                   </div>
                 )}
               </div>
-            </div>
-            
-            <div className="flex gap-2">
+              
+              {/* 操作按鈕 */}
+              <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
                 onClick={handleAIAnalysis}
@@ -340,17 +347,17 @@ export default function Portfolio() {
                 )}
               </Button>
               
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    添加持倉
-                  </Button>
-                </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>添加新持倉</DialogTitle>
-                  <DialogDescription>
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      添加持倉
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>添加新持倉</DialogTitle>
+                      <DialogDescription>
                     輸入您的股票持倉資訊
                   </DialogDescription>
                 </DialogHeader>
@@ -427,30 +434,18 @@ export default function Portfolio() {
                       添加
                     </Button>
                   </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* 績效圖表 */}
-        {historyData.length > 0 && allPricesLoaded && (
-          <div className="mb-8">
-            <PortfolioPerformanceChart 
-              data={historyData}
-              currentValue={stats.totalCurrentValue}
-              currentCost={stats.totalInvestment}
-              periodGainLoss={stats.totalGainLoss}
-              periodGainLossPercent={stats.totalGainLossPercent}
-            />
-          </div>
-        )}
-
         {/* 統計卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>總投資金額</CardDescription>
@@ -531,19 +526,19 @@ export default function Portfolio() {
                 <p className="text-sm mt-2">點擊上方「添加持倉」按鈕開始記錄您的投資</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table className="min-w-[800px] sm:min-w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>股票</TableHead>
-                      <TableHead className="text-right">持股數量</TableHead>
-                      <TableHead className="text-right">購買價格</TableHead>
-                      <TableHead className="text-right">當前價格</TableHead>
-                      <TableHead className="text-right">成本</TableHead>
-                      <TableHead className="text-right">市值</TableHead>
-                      <TableHead className="text-right">損益</TableHead>
-                      <TableHead className="text-right">報酬率</TableHead>
-                      <TableHead className="text-right">操作</TableHead>
+                      <TableHead className="min-w-[120px]">股票</TableHead>
+                      <TableHead className="text-right min-w-[80px]">持股數量</TableHead>
+                      <TableHead className="text-right min-w-[100px]">購買價格</TableHead>
+                      <TableHead className="text-right min-w-[100px]">當前價格</TableHead>
+                      <TableHead className="text-right min-w-[120px]">成本</TableHead>
+                      <TableHead className="text-right min-w-[120px]">市值</TableHead>
+                      <TableHead className="text-right min-w-[100px]">損益</TableHead>
+                      <TableHead className="text-right min-w-[80px]">報酬率</TableHead>
+                      <TableHead className="text-right min-w-[80px]">操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

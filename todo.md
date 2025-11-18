@@ -1421,3 +1421,20 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 統計卡片在價格未載入時顯示 Loader
 - [x] 績效圖表只在價格載入完成後顯示
 - [x] 移除調試日誌
+
+
+## 優化投資組合頁面排版和手機顯示
+
+### 需求
+- [ ] 移除「投資組合績效」圖表卡片（紅框部分）
+- [ ] 重新優化統計卡片排版
+- [ ] 修正手機畫面跑版問題
+- [ ] 維持良好的使用者體驗
+
+### 實作計劃
+- [x] 移除 PortfolioPerformanceChart 組件的使用
+- [x] 優化統計卡片排版（grid-cols-1 sm:grid-cols-2 lg:grid-cols-4）
+- [x] 優化 header 響應式設計（分為兩行，手機上更緊湊）
+- [x] 優化持倉明細表格的手機顯示（添加 overflow-x-auto 和 min-width）
+- [x] 隱藏手機上的部分文字（使用 hidden sm:inline）
+- [ ] 測試不同螢幕尺寸的顯示效果
