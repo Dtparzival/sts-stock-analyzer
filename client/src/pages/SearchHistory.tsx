@@ -116,20 +116,31 @@ export default function SearchHistory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首頁
-        </Button>
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <History className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">搜尋歷史</h1>
-          </div>
-          
-          {/* 市場篩選器和清空按鈕 */}
-          <div className="flex gap-2">
+      {/* 頂部導航 */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col gap-4">
+            {/* 第一行：返回按鈕和標題 */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/")}
+                  className="flex-shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="ml-2 hidden sm:inline">返回首頁</span>
+                </Button>
+                <div className="flex items-center gap-3">
+                  <History className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                  <h1 className="text-xl sm:text-3xl font-bold">搜尋歷史</h1>
+                </div>
+              </div>
+            </div>
+            
+            {/* 第二行：市場篩選器和清空按鈕 */}
+            <div className="flex gap-2 flex-wrap">
             {history && history.length > 0 && (
               <Button
                 variant="destructive"
@@ -162,8 +173,11 @@ export default function SearchHistory() {
               台股
             </Button>
           </div>
+          </div>
         </div>
+      </header>
 
+      <div className="container mx-auto px-4 py-6">
         {/* 熱門追蹤區塊 */}
         {topStocks && topStocks.length > 0 && (
           <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">

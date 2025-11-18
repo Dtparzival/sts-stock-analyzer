@@ -1557,3 +1557,28 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 設置 useEffect 輪詢，每 30 秒更新一次
 - [x] 根據漲跌顯示不同顏色（上漲綠色、下跌紅色）
 - [x] 股價未載入時顯示 Loader 動畫
+
+
+## 統一 Header 設計並添加毛玻璃效果
+
+### 需求
+- [ ] 投資組合頁面的 Header 參考首頁設計
+- [ ] 搜尋歷史頁面的 Header 參考首頁設計
+- [ ] 滑動時呈現毛玻璃效果（backdrop-blur）
+- [ ] 保持 Header 固定在頂部（sticky）
+
+### 實作計劃
+- [x] 檢查首頁 Header 的實作和樣式
+- [x] 修改投資組合頁面的 Header 樣式
+- [x] 修改搜尋歷史頁面的 Header 樣式
+- [x] 添加 backdrop-blur-sm 毛玻璃效果
+- [x] 添加 sticky top-0 z-50 固定定位
+- [x] 測試不同頁面的一致性
+
+### 實現內容
+- [x] 首頁：`bg-card/50 backdrop-blur-sm sticky top-0 z-50`
+- [x] 投資組合：`bg-card/50 backdrop-blur-sm sticky top-0 z-50`
+- [x] 搜尋歷史：`bg-card/50 backdrop-blur-sm sticky top-0 z-50`
+- [x] 統一使用 container mx-auto px-4 py-4
+- [x] 統一使用 flex flex-col gap-4 佈局
+- [x] 統一使用響應式設計（hidden sm:inline）

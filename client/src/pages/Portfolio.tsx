@@ -276,7 +276,7 @@ export default function Portfolio() {
   return (
     <div className="min-h-screen bg-background">
       {/* 頂部導航 */}
-      <header className="border-b bg-card">
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-4">
             {/* 第一行：標題和返回按鈕 */}
