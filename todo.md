@@ -1358,3 +1358,20 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 添加 onMouseDown 事件處理器
 - [x] 添加 inline style (pointerEvents: 'auto', zIndex: 100)
 - [ ] 等待用戶測試並提供 Console 日誌輸出結果
+
+
+## 問題診斷結果：按鈕被覆蓋導致事件無法觸發
+
+### 診斷結果
+- [x] 用戶確認 Console 完全沒有日誌輸出
+- [x] 確定問題：按鈕被其他元素覆蓋，事件根本沒有觸發
+- [ ] 需要檢查 Portfolio 頁面是否有覆蓋層
+- [ ] 需要提升按鈕容器的 z-index
+
+### 修復方案
+- [x] 檢查 CardHeader 和父容器的 z-index
+- [x] 為按鈕容器添加更高的 z-index (9999)
+- [x] 確保按鈕容器有 position: relative
+- [x] 為 Card 添加 z-index: 1
+- [x] 為 CardHeader 添加 z-index: 10
+- [ ] 等待用戶測試並確認 Console 日誌輸出

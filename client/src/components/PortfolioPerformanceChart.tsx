@@ -63,14 +63,14 @@ export function PortfolioPerformanceChart({
   }));
 
   return (
-    <Card>
-      <CardHeader>
+    <Card style={{ position: 'relative', zIndex: 1 }}>
+      <CardHeader style={{ position: 'relative', zIndex: 10 }}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-2xl font-bold">投資組合績效</CardTitle>
             <CardDescription className="mt-1">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2" style={{ position: 'relative', zIndex: 9999 }}>
             <button
               onClick={() => handleTimeRangeChange('7')}
               onMouseDown={(e) => {
