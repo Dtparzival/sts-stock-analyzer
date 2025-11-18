@@ -202,6 +202,9 @@ export default function Portfolio() {
   };
 
   const stats = calculateStats();
+  
+  // 檢查是否所有股票價格都已載入
+  const allPricesLoaded = portfolio.length > 0 && portfolio.every(item => stockPrices[item.symbol] !== undefined);
 
   // 獲取歷史記錄
   const { data: historyData = [] } = trpc.portfolio.getHistory.useQuery(
@@ -434,7 +437,7 @@ export default function Portfolio() {
 
       <main className="container mx-auto px-4 py-8">
         {/* 績效圖表 */}
-        {historyData.length > 0 && (
+        {historyData.length > 0 && allPricesLoaded && (
           <div className="mb-8">
             <PortfolioPerformanceChart 
               data={historyData}
@@ -461,7 +464,14 @@ export default function Portfolio() {
             <CardHeader className="pb-3">
               <CardDescription>當前總價值</CardDescription>
               <CardTitle className="text-2xl">
-                {getCurrencySymbol()}{convertCurrency(stats.totalCurrentValue).toFixed(2)}
+                {!allPricesLoaded ? (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    載入中...
+                  </span>
+                ) : (
+                  <>{getCurrencySymbol()}{convertCurrency(stats.totalCurrentValue).toFixed(2)}</>
+                )}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -470,8 +480,17 @@ export default function Portfolio() {
             <CardHeader className="pb-3">
               <CardDescription>總損益</CardDescription>
               <CardTitle className={`text-2xl flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.totalGainLoss >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-                {stats.totalGainLoss >= 0 ? '+' : '-'}{getCurrencySymbol()}{Math.abs(convertCurrency(stats.totalGainLoss)).toFixed(2)}
+                {!allPricesLoaded ? (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    載入中...
+                  </span>
+                ) : (
+                  <>
+                    {stats.totalGainLoss >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                    {stats.totalGainLoss >= 0 ? '+' : '-'}{getCurrencySymbol()}{Math.abs(convertCurrency(stats.totalGainLoss)).toFixed(2)}
+                  </>
+                )}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -480,7 +499,14 @@ export default function Portfolio() {
             <CardHeader className="pb-3">
               <CardDescription>總報酬率</CardDescription>
               <CardTitle className={`text-2xl ${stats.totalGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.totalGainLossPercent >= 0 ? '+' : ''}{stats.totalGainLossPercent.toFixed(2)}%
+                {!allPricesLoaded ? (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    載入中...
+                  </span>
+                ) : (
+                  <>{stats.totalGainLossPercent >= 0 ? '+' : ''}{stats.totalGainLossPercent.toFixed(2)}%</>
+                )}
               </CardTitle>
             </CardHeader>
           </Card>
