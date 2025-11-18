@@ -12,15 +12,64 @@ import { toast } from "sonner";
 
 type MarketFilter = 'all' | 'US' | 'TW';
 
-// 基本信息顯示組件
-function StockInfoDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date }) {
-  return (
-    <div className="space-y-2 py-2">
-      <div className="text-sm text-muted-foreground">
-        添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}
+// 股價顯示組件
+function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date }) {
+  const { data: stockData, isLoading, error } = trpc.stock.getStockData.useQuery(
+    { symbol, range: '1d', interval: '1d' },
+    { 
+      enabled: !!symbol,
+      retry: 1,
+      refetchInterval: 30000, // 每 30 秒自動更新
+    }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
-      <div className="text-xs text-muted-foreground">
-        點擊查看詳細股價信息
+    );
+  }
+
+  if (error || !stockData || !stockData.price) {
+    return (
+      <div className="space-y-2 py-2">
+        <div className="text-sm text-muted-foreground">
+          添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          點擊查看詳細股價信息
+        </div>
+      </div>
+    );
+  }
+
+  const change = stockData.price - (stockData.previousClose || stockData.price);
+  const changePercent = stockData.previousClose ? (change / stockData.previousClose) * 100 : 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between">
+        <span className="text-2xl font-bold">
+          ${stockData.price.toFixed(2)}
+        </span>
+        <span className={`text-sm font-medium ${
+          changePercent >= 0 
+            ? 'text-green-600' 
+            : 'text-red-600'
+        }`}>
+          {changePercent >= 0 ? '+' : ''}
+          {changePercent.toFixed(2)}%
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className={changePercent >= 0 ? 'text-green-600' : 'text-red-600'}>
+          {changePercent >= 0 ? '+' : ''}
+          ${change.toFixed(2)}
+        </span>
+        <span>
+          添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}
+        </span>
       </div>
     </div>
   );
@@ -209,7 +258,7 @@ export default function Watchlist() {
                     </div>
                   </div>
                   {/* 股價和漲跌幅 */}
-                  <StockInfoDisplay symbol={item.symbol} addedAt={item.addedAt} />
+                  <StockPriceDisplay symbol={item.symbol} addedAt={item.addedAt} />
                 </CardContent>
               </Card>
             ))}

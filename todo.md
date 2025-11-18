@@ -1669,3 +1669,13 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 
 - [x] 修正首頁熱門台股卡片顯示邏輯，移除 .TW 後綴
 - [x] 只顯示純數字代碼（例如：2330 而不是 2330.TW）
+
+## 重新實現收藏列表股價顯示功能
+
+- [x] 參考 StockDetail 頁面的 tRPC 調用方式
+- [x] 實現 StockPriceDisplay 組件，使用與 StockDetail 相同的方式
+- [x] 在收藏卡片上顯示當前價格
+- [x] 顯示漲跌幅百分比（綠色上漲、紅色下跌）
+- [x] 顯示絕對漲跌值
+- [x] 添加自動更新機制（每 30 秒）
+- [ ] 測試功能確保正常運作
