@@ -1248,3 +1248,41 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - 優化 `PortfolioPerformanceChart` 組件，添加期間報酬和當前價值顯示
 - 調整頁面布局順序：績效圖表 → 統計卡片 → 持倉明細 → AI 分析 → 持倉分析
 - 所有功能模塊均已存在並正常運作
+
+## 新增任務：修正投資組合頁面時間範圍按鈕無反應問題
+
+### 問題描述
+- [x] 紅框標示的區域：投資組合績效圖表上方的時間範圍按鈕（7天、30天、90天、全部）
+- [x] 問題：點擊按鈕無任何反應
+- [x] 位置：PortfolioPerformanceChart 組件
+
+### 修正無反應問題
+- [x] 檢查 PortfolioPerformanceChart 組件的按鈕事件處理
+- [x] 診斷時間範圍狀態管理問題
+- [x] 修正按鈕點擊事件（添加 preventDefault, stopPropagation, type="button"）
+- [x] 驗證時間範圍切換功能
+- [x] 測試圖表數據過濾功能
+
+### 優化版面編排
+- [x] 分析投資組合頁面的使用者體驗問題
+- [x] 提出具體的優化建議
+- [x] 實作版面編排優化（改進標題樣式、按鈕間距、卡片視覺效果）
+- [x] 測試優化後的使用者體驗
+
+### 實作結果
+
+**修正內容：**
+1. 添加事件處理優化：e.preventDefault(), e.stopPropagation(), type="button"
+2. 添加樣式優化：cursor-pointer, zIndex: 10, position: 'relative'
+3. 移除 flex-1 類別，使用 min-w-[60px] 以避免小螢幕上過度拉伸
+
+**版面優化：**
+1. 改進標題樣式：text-2xl font-bold
+2. 優化按鈕布局：移除 flex-wrap，使按鈕保持在同一行
+3. 優化卡片視覺效果：
+   - 增加間距：gap-6
+   - 增加內邊距：p-6
+   - 添加邊框：border border-border/50
+   - 添加懸停效果：hover:border-border transition-colors
+   - 優化背景：bg-muted/30
+   - 優化字體大小：text-4xl 為主要數字，text-base 為次要資訊

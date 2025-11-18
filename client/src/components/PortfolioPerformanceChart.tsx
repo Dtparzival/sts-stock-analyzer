@@ -50,41 +50,61 @@ export function PortfolioPerformanceChart({
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-xl">投資組合績效</CardTitle>
-            <CardDescription>追蹤您的投資組合價值變化</CardDescription>
+            <CardTitle className="text-2xl font-bold">投資組合績效</CardTitle>
+            <CardDescription className="mt-1">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex gap-2" style={{ zIndex: 10, position: 'relative' }}>
             <Button
               variant={timeRange === '7' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimeRange('7')}
-              className="flex-1 sm:flex-none"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTimeRange('7');
+              }}
+              className="min-w-[60px] cursor-pointer"
+              type="button"
             >
               7天
             </Button>
             <Button
               variant={timeRange === '30' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimeRange('30')}
-              className="flex-1 sm:flex-none"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTimeRange('30');
+              }}
+              className="min-w-[60px] cursor-pointer"
+              type="button"
             >
               30天
             </Button>
             <Button
               variant={timeRange === '90' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimeRange('90')}
-              className="flex-1 sm:flex-none"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTimeRange('90');
+              }}
+              className="min-w-[60px] cursor-pointer"
+              type="button"
             >
               90天
             </Button>
             <Button
               variant={timeRange === 'all' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimeRange('all')}
-              className="flex-1 sm:flex-none"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTimeRange('all');
+              }}
+              className="min-w-[60px] cursor-pointer"
+              type="button"
             >
               全部
             </Button>
@@ -100,20 +120,20 @@ export function PortfolioPerformanceChart({
         ) : (
           <>
             {/* 期間報酬和當前價值 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">期間報酬</p>
-                <p className={`text-3xl font-bold ${periodGainLoss >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+              <div className="p-6 bg-muted/30 rounded-xl border border-border/50 hover:border-border transition-colors">
+                <p className="text-sm font-medium text-muted-foreground mb-2">期間報酬</p>
+                <p className={`text-4xl font-bold mb-1 ${periodGainLoss >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
                   {periodGainLoss >= 0 ? '+' : ''}${periodGainLoss.toFixed(2)}
                 </p>
-                <p className={`text-sm mt-1 ${periodGainLossPercent >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                <p className={`text-base font-medium ${periodGainLossPercent >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
                   {periodGainLossPercent >= 0 ? '+' : ''}{periodGainLossPercent.toFixed(2)}%
                 </p>
               </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">當前價值</p>
-                <p className="text-3xl font-bold">${currentValue.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground mt-1">
+              <div className="p-6 bg-muted/30 rounded-xl border border-border/50 hover:border-border transition-colors">
+                <p className="text-sm font-medium text-muted-foreground mb-2">當前價值</p>
+                <p className="text-4xl font-bold mb-1">${currentValue.toFixed(2)}</p>
+                <p className="text-base text-muted-foreground">
                   成本: ${currentCost.toFixed(2)}
                 </p>
               </div>
