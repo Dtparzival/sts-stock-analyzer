@@ -1191,3 +1191,18 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - ⊘ 跳過：0 筆
 - ✗ 失敗：0 筆
 - 更新詳情：`2317.TW` → `鴻海`
+
+## 新增任務：批量更新投資組合資料
+
+- [x] 創建投資組合資料遷移腳本（server/migrations/migratePortfolio.mjs）
+- [x] 參考收藏列表遷移腳本的實作邏輯
+- [x] 實作批量更新邏輯（查詢所有舊格式記錄並更新）
+- [x] 添加進度顯示和錯誤處理
+- [x] 執行遷移腳本（找到 0 筆需要更新的記錄）
+- [x] 驗證遷移結果（檢查更新的記錄數量）
+- [x] 測試投資組合頁面顯示
+
+**執行結果：**
+- 找到 0 筆需要更新的記錄
+- 投資組合資料表中沒有舊格式的 companyName
+- 遷移腳本已準備好，未來可隨時執行
