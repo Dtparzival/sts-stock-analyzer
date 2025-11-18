@@ -1286,3 +1286,31 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
    - 添加懸停效果：hover:border-border transition-colors
    - 優化背景：bg-muted/30
    - 優化字體大小：text-4xl 為主要數字，text-base 為次要資訊
+
+## 新增問題：時間範圍按鈕仍然無反應
+
+### 問題描述
+- [x] 用戶確認按鈕仍然無反應
+- [x] 需要深入診斷問題根源
+- [x] 可能的原因：狀態更新問題、數據過濾邏輯問題、或其他未知問題
+
+### 診斷步驟
+- [x] 添加調試日誌確認按鈕點擊事件是否觸發
+- [x] 檢查 timeRange 狀態是否正常更新
+- [x] 檢查圖表數據過濾邏輯是否正確
+- [x] 檢查是否有其他因素阻止圖表重新渲染
+
+### 修復計劃
+- [x] 根據診斷結果修復問題
+- [x] 測試所有時間範圍按鈕
+- [x] 確認圖表和期間報酬都正確更新
+
+### 問題根源
+
+**發現問題：**
+按鈕被設置了 `pointer-events: none` CSS 屬性，完全阻止了點擊事件。
+
+**解決方案：**
+1. 使用 Tailwind 的 arbitrary variant 語法 `[pointer-events:auto!important]` 強制覆蓋
+2. 改進數據過濾邏輯，使用日期範圍過濾而非簡單的 slice
+3. 添加空數據檢查，提高健壯性

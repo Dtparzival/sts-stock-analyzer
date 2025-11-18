@@ -32,9 +32,20 @@ export function PortfolioPerformanceChart({
 
   // 根據時間範圍過濾數據
   const getFilteredData = () => {
+    if (!data || data.length === 0) return [];
     if (timeRange === 'all') return data;
+    
     const days = parseInt(timeRange);
-    return data.slice(-days);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    // 過濾出指定天數內的數據
+    const filtered = data.filter(item => {
+      const itemDate = new Date(item.recordDate);
+      return itemDate >= cutoffDate;
+    });
+    
+    return filtered;
   };
 
   const filteredData = getFilteredData();
@@ -55,7 +66,7 @@ export function PortfolioPerformanceChart({
             <CardTitle className="text-2xl font-bold">投資組合績效</CardTitle>
             <CardDescription className="mt-1">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex gap-2" style={{ zIndex: 10, position: 'relative' }}>
+          <div className="flex gap-2" style={{ zIndex: 50, position: 'relative', pointerEvents: 'auto' }}>
             <Button
               variant={timeRange === '7' ? 'default' : 'outline'}
               size="sm"
@@ -64,7 +75,7 @@ export function PortfolioPerformanceChart({
                 e.stopPropagation();
                 setTimeRange('7');
               }}
-              className="min-w-[60px] cursor-pointer"
+              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
               type="button"
             >
               7天
@@ -77,7 +88,7 @@ export function PortfolioPerformanceChart({
                 e.stopPropagation();
                 setTimeRange('30');
               }}
-              className="min-w-[60px] cursor-pointer"
+              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
               type="button"
             >
               30天
@@ -90,7 +101,7 @@ export function PortfolioPerformanceChart({
                 e.stopPropagation();
                 setTimeRange('90');
               }}
-              className="min-w-[60px] cursor-pointer"
+              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
               type="button"
             >
               90天
@@ -103,7 +114,7 @@ export function PortfolioPerformanceChart({
                 e.stopPropagation();
                 setTimeRange('all');
               }}
-              className="min-w-[60px] cursor-pointer"
+              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
               type="button"
             >
               全部
