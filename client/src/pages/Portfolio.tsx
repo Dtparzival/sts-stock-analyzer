@@ -436,36 +436,14 @@ export default function Portfolio() {
         {/* 績效圖表 */}
         {historyData.length > 0 && (
           <div className="mb-8">
-            <PortfolioPerformanceChart data={historyData} />
-          </div>
-        )}
-
-        {/* 持倉分析儀表板 */}
-        {analysisData && portfolio.length > 0 && (
-          <div className="mb-8">
-            <PortfolioAnalysisDashboard 
-              distribution={analysisData.distribution}
-              riskMetrics={analysisData.riskMetrics}
+            <PortfolioPerformanceChart 
+              data={historyData}
+              currentValue={stats.totalCurrentValue}
+              currentCost={stats.totalInvestment}
+              periodGainLoss={stats.totalGainLoss}
+              periodGainLossPercent={stats.totalGainLossPercent}
             />
           </div>
-        )}
-
-        {/* AI 分析結果 */}
-        {aiAnalysis && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                AI 智能分析報告
-              </CardTitle>
-              <CardDescription>基於您的持倉組合提供的風險評估和優化建議</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <Streamdown>{aiAnalysis}</Streamdown>
-              </div>
-            </CardContent>
-          </Card>
         )}
 
         {/* 統計卡片 */}
@@ -509,7 +487,7 @@ export default function Portfolio() {
         </div>
 
         {/* 持倉列表 */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle>持倉明細</CardTitle>
             <CardDescription>
@@ -633,6 +611,34 @@ export default function Portfolio() {
             )}
           </CardContent>
         </Card>
+
+        {/* AI 分析結果 */}
+        {aiAnalysis && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                AI 智能分析報告
+              </CardTitle>
+              <CardDescription>基於您的持倉組合提供的風險評估和優化建議</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <Streamdown>{aiAnalysis}</Streamdown>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 持倉分析儀表板 */}
+        {analysisData && portfolio.length > 0 && (
+          <div className="mb-8">
+            <PortfolioAnalysisDashboard 
+              distribution={analysisData.distribution}
+              riskMetrics={analysisData.riskMetrics}
+            />
+          </div>
+        )}
       </main>
     </div>
   );

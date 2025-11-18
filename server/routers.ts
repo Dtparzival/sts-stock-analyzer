@@ -912,6 +912,90 @@ ${portfolioData.map(h => `
         },
       };
     }),
+
+    // 獲取投資組合績效統計
+    getPerformance: protectedProcedure
+      .input(z.object({
+        currentPrices: z.record(z.string(), z.number()), // 當前股價
+        days: z.number().optional(), // 時間範圍（天數）
+      }))
+      .query(async ({ input, ctx }) => {
+        const { currentPrices, days } = input;
+        const holdings = await db.getUserPortfolio(ctx.user.id);
+        
+        if (holdings.length === 0) {
+          return {
+            totalInvestment: 0,
+            currentValue: 0,
+            totalGainLoss: 0,
+            totalGainLossPercent: 0,
+            periodGainLoss: 0,
+            periodGainLossPercent: 0,
+            holdings: [],
+          };
+        }
+        
+        // 計算當前總成本和總市值
+        let totalCost = 0;
+        let totalValue = 0;
+        
+        const holdingsWithCurrentPrice = holdings.map(h => {
+          const purchasePrice = h.purchasePrice / 100;
+          const currentPrice = currentPrices[h.symbol] || purchasePrice;
+          const cost = purchasePrice * h.shares;
+          const value = currentPrice * h.shares;
+          const gainLoss = value - cost;
+          const gainLossPercent = (gainLoss / cost) * 100;
+          
+          totalCost += cost;
+          totalValue += value;
+          
+          return {
+            symbol: h.symbol,
+            companyName: h.companyName || h.symbol,
+            shares: h.shares,
+            purchasePrice,
+            currentPrice,
+            cost,
+            value,
+            gainLoss,
+            gainLossPercent,
+            percentage: 0, // 將在下面計算
+          };
+        });
+        
+        // 計算持股比例
+        holdingsWithCurrentPrice.forEach(h => {
+          h.percentage = (h.value / totalValue) * 100;
+        });
+        
+        const totalGainLoss = totalValue - totalCost;
+        const totalGainLossPercent = (totalGainLoss / totalCost) * 100;
+        
+        // 獲取歷史記錄以計算期間報酬
+        let periodGainLoss = 0;
+        let periodGainLossPercent = 0;
+        
+        if (days) {
+          const history = await db.getPortfolioHistory(ctx.user.id, days);
+          if (history.length > 0) {
+            const oldestRecord = history[0];
+            const oldValue = oldestRecord.totalValue / 100;
+            periodGainLoss = totalValue - oldValue;
+            periodGainLossPercent = (periodGainLoss / oldValue) * 100;
+          }
+        }
+        
+        return {
+          totalInvestment: totalCost,
+          currentValue: totalValue,
+          totalGainLoss,
+          totalGainLossPercent,
+          periodGainLoss,
+          periodGainLossPercent,
+          holdings: holdingsWithCurrentPrice,
+        };
+      }),
   }),
 });
 

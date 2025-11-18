@@ -2,6 +2,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface PerformanceData {
   recordDate: Date;
@@ -12,11 +13,21 @@ interface PerformanceData {
 
 interface PortfolioPerformanceChartProps {
   data: PerformanceData[];
+  currentValue?: number;
+  currentCost?: number;
+  periodGainLoss?: number;
+  periodGainLossPercent?: number;
 }
 
 type TimeRange = '7' | '30' | '90' | 'all';
 
-export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartProps) {
+export function PortfolioPerformanceChart({ 
+  data, 
+  currentValue = 0,
+  currentCost = 0,
+  periodGainLoss = 0,
+  periodGainLossPercent = 0,
+}: PortfolioPerformanceChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
 
   // 根據時間範圍過濾數據
@@ -36,19 +47,13 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
     returnRate: item.gainLossPercent,
   }));
 
-  // 計算統計數據
-  const latestValue = filteredData[filteredData.length - 1]?.totalValue || 0;
-  const initialValue = filteredData[0]?.totalValue || 0;
-  const totalReturn = latestValue - initialValue;
-  const totalReturnPercent = initialValue > 0 ? ((latestValue - initialValue) / initialValue) * 100 : 0;
-
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle>投資組合績效</CardTitle>
-            <CardDescription className="hidden sm:block">追蹤您的投資組合價值變化</CardDescription>
+            <CardTitle className="text-xl">投資組合績效</CardTitle>
+            <CardDescription>追蹤您的投資組合價值變化</CardDescription>
           </div>
           <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <Button
@@ -94,35 +99,39 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">期間報酬</p>
-                <p className={`text-2xl font-bold ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${totalReturn.toFixed(2)}
+            {/* 期間報酬和當前價值 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">期間報酬</p>
+                <p className={`text-3xl font-bold ${periodGainLoss >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                  {periodGainLoss >= 0 ? '+' : ''}${periodGainLoss.toFixed(2)}
                 </p>
-                <p className={`text-sm ${totalReturnPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
+                <p className={`text-sm mt-1 ${periodGainLossPercent >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                  {periodGainLossPercent >= 0 ? '+' : ''}{periodGainLossPercent.toFixed(2)}%
                 </p>
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">當前價值</p>
-                <p className="text-2xl font-bold">${latestValue.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground">
-                  成本: ${filteredData[filteredData.length - 1]?.totalCost.toFixed(2) || '0.00'}
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">當前價值</p>
+                <p className="text-3xl font-bold">${currentValue.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  成本: ${currentCost.toFixed(2)}
                 </p>
               </div>
             </div>
             
+            {/* 曲線圖 */}
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="date" 
                   tick={{ fontSize: 12 }}
+                  className="text-muted-foreground"
                 />
                 <YAxis 
                   tick={{ fontSize: 12 }}
                   tickFormatter={(value) => `$${value.toLocaleString()}`}
+                  className="text-muted-foreground"
                 />
                 <Tooltip 
                   formatter={(value: number, name: string) => {
@@ -132,12 +141,15 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
                     return [`$${value.toLocaleString()}`, name === 'value' ? '總價值' : '總成本'];
                   }}
                   contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid #ccc',
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                />
                 <Line 
                   type="monotone" 
                   dataKey="value" 
@@ -145,6 +157,7 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
                   strokeWidth={2}
                   name="總價值"
                   dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
                 <Line 
                   type="monotone" 
@@ -154,6 +167,7 @@ export function PortfolioPerformanceChart({ data }: PortfolioPerformanceChartPro
                   strokeDasharray="5 5"
                   name="總成本"
                   dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
