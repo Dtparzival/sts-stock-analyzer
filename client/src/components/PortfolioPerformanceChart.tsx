@@ -1,6 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
@@ -66,59 +65,51 @@ export function PortfolioPerformanceChart({
             <CardTitle className="text-2xl font-bold">投資組合績效</CardTitle>
             <CardDescription className="mt-1">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex gap-2" style={{ zIndex: 50, position: 'relative', pointerEvents: 'auto' }}>
-            <Button
-              variant={timeRange === '7' ? 'default' : 'outline'}
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTimeRange('7');
-              }}
-              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
+          <div className="flex gap-2">
+            <button
+              onClick={() => setTimeRange('7')}
+              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                timeRange === '7'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-input bg-transparent hover:bg-accent'
+              }`}
               type="button"
             >
               7天
-            </Button>
-            <Button
-              variant={timeRange === '30' ? 'default' : 'outline'}
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTimeRange('30');
-              }}
-              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
+            </button>
+            <button
+              onClick={() => setTimeRange('30')}
+              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                timeRange === '30'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-input bg-transparent hover:bg-accent'
+              }`}
               type="button"
             >
               30天
-            </Button>
-            <Button
-              variant={timeRange === '90' ? 'default' : 'outline'}
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTimeRange('90');
-              }}
-              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
+            </button>
+            <button
+              onClick={() => setTimeRange('90')}
+              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                timeRange === '90'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-input bg-transparent hover:bg-accent'
+              }`}
               type="button"
             >
               90天
-            </Button>
-            <Button
-              variant={timeRange === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTimeRange('all');
-              }}
-              className="min-w-[60px] cursor-pointer relative [pointer-events:auto!important]"
+            </button>
+            <button
+              onClick={() => setTimeRange('all')}
+              className={`min-w-[60px] px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                timeRange === 'all'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-input bg-transparent hover:bg-accent'
+              }`}
               type="button"
             >
               全部
-            </Button>
+            </button>
           </div>
         </div>
       </CardHeader>

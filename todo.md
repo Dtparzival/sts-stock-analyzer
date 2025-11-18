@@ -1314,3 +1314,31 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 1. 使用 Tailwind 的 arbitrary variant 語法 `[pointer-events:auto!important]` 強制覆蓋
 2. 改進數據過濾邏輯，使用日期範圍過濾而非簡單的 slice
 3. 添加空數據檢查，提高健壯性
+
+## 緊急問題：時間範圍按鈕修復後仍然無反應
+
+### 問題描述
+- [ ] 用戶確認即使使用 `[pointer-events:auto!important]` 後按鈕仍然無反應
+- [ ] 需要使用替代方案徹底解決問題
+- [ ] 可能的原因：shadcn Button 組件內部有更深層的 pointer-events 設置
+
+### 解決方案
+- [ ] 檢查 Button 組件的源碼
+- [ ] 使用原生 HTML button 元素取代 shadcn Button 組件
+- [ ] 手動實作按鈕樣式以完全控制 CSS
+- [ ] 測試所有時間範圍按鈕功能
+
+
+## 緊急問題：投資組合績效圖表時間範圍按鈕無反應（第二次修復）
+
+### 問題描述
+- [x] 用戶確認即使使用 `[pointer-events:auto!important]` 後按鈕仍然無反應
+- [x] 檢查 Button 組件源碼發現第 8 行有 `[&_svg]:pointer-events-none`
+- [x] 決定使用原生 HTML button 元素取代 shadcn Button 組件
+
+### 解決方案
+- [x] 移除 shadcn Button 組件的導入
+- [x] 使用原生 `<button>` 元素
+- [x] 手動實作按鈕樣式（保持與原設計一致）
+- [x] 簡化點擊事件處理（移除不必要的 preventDefault/stopPropagation）
+- [ ] 等待用戶測試確認功能正常
