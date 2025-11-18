@@ -1,6 +1,9 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertCircle, CheckCircle, TrendingUp, Eye, EyeOff, AlertTriangle } from "lucide-react";
 
 interface DistributionItem {
   symbol: string;
@@ -34,12 +37,21 @@ const COLORS = [
 ];
 
 export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: PortfolioAnalysisDashboardProps) {
+  // 狀態管理
+  const [showLabels, setShowLabels] = useState(true);
+  const [selectedStock, setSelectedStock] = useState<DistributionItem | null>(null);
+  const [highlightedSymbol, setHighlightedSymbol] = useState<string | null>(null);
+
   // 準備圓餅圖數據
   const chartData = distribution.map(item => ({
     name: item.symbol,
     value: item.value,
     percentage: item.percentage,
   }));
+
+  // 檢查是否有持倉超過 50%
+  const hasHighConcentration = distribution.some(item => item.percentage > 50);
+  const highConcentrationStock = distribution.find(item => item.percentage > 50);
 
   // 生成投資建議
   const getRecommendations = () => {
@@ -100,15 +112,37 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
   const recommendations = getRecommendations();
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* 持倉分布圓餅圖 */}
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
-            持倉分布
-          </CardTitle>
-          <CardDescription>按市值佔比顯示各股票持倉</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+                持倉分布
+                {hasHighConcentration && (
+                  <div className="relative group">
+                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                      持倉集中度過高
+                    </span>
+                  </div>
+                )}
+              </CardTitle>
+              <CardDescription>按市值佔比顯示各股票持倉</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowLabels(!showLabels)}
+              className="flex items-center gap-2"
+            >
+              {showLabels ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="hidden sm:inline">{showLabels ? '隱藏標籤' : '顯示標籤'}</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {distribution.length === 0 ? (
@@ -123,20 +157,29 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    labelLine={true}
-                    label={({ name, percentage }) => `${name} ${percentage.toFixed(1)}%`}
+                    labelLine={showLabels}
+                    label={showLabels ? ({ name, percentage }) => `${name} ${percentage.toFixed(1)}%` : false}
                     outerRadius={110}
                     innerRadius={0}
                     paddingAngle={2}
                     fill="#8884d8"
                     dataKey="value"
+                    onClick={(data) => {
+                      const clickedStock = distribution.find(item => item.symbol === data.name);
+                      if (clickedStock) {
+                        setSelectedStock(clickedStock);
+                        setHighlightedSymbol(clickedStock.symbol);
+                      }
+                    }}
                   >
                     {chartData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
                         fill={COLORS[index % COLORS.length]}
                         stroke="#fff"
-                        strokeWidth={2}
+                        strokeWidth={highlightedSymbol === entry.name ? 4 : 2}
+                        opacity={highlightedSymbol === null || highlightedSymbol === entry.name ? 1 : 0.6}
+                        style={{ cursor: 'pointer' }}
                       />
                     ))}
                   </Pie>
@@ -156,10 +199,21 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
               
               <div className="mt-6 space-y-2">
                 <div className="text-sm font-semibold text-muted-foreground mb-3">持倉明細</div>
-                {distribution.map((item, index) => (
+                {distribution.map((item, index) => {
+                  const isHighlighted = highlightedSymbol === item.symbol;
+                  const isHighConcentration = item.percentage > 50;
+                  return (
                   <div 
                     key={item.symbol} 
-                    className="flex items-center justify-between text-xs sm:text-sm gap-2 p-3 rounded-lg border border-border/50 hover:border-border hover:bg-accent/50 transition-colors"
+                    className={`flex items-center justify-between text-xs sm:text-sm gap-2 p-3 rounded-lg border transition-all cursor-pointer ${
+                      isHighlighted 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-md' 
+                        : 'border-border/50 hover:border-border hover:bg-accent/50'
+                    }`}
+                    onClick={() => {
+                      setSelectedStock(item);
+                      setHighlightedSymbol(item.symbol);
+                    }}
                   >
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       <div 
@@ -176,7 +230,8 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                       <span className="font-bold text-sm">{item.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
@@ -219,6 +274,16 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
               <p className="text-xs text-muted-foreground">
                 最大單一持倉佔比，越低表示風險越分散
               </p>
+              {hasHighConcentration && highConcentrationStock && (
+                <div className="mt-3 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-800 dark:text-red-200">
+                      <span className="font-semibold">{highConcentrationStock.symbol}</span> 持倉占比達 {highConcentrationStock.percentage.toFixed(1)}%，超過 50% 警戒線，建議分散投資。
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -284,5 +349,70 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
         </Card>
       </div>
     </div>
+
+    {/* 股票詳細信息彈窗 */}
+    <Dialog open={selectedStock !== null} onOpenChange={(open) => {
+      if (!open) {
+        setSelectedStock(null);
+        setHighlightedSymbol(null);
+      }
+    }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="text-2xl font-bold">{selectedStock?.symbol}</span>
+            {selectedStock && selectedStock.percentage > 50 && (
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+            )}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedStock?.companyName}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {selectedStock && (
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">持倉市值</p>
+                <p className="text-2xl font-bold">${selectedStock.value.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">持倉占比</p>
+                <p className="text-2xl font-bold">{selectedStock.percentage.toFixed(1)}%</p>
+              </div>
+            </div>
+
+            {selectedStock.percentage > 50 && (
+              <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-orange-900 dark:text-orange-100">集中度警示</p>
+                    <p className="text-sm text-orange-800 dark:text-orange-200">
+                      該股票占投資組合超過 50%，建議分散投資以降低集中度風險。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => {
+                  setSelectedStock(null);
+                  setHighlightedSymbol(null);
+                }}
+              >
+                關閉
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
