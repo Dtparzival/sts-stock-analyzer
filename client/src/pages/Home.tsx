@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
@@ -294,8 +294,39 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
           </Card>
+        </div>
+        
+        {/* AI 分析功能 */}
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/analysis-accuracy")}>
+            <CardHeader>
+              <Target className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>AI 分析準確度追蹤</CardTitle>
+              <CardDescription>
+                自動比對歷史分析建議與實際股價走勢，評估 AI 分析的可靠性
+              </CardDescription>
+            </CardHeader>
+          </Card>
           
-
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/watchlist")}>
+            <CardHeader>
+              <Star className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>我的收藏</CardTitle>
+              <CardDescription>
+                收藏關注的股票，一鍵批量 AI 分析，快速掌握投資機會
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/history")}>
+            <CardHeader>
+              <History className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>搜尋歷史</CardTitle>
+              <CardDescription>
+                查看最近搜尋的股票，快速返回關注的標的
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </div>
 
         {/* 熱門股票 */}

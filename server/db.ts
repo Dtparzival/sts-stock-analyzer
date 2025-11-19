@@ -302,6 +302,15 @@ export async function getAnalysisHistory(symbol: string, analysisType: string, l
     .limit(limit);
 }
 
+export async function getAllAnalysisHistory(): Promise<AnalysisHistory[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(analysisHistory)
+    .where(eq(analysisHistory.analysisType, 'investment_analysis'))
+    .orderBy(desc(analysisHistory.createdAt));
+}
+
 // Portfolio functions
 export async function getUserPortfolio(userId: number): Promise<Portfolio[]> {
   const db = await getDb();

@@ -13,6 +13,7 @@ import * as dbCache from './dbStockDataCache';
 // import { convertTiingoToYahooFormat } from './tiingo'; // 不再使用 Tiingo API
 // import { convertAlphaVantageToYahooFormat } from './alphaVantage'; // 不再使用 Alpha Vantage API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
+import { calculateAccuracyStats } from './analysisAccuracy';
 
 /**
  * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
@@ -1150,6 +1151,14 @@ ${portfolioData.map(h => `
           periodGainLossPercent,
           holdings: holdingsWithCurrentPrice,
         };
+      }),
+  }),
+
+  analysis: router({
+    // 獲取 AI 分析準確度統計
+    getAccuracyStats: publicProcedure
+      .query(async () => {
+        return calculateAccuracyStats();
       }),
   }),
 });
