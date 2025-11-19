@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, RefreshCw } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
@@ -297,23 +297,13 @@ export default function Home() {
         </div>
         
         {/* AI 分析功能 */}
-        <div className="grid md:grid-cols-4 gap-6 mb-16">
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
           <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/analysis-accuracy")}>
             <CardHeader>
               <Target className="h-12 w-12 text-primary mb-4" />
               <CardTitle>AI 分析準確度追蹤</CardTitle>
               <CardDescription>
                 自動比對歷史分析建議與實際股價走勢，評估 AI 分析的可靠性
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setLocation("/improvement-tracking")}>
-            <CardHeader>
-              <RefreshCw className="h-12 w-12 text-primary mb-4" />
-              <CardTitle>準確度改進追蹤</CardTitle>
-              <CardDescription>
-                識別問題、制定計畫、追蹤效果，形成持續優化循環
               </CardDescription>
             </CardHeader>
           </Card>
