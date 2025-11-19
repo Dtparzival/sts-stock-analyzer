@@ -1,4 +1,4 @@
-import { eq, desc, and, gt, sql, count } from "drizzle-orm";
+import { eq, desc, and, or, gt, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -20,7 +20,10 @@ import {
   InsertPortfolio,
   portfolioHistory,
   PortfolioHistory,
-  InsertPortfolioHistory
+  InsertPortfolioHistory,
+  improvementPlans,
+  ImprovementPlan,
+  InsertImprovementPlan
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -391,4 +394,70 @@ export async function addPortfolioHistory(data: InsertPortfolioHistory): Promise
     // 插入新記錄
     await db.insert(portfolioHistory).values(data);
   }
+}
+
+// Improvement plans functions
+export async function createImprovementPlan(data: InsertImprovementPlan): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(improvementPlans).values(data);
+  return result[0].insertId;
+}
+
+export async function getImprovementPlans(userId: number): Promise<ImprovementPlan[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(improvementPlans)
+    .where(eq(improvementPlans.userId, userId))
+    .orderBy(desc(improvementPlans.createdAt));
+}
+
+export async function getImprovementPlanById(id: number): Promise<ImprovementPlan | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const results = await db.select().from(improvementPlans)
+    .where(eq(improvementPlans.id, id))
+    .limit(1);
+  
+  return results[0];
+}
+
+export async function updateImprovementPlan(
+  id: number,
+  data: Partial<InsertImprovementPlan>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(improvementPlans)
+    .set(data)
+    .where(eq(improvementPlans.id, id));
+}
+
+export async function deleteImprovementPlan(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(improvementPlans)
+    .where(eq(improvementPlans.id, id));
+}
+
+export async function getActiveImprovementPlans(userId: number): Promise<ImprovementPlan[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(improvementPlans)
+    .where(
+      and(
+        eq(improvementPlans.userId, userId),
+        or(
+          eq(improvementPlans.status, "pending"),
+          eq(improvementPlans.status, "in_progress")
+        )
+      )
+    )
+    .orderBy(desc(improvementPlans.createdAt));
 }

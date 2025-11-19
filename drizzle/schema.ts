@@ -174,3 +174,34 @@ export const analysisHistory = mysqlTable("analysisHistory", {
 
 export type AnalysisHistory = typeof analysisHistory.$inferSelect;
 export type InsertAnalysisHistory = typeof analysisHistory.$inferInsert;
+
+/**
+ * 準確度改進計畫表
+ * 記錄識別到的準確率問題和改進措施，追蹤改進效果
+ */
+export const improvementPlans = mysqlTable("improvementPlans", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // 創建者 ID
+  problemType: varchar("problemType", { length: 50 }).notNull(), // 問題類型（overall, recommendation, symbol）
+  problemTarget: varchar("problemTarget", { length: 50 }), // 問題目標（例如：買入、AAPL）
+  problemDescription: text("problemDescription").notNull(), // 問題描述
+  baselineAccuracy: int("baselineAccuracy").notNull(), // 基準準確率（以萬分之一為單位，例如 5000 = 50%）
+  targetAccuracy: int("targetAccuracy").notNull(), // 目標準確率（以萬分之一為單位）
+  improvementMeasures: text("improvementMeasures").notNull(), // 改進措施（JSON 格式）
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending").notNull(),
+  startDate: timestamp("startDate"), // 開始日期
+  endDate: timestamp("endDate"), // 結束日期
+  currentAccuracy: int("currentAccuracy"), // 當前準確率（以萬分之一為單位）
+  improvementRate: int("improvementRate"), // 改進幅度（以萬分之一為單位）
+  notes: text("notes"), // 備註
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  statusIdx: index("status_idx").on(table.status),
+  problemTypeIdx: index("problemType_idx").on(table.problemType),
+  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+}));
+
+export type ImprovementPlan = typeof improvementPlans.$inferSelect;
+export type InsertImprovementPlan = typeof improvementPlans.$inferInsert;
