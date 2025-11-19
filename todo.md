@@ -1679,3 +1679,22 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - [x] 顯示絕對漲跌值
 - [x] 添加自動更新機制（每 30 秒）
 - [ ] 測試功能確保正常運作
+
+### 修正 AI 投資分析內容與個股不合的問題
+
+- [x] 檢查 AI 分析 API 調用時傳遞的股票代碼是否正確
+- [x] 檢查 AI 分析結果是否正確對應到當前查看的股票
+- [x] 修正 AI 分析調用邏輯，確保股票代碼正確傳遞
+- [ ] 測試多支股票的 AI 分析功能
+
+### 問題原因
+後端 `server/routers.ts` 中有兩個同名的 `getAIAnalysis` procedure：
+1. 第 349 行：`publicProcedure` - 用於股票詳情頁的個股分析
+2. 第 770 行：`protectedProcedure` - 用於投資組合的 AI 分析
+
+第二個定義覆蓋了第一個，導致股票詳情頁調用的實際上是投資組合分析的 API。
+
+### 解決方案
+- 將投資組合的 AI 分析 procedure 重命名為 `getPortfolioAIAnalysis`
+- 修正 Portfolio 頁面的調用，改用新的 procedure 名稱
+- 股票詳情頁的 `getAIAnalysis` 保持不變，用於個股分析

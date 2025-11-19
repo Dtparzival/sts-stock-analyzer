@@ -767,7 +767,7 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
       }),
 
     // AI 智能分析投資組合
-    getAIAnalysis: protectedProcedure
+    getPortfolioAIAnalysis: protectedProcedure
       .input(z.object({
         currentPrices: z.record(z.string(), z.number()), // 當前股價
       }))

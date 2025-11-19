@@ -69,13 +69,13 @@ export default function Portfolio() {
     },
   });
 
-  const aiAnalysisMutation = trpc.portfolio.getAIAnalysis.useMutation({
-    onSuccess: (data) => {
+  const aiAnalysisMutation = trpc.portfolio.getPortfolioAIAnalysis.useMutation({
+    onSuccess: (data: { analysis: string; fromCache: boolean }) => {
       setAiAnalysis(data.analysis);
       setIsAnalyzing(false);
       toast.success("AI 分析完成");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`AI 分析失敗: ${error.message}`);
       setIsAnalyzing(false);
     },
