@@ -11,6 +11,7 @@ import Portfolio from "./pages/Portfolio";
 import SearchHistory from "./pages/SearchHistory";
 import AIAdvisor from "./pages/AIAdvisor";
 import AnalysisAccuracy from "./pages/AnalysisAccuracy";
+import { ApiMonitor } from "./components/ApiMonitor";
 
 function Router() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <ApiMonitor />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

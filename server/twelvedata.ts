@@ -1,4 +1,5 @@
 import { ENV } from "./_core/env";
+import { twelveDataQueue } from "./twelvedataQueue";
 
 /**
  * TwelveData API 整合模組
@@ -59,30 +60,35 @@ interface TwelveDataTimeSeries {
  * 獲取股票即時報價
  */
 export async function getTwelveDataQuote(symbol: string): Promise<TwelveDataQuote | null> {
-  try {
-    const url = new URL("quote", ENV.twelveDataBaseUrl);
-    url.searchParams.append("symbol", symbol);
-    url.searchParams.append("apikey", ENV.twelveDataToken);
+  // 使用請求佇列管理 API 調用
+  return twelveDataQueue.enqueue(async () => {
+    try {
+      const url = new URL("quote", ENV.twelveDataBaseUrl);
+      url.searchParams.append("symbol", symbol);
+      url.searchParams.append("apikey", ENV.twelveDataToken);
 
-    const response = await fetch(url.toString());
-    
-    if (!response.ok) {
-      console.error(`[TwelveData] Quote API error: ${response.status} ${response.statusText}`);
+      console.log(`[TwelveData] Fetching quote for ${symbol}`);
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        console.error(`[TwelveData] Quote API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+      
+      if (data.code || data.status === "error") {
+        console.error(`[TwelveData] Quote API error:`, data.message || data);
+        return null;
+      }
+
+      console.log(`[TwelveData] Successfully fetched quote for ${symbol}`);
+      return data as TwelveDataQuote;
+    } catch (error) {
+      console.error(`[TwelveData] Failed to fetch quote for ${symbol}:`, error);
       return null;
     }
-
-    const data = await response.json();
-    
-    if (data.code || data.status === "error") {
-      console.error(`[TwelveData] Quote API error:`, data.message || data);
-      return null;
-    }
-
-    return data as TwelveDataQuote;
-  } catch (error) {
-    console.error(`[TwelveData] Failed to fetch quote for ${symbol}:`, error);
-    return null;
-  }
+  });
 }
 
 /**
@@ -96,32 +102,37 @@ export async function getTwelveDataTimeSeries(
   interval: string = "1day",
   outputsize: number = 30
 ): Promise<TwelveDataTimeSeries | null> {
-  try {
-    const url = new URL("time_series", ENV.twelveDataBaseUrl);
-    url.searchParams.append("symbol", symbol);
-    url.searchParams.append("interval", interval);
-    url.searchParams.append("outputsize", outputsize.toString());
-    url.searchParams.append("apikey", ENV.twelveDataToken);
+  // 使用請求佇列管理 API 調用
+  return twelveDataQueue.enqueue(async () => {
+    try {
+      const url = new URL("time_series", ENV.twelveDataBaseUrl);
+      url.searchParams.append("symbol", symbol);
+      url.searchParams.append("interval", interval);
+      url.searchParams.append("outputsize", outputsize.toString());
+      url.searchParams.append("apikey", ENV.twelveDataToken);
 
-    const response = await fetch(url.toString());
-    
-    if (!response.ok) {
-      console.error(`[TwelveData] TimeSeries API error: ${response.status} ${response.statusText}`);
+      console.log(`[TwelveData] Fetching time series for ${symbol} (interval: ${interval}, outputsize: ${outputsize})`);
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        console.error(`[TwelveData] TimeSeries API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+      
+      if (data.code || data.status === "error") {
+        console.error(`[TwelveData] TimeSeries API error:`, data.message || data);
+        return null;
+      }
+
+      console.log(`[TwelveData] Successfully fetched time series for ${symbol}`);
+      return data as TwelveDataTimeSeries;
+    } catch (error) {
+      console.error(`[TwelveData] Failed to fetch time series for ${symbol}:`, error);
       return null;
     }
-
-    const data = await response.json();
-    
-    if (data.code || data.status === "error") {
-      console.error(`[TwelveData] TimeSeries API error:`, data.message || data);
-      return null;
-    }
-
-    return data as TwelveDataTimeSeries;
-  } catch (error) {
-    console.error(`[TwelveData] Failed to fetch time series for ${symbol}:`, error);
-    return null;
-  }
+  });
 }
 
 /**

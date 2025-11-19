@@ -276,9 +276,9 @@ export const appRouter = router({
             },
           };
           
-          // 儲存到資料庫緩存（30 分鐘）
+          // 儲存到資料庫緩存（1 小時）
           const now = new Date();
-          await dbCache.setCache('twelvedata_stock_data', cacheParams, data, 30 * 60 * 1000);
+          await dbCache.setCache('twelvedata_stock_data', cacheParams, data, 60 * 60 * 1000);
           
           // 返回數據並附帶時間戳
           return {
@@ -286,7 +286,7 @@ export const appRouter = router({
             _metadata: {
               lastUpdated: now,
               isFromCache: false,
-              expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
+              expiresAt: new Date(now.getTime() + 60 * 60 * 1000),
             }
           };
         } catch (error: any) {
@@ -1218,6 +1218,24 @@ ${portfolioData.map(h => `
       }))
       .query(async ({ input }) => {
         return checkLowAccuracyStocks(input.threshold, input.timeRange);
+      }),
+  }),
+
+  // API 速率限制監控
+  apiMonitor: router({
+    // 獲取 TwelveData API 使用狀況
+    getTwelveDataStats: publicProcedure
+      .query(async () => {
+        const { twelveDataQueue } = await import('./twelvedataQueue');
+        const stats = twelveDataQueue.getStats();
+        const isNearLimit = twelveDataQueue.isNearLimit();
+        const warningMessage = twelveDataQueue.getWarningMessage();
+        
+        return {
+          stats,
+          isNearLimit,
+          warningMessage,
+        };
       }),
   }),
 });
