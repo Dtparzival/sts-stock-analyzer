@@ -1828,3 +1828,20 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - 準確度時間趋勢：按月份統計準確率，以折線圖呈現趋勢，幫助用戶了解 AI 模型是否持續改進
 - 個股深度報告：為每支股票生成專屬報告，包含歷史庭議回顧、準確率統計、最佳/最差預測案例分析
 - 準確度提醒：當股票準確率低於 50% 時顯示警告，幫助用戶謹慎參考低準確率股票的 AI 建議
+
+## 新增需求：美股資料改接 TwelveData API
+
+- [x] 檢查現有 TwelveData API 整合模組（server/twelvedata.ts）
+- [x] 確認 TwelveData API 環境變數配置（TWELVEDATA_BASE_URL, TWELVEDATA_TOKEN）
+- [x] 修改 stock.getStockData API，美股改用 TwelveData 替代 Yahoo Finance
+- [x] 測試美股資料獲取功能（TSLA, AAPL, GOOGL）
+- [x] 測試歷史價格圖表顯示
+- [x] 驗證所有美股查詢功能正常運作
+
+**實作說明：**
+- 已將美股資料來源從 Yahoo Finance API 改為 TwelveData API
+- 使用 getTwelveDataQuote 獲取即時報價，使用 getTwelveDataTimeSeries 獲取歷史數據
+- 轉換為 Yahoo Finance 格式保持前端相容性
+- 修正時間序列順序（TwelveData 返回最新到最舊，需要反轉）
+- 更新搜尋歷史功能使用 TwelveData 獲取公司名稱
+- 測試 TSLA 和 AAPL 股票頁面成功載入

@@ -141,7 +141,7 @@ export const appRouter = router({
           return await getTWSEStockData(fullSymbol, range, ctx);
         }
         
-        // 美股使用 Yahoo Finance API（通過 callDataApi）
+        // 美股使用 TwelveData API
         
         // 生成緩存參數
         const cacheParams = { symbol, region, range, interval };
@@ -167,21 +167,14 @@ export const appRouter = router({
               let companyName = await dbCache.getCache('company_name', companyNameCacheKey);
               
               if (!companyName) {
-                // 嘗試從 API 獲取公司名稱
+                // 嘗試從 TwelveData API 獲取公司名稱
                 try {
-                const chartData = await withRateLimit(() => callDataApi("YahooFinance/get_stock_chart", {
-                  query: {
-                    symbol,
-                      region,
-                      interval: '1d',
-                      range: '1d',
-                      includeAdjustedClose: 'true',
-                    },
-                  })) as any;
+                  const { getTwelveDataQuote } = await import('./twelvedata');
+                  const quote = await getTwelveDataQuote(symbol);
                   
                   companyName = symbol;
-                  if (chartData?.chart?.result?.[0]?.meta?.longName) {
-                    companyName = chartData.chart.result[0].meta.longName;
+                  if (quote?.name) {
+                    companyName = quote.name;
                   }
                   
                   // 儲存公司名稱到資料庫緩存（24 小時）
@@ -208,7 +201,7 @@ export const appRouter = router({
         }
         
         // 檢查資料庫緩存
-        const cacheResult = await dbCache.getCacheWithMetadata('get_stock_chart', cacheParams);
+        const cacheResult = await dbCache.getCacheWithMetadata('twelvedata_stock_data', cacheParams);
         if (cacheResult) {
           // 返回緩存數據並附帶時間戳
           return {
@@ -221,30 +214,71 @@ export const appRouter = router({
           };
         }
         
-        const queryParams: any = {
-          symbol,
-          region,
-          interval,
-          includeAdjustedClose: 'true',
-          events: 'div,split',
-        };
-        
-        // 根據是否有自訂日期範圍使用不同參數
-        if (period1 && period2) {
-          queryParams.period1 = period1;
-          queryParams.period2 = period2;
-        } else {
-          queryParams.range = range;
-        }
+        // 計算需要的數據點數（根據 range 參數）
+        let outputsize = 30; // 預設 30 天
+        if (range === '1d') outputsize = 1;
+        else if (range === '5d') outputsize = 5;
+        else if (range === '1mo') outputsize = 30;
+        else if (range === '3mo') outputsize = 90;
+        else if (range === '1y') outputsize = 365;
+        else if (range === '5y') outputsize = 1825;
         
         try {
-          const data = await withRateLimit(() => callDataApi("YahooFinance/get_stock_chart", {
-            query: queryParams,
-          }));
+          // 使用 TwelveData API 獲取股票數據
+          const { getTwelveDataQuote, getTwelveDataTimeSeries } = await import('./twelvedata');
+          
+          // 獲取即時報價
+          const quote = await getTwelveDataQuote(symbol);
+          if (!quote) {
+            throw new Error(`無法獲取股票 ${symbol} 的即時報價`);
+          }
+          
+          // 獲取歷史數據
+          const timeSeries = await getTwelveDataTimeSeries(symbol, '1day', outputsize);
+          if (!timeSeries) {
+            throw new Error(`無法獲取股票 ${symbol} 的歷史數據`);
+          }
+          
+          // 轉換為 Yahoo Finance 格式（保持前端相容）
+          const data = {
+            chart: {
+              result: [
+                {
+                  meta: {
+                    symbol: quote.symbol,
+                    longName: quote.name,
+                    regularMarketPrice: parseFloat(quote.close),
+                    previousClose: parseFloat(quote.previous_close),
+                    regularMarketDayHigh: parseFloat(quote.high),
+                    regularMarketDayLow: parseFloat(quote.low),
+                    regularMarketOpen: parseFloat(quote.open),
+                    regularMarketVolume: parseInt(quote.volume),
+                    fiftyTwoWeekHigh: parseFloat(quote.fifty_two_week.high),
+                    fiftyTwoWeekLow: parseFloat(quote.fifty_two_week.low),
+                    currency: quote.currency,
+                    exchangeName: quote.exchange,
+                  },
+                  // TwelveData 返回的數據是從最新到最舊，需要反轉
+                  timestamp: [...timeSeries.values].reverse().map(v => Math.floor(new Date(v.datetime).getTime() / 1000)),
+                  indicators: {
+                    quote: [
+                      {
+                        open: [...timeSeries.values].reverse().map(v => parseFloat(v.open)),
+                        high: [...timeSeries.values].reverse().map(v => parseFloat(v.high)),
+                        low: [...timeSeries.values].reverse().map(v => parseFloat(v.low)),
+                        close: [...timeSeries.values].reverse().map(v => parseFloat(v.close)),
+                        volume: [...timeSeries.values].reverse().map(v => parseInt(v.volume)),
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          };
           
           // 儲存到資料庫緩存（30 分鐘）
           const now = new Date();
-          await dbCache.setCache('get_stock_chart', cacheParams, data, 30 * 60 * 1000);
+          await dbCache.setCache('twelvedata_stock_data', cacheParams, data, 30 * 60 * 1000);
           
           // 返回數據並附帶時間戳
           return {
@@ -256,18 +290,15 @@ export const appRouter = router({
             }
           };
         } catch (error: any) {
-          // 如果是 429 錯誤，嘗試返回緩存數據（即使過期）
-          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-            console.warn('[Stock API] Rate limit hit, attempting to use stale cache');
-            const staleData = await dbCache.getStaleCache('get_stock_chart', cacheParams);
-            if (staleData) {
-              console.log('[Stock API] Returning stale cached data');
-              return staleData;
-            }
-            // 如果沒有緩存數據，拋出友好的錯誤訊息
-            throw new Error('股票數據服務暫時繁忙（API 速率限制），請稍後再試。系統已啟用 30 分鐘緩存機制，再次查詢會更快。');
+          // 如果是 API 錯誤，嘗試返回緩存數據（即使過期）
+          console.warn('[Stock API] TwelveData API error, attempting to use stale cache:', error.message);
+          const staleData = await dbCache.getStaleCache('twelvedata_stock_data', cacheParams);
+          if (staleData) {
+            console.log('[Stock API] Returning stale cached data');
+            return staleData;
           }
-          throw error;
+          // 如果沒有緩存數據，拋出友好的錯誤訊息
+          throw new Error(`無法獲取股票 ${symbol} 的數據，請稍後再試。錯誤：${error.message}`);
         }
       }),
 
