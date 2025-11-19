@@ -321,3 +321,363 @@ export async function calculateAccuracyStats(): Promise<AccuracyStats> {
     records,
   };
 }
+
+/**
+ * 時間趨勢數據點
+ */
+export interface TrendDataPoint {
+  month: string; // 格式：YYYY-MM
+  total: number;
+  accurate: number;
+  accuracyRate: number;
+}
+
+/**
+ * 準確度時間趨勢統計
+ */
+export interface AccuracyTrend {
+  overall: TrendDataPoint[];
+  byRecommendation: {
+    買入: TrendDataPoint[];
+    持有: TrendDataPoint[];
+    賣出: TrendDataPoint[];
+  };
+}
+
+/**
+ * 計算準確度時間趨勢
+ * @param timeRange 評估時間範圍（7、30、90 天）
+ */
+export async function calculateAccuracyTrend(timeRange: 7 | 30 | 90): Promise<AccuracyTrend> {
+  // 獲取所有歷史分析記錄
+  const allHistory = await db.getAllAnalysisHistory();
+  
+  // 按月份分組
+  const monthlyData: Map<string, AccuracyRecord[]> = new Map();
+  
+  for (const history of allHistory) {
+    if (!history.recommendation || !history.priceAtAnalysis) {
+      continue;
+    }
+    
+    const priceAtAnalysis = history.priceAtAnalysis / 100;
+    const analysisDate = new Date(history.createdAt);
+    const monthKey = `${analysisDate.getFullYear()}-${String(analysisDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    // 獲取對應時間範圍後的股價
+    let priceAfter: number | null = null;
+    let isAccurate: boolean | null = null;
+    
+    if (timeRange === 7) {
+      priceAfter = await getStockPriceAfterDays(history.symbol, analysisDate, 7);
+      isAccurate = priceAfter
+        ? isRecommendationAccurate(history.recommendation, priceAtAnalysis, priceAfter)
+        : null;
+    } else if (timeRange === 30) {
+      priceAfter = await getStockPriceAfterDays(history.symbol, analysisDate, 30);
+      isAccurate = priceAfter
+        ? isRecommendationAccurate(history.recommendation, priceAtAnalysis, priceAfter)
+        : null;
+    } else if (timeRange === 90) {
+      priceAfter = await getStockPriceAfterDays(history.symbol, analysisDate, 90);
+      isAccurate = priceAfter
+        ? isRecommendationAccurate(history.recommendation, priceAtAnalysis, priceAfter)
+        : null;
+    }
+    
+    const record: AccuracyRecord = {
+      id: history.id,
+      symbol: history.symbol,
+      analysisDate,
+      recommendation: history.recommendation,
+      priceAtAnalysis,
+      priceAfter7Days: timeRange === 7 ? priceAfter : null,
+      priceAfter30Days: timeRange === 30 ? priceAfter : null,
+      priceAfter90Days: timeRange === 90 ? priceAfter : null,
+      isAccurate7Days: timeRange === 7 ? isAccurate : null,
+      isAccurate30Days: timeRange === 30 ? isAccurate : null,
+      isAccurate90Days: timeRange === 90 ? isAccurate : null,
+    };
+    
+    if (!monthlyData.has(monthKey)) {
+      monthlyData.set(monthKey, []);
+    }
+    monthlyData.get(monthKey)!.push(record);
+  }
+  
+  // 計算整體趨勢
+  const overallTrend: TrendDataPoint[] = [];
+  const sortedMonths = Array.from(monthlyData.keys()).sort();
+  
+  for (const month of sortedMonths) {
+    const records = monthlyData.get(month)!;
+    const validRecords = records.filter(r => {
+      if (timeRange === 7) return r.isAccurate7Days !== null;
+      if (timeRange === 30) return r.isAccurate30Days !== null;
+      return r.isAccurate90Days !== null;
+    });
+    
+    const accurateRecords = validRecords.filter(r => {
+      if (timeRange === 7) return r.isAccurate7Days === true;
+      if (timeRange === 30) return r.isAccurate30Days === true;
+      return r.isAccurate90Days === true;
+    });
+    
+    overallTrend.push({
+      month,
+      total: validRecords.length,
+      accurate: accurateRecords.length,
+      accuracyRate: validRecords.length > 0 ? accurateRecords.length / validRecords.length : 0,
+    });
+  }
+  
+  // 計算按建議類型的趨勢
+  const byRecommendation: AccuracyTrend['byRecommendation'] = {
+    買入: [],
+    持有: [],
+    賣出: [],
+  };
+  
+  for (const month of sortedMonths) {
+    const records = monthlyData.get(month)!;
+    
+    for (const recType of ['買入', '持有', '賣出'] as const) {
+      const typeRecords = records.filter(r => r.recommendation === recType);
+      const validRecords = typeRecords.filter(r => {
+        if (timeRange === 7) return r.isAccurate7Days !== null;
+        if (timeRange === 30) return r.isAccurate30Days !== null;
+        return r.isAccurate90Days !== null;
+      });
+      
+      const accurateRecords = validRecords.filter(r => {
+        if (timeRange === 7) return r.isAccurate7Days === true;
+        if (timeRange === 30) return r.isAccurate30Days === true;
+        return r.isAccurate90Days === true;
+      });
+      
+      byRecommendation[recType].push({
+        month,
+        total: validRecords.length,
+        accurate: accurateRecords.length,
+        accuracyRate: validRecords.length > 0 ? accurateRecords.length / validRecords.length : 0,
+      });
+    }
+  }
+  
+  return {
+    overall: overallTrend,
+    byRecommendation,
+  };
+}
+
+/**
+ * 個股分析案例
+ */
+export interface AnalysisCase {
+  id: number;
+  date: Date;
+  recommendation: string;
+  priceAtAnalysis: number;
+  priceAfter30Days: number | null;
+  priceChange: number | null; // 價格變化百分比
+  isAccurate: boolean | null;
+  profit: number | null; // 假設投資 $10000 的獲利/虧損
+}
+
+/**
+ * 個股深度分析報告
+ */
+export interface StockAnalysisReport {
+  symbol: string;
+  totalAnalyses: number;
+  recommendationCounts: {
+    買入: number;
+    持有: number;
+    賣出: number;
+  };
+  accuracyRates: {
+    overall: number;
+    買入: number;
+    持有: number;
+    賣出: number;
+  };
+  bestCase: AnalysisCase | null; // 最佳預測案例（準確且獲利最高）
+  worstCase: AnalysisCase | null; // 最差預測案例（不準確且損失最大）
+  recentCases: AnalysisCase[]; // 最近 10 次分析
+}
+
+/**
+ * 生成個股深度分析報告
+ * @param symbol 股票代號
+ */
+export async function generateStockAnalysisReport(symbol: string): Promise<StockAnalysisReport> {
+  // 獲取該股票的所有歷史分析記錄
+  const history = await db.getAnalysisHistory(symbol, 'investment_analysis', 1000);
+  
+  if (history.length === 0) {
+    return {
+      symbol,
+      totalAnalyses: 0,
+      recommendationCounts: { 買入: 0, 持有: 0, 賣出: 0 },
+      accuracyRates: { overall: 0, 買入: 0, 持有: 0, 賣出: 0 },
+      bestCase: null,
+      worstCase: null,
+      recentCases: [],
+    };
+  }
+  
+  // 處理每條歷史記錄
+  const cases: AnalysisCase[] = [];
+  
+  for (const h of history) {
+    if (!h.recommendation || !h.priceAtAnalysis) continue;
+    
+    const priceAtAnalysis = h.priceAtAnalysis / 100;
+    const analysisDate = new Date(h.createdAt);
+    
+    // 獲取 30 天後的股價
+    const priceAfter30Days = await getStockPriceAfterDays(symbol, analysisDate, 30);
+    
+    let priceChange: number | null = null;
+    let isAccurate: boolean | null = null;
+    let profit: number | null = null;
+    
+    if (priceAfter30Days) {
+      priceChange = (priceAfter30Days - priceAtAnalysis) / priceAtAnalysis;
+      isAccurate = isRecommendationAccurate(h.recommendation, priceAtAnalysis, priceAfter30Days);
+      
+      // 計算假設投資 $10000 的獲利/虧損
+      if (h.recommendation === '買入') {
+        // 買入：獲利 = 價格變化 * 投資金額
+        profit = priceChange * 10000;
+      } else if (h.recommendation === '賣出') {
+        // 賣出：獲利 = -價格變化 * 投資金額（做空）
+        profit = -priceChange * 10000;
+      } else {
+        // 持有：不計算獲利
+        profit = 0;
+      }
+    }
+    
+    cases.push({
+      id: h.id,
+      date: analysisDate,
+      recommendation: h.recommendation,
+      priceAtAnalysis,
+      priceAfter30Days,
+      priceChange,
+      isAccurate,
+      profit,
+    });
+  }
+  
+  // 計算建議次數統計
+  const recommendationCounts = {
+    買入: cases.filter(c => c.recommendation === '買入').length,
+    持有: cases.filter(c => c.recommendation === '持有').length,
+    賣出: cases.filter(c => c.recommendation === '賣出').length,
+  };
+  
+  // 計算準確率統計
+  const validCases = cases.filter(c => c.isAccurate !== null);
+  const accurateCases = validCases.filter(c => c.isAccurate === true);
+  
+  const buyValidCases = cases.filter(c => c.recommendation === '買入' && c.isAccurate !== null);
+  const buyAccurateCases = buyValidCases.filter(c => c.isAccurate === true);
+  
+  const holdValidCases = cases.filter(c => c.recommendation === '持有' && c.isAccurate !== null);
+  const holdAccurateCases = holdValidCases.filter(c => c.isAccurate === true);
+  
+  const sellValidCases = cases.filter(c => c.recommendation === '賣出' && c.isAccurate !== null);
+  const sellAccurateCases = sellValidCases.filter(c => c.isAccurate === true);
+  
+  const accuracyRates = {
+    overall: validCases.length > 0 ? accurateCases.length / validCases.length : 0,
+    買入: buyValidCases.length > 0 ? buyAccurateCases.length / buyValidCases.length : 0,
+    持有: holdValidCases.length > 0 ? holdAccurateCases.length / holdValidCases.length : 0,
+    賣出: sellValidCases.length > 0 ? sellAccurateCases.length / sellValidCases.length : 0,
+  };
+  
+  // 找出最佳預測案例（準確且獲利最高）
+  const accurateAndProfitableCases = cases.filter(c => c.isAccurate === true && c.profit !== null && c.profit > 0);
+  const bestCase = accurateAndProfitableCases.length > 0
+    ? accurateAndProfitableCases.reduce((best, current) => 
+        (current.profit! > best.profit! ? current : best)
+      )
+    : null;
+  
+  // 找出最差預測案例（不準確且損失最大）
+  const inaccurateAndLosingCases = cases.filter(c => c.isAccurate === false && c.profit !== null && c.profit < 0);
+  const worstCase = inaccurateAndLosingCases.length > 0
+    ? inaccurateAndLosingCases.reduce((worst, current) => 
+        (current.profit! < worst.profit! ? current : worst)
+      )
+    : null;
+  
+  // 最近 10 次分析
+  const recentCases = cases.slice(0, 10);
+  
+  return {
+    symbol,
+    totalAnalyses: cases.length,
+    recommendationCounts,
+    accuracyRates,
+    bestCase,
+    worstCase,
+    recentCases,
+  };
+}
+
+/**
+ * 低準確率股票警告
+ */
+export interface LowAccuracyWarning {
+  symbol: string;
+  totalAnalyses: number;
+  accuracyRate: number;
+  recommendation: string; // 最近一次建議
+}
+
+/**
+ * 檢查需要提醒的低準確率股票
+ * @param threshold 準確率閾值（預設 0.5，即 50%）
+ * @param timeRange 評估時間範圍（7、30、90 天）
+ */
+export async function checkLowAccuracyStocks(
+  threshold: number = 0.5,
+  timeRange: 7 | 30 | 90 = 30
+): Promise<LowAccuracyWarning[]> {
+  const stats = await calculateAccuracyStats();
+  const warnings: LowAccuracyWarning[] = [];
+  
+  for (const [symbol, symbolStats] of Object.entries(stats.bySymbol)) {
+    // 根據時間範圍選擇準確率
+    let accuracyRate = 0;
+    if (timeRange === 7) {
+      accuracyRate = symbolStats.accuracyRate7Days;
+    } else if (timeRange === 30) {
+      accuracyRate = symbolStats.accuracyRate30Days;
+    } else {
+      accuracyRate = symbolStats.accuracyRate90Days;
+    }
+    
+    // 如果準確率低於閾值且至少有 3 次分析記錄
+    if (accuracyRate < threshold && symbolStats.total >= 3) {
+      // 獲取最近一次分析建議
+      const history = await db.getAnalysisHistory(symbol, 'investment_analysis', 1);
+      const latestRecommendation = history.length > 0 ? history[0].recommendation : null;
+      
+      warnings.push({
+        symbol,
+        totalAnalyses: symbolStats.total,
+        accuracyRate,
+        recommendation: latestRecommendation || '未知',
+      });
+    }
+  }
+  
+  // 按準確率從低到高排序
+  warnings.sort((a, b) => a.accuracyRate - b.accuracyRate);
+  
+  return warnings;
+}

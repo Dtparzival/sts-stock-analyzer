@@ -13,7 +13,7 @@ import * as dbCache from './dbStockDataCache';
 // import { convertTiingoToYahooFormat } from './tiingo'; // 不再使用 Tiingo API
 // import { convertAlphaVantageToYahooFormat } from './alphaVantage'; // 不再使用 Alpha Vantage API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
-import { calculateAccuracyStats } from './analysisAccuracy';
+import { calculateAccuracyStats, calculateAccuracyTrend, generateStockAnalysisReport, checkLowAccuracyStocks } from './analysisAccuracy';
 
 /**
  * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
@@ -1159,6 +1159,34 @@ ${portfolioData.map(h => `
     getAccuracyStats: publicProcedure
       .query(async () => {
         return calculateAccuracyStats();
+      }),
+    
+    // 獲取準確度時間趋勢
+    getAccuracyTrend: publicProcedure
+      .input(z.object({
+        timeRange: z.union([z.literal(7), z.literal(30), z.literal(90)]),
+      }))
+      .query(async ({ input }) => {
+        return calculateAccuracyTrend(input.timeRange);
+      }),
+    
+    // 獲取個股深度分析報告
+    getStockReport: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return generateStockAnalysisReport(input.symbol);
+      }),
+    
+    // 檢查低準確率股票
+    getLowAccuracyWarnings: publicProcedure
+      .input(z.object({
+        threshold: z.number().optional().default(0.5),
+        timeRange: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional().default(30),
+      }))
+      .query(async ({ input }) => {
+        return checkLowAccuracyStocks(input.threshold, input.timeRange);
       }),
   }),
 });

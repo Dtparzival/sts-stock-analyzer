@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Loader2, TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import {
@@ -14,6 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import {
   PieChart,
@@ -27,6 +34,8 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 
 type TimeRange = '7' | '30' | '90';
@@ -35,8 +44,26 @@ export default function AnalysisAccuracy() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   const { data: accuracyStats, isLoading, error } = trpc.analysis.getAccuracyStats.useQuery();
+  const { data: accuracyTrend, isLoading: isTrendLoading } = trpc.analysis.getAccuracyTrend.useQuery({
+    timeRange: parseInt(timeRange) as 7 | 30 | 90,
+  });
+  const { data: stockReport, isLoading: isReportLoading } = trpc.analysis.getStockReport.useQuery(
+    { symbol: selectedSymbol! },
+    { enabled: !!selectedSymbol }
+  );
+  const { data: lowAccuracyWarnings } = trpc.analysis.getLowAccuracyWarnings.useQuery({
+    threshold: 0.5,
+    timeRange: parseInt(timeRange) as 7 | 30 | 90,
+  });
+
+  const handleViewReport = (symbol: string) => {
+    setSelectedSymbol(symbol);
+    setIsReportDialogOpen(true);
+  };
 
   if (loading) {
     return (
@@ -272,6 +299,97 @@ export default function AnalysisAccuracy() {
               </Card>
             </div>
 
+            {/* 低準確率股票警告 */}
+            {lowAccuracyWarnings && lowAccuracyWarnings.length > 0 && (
+              <Card className="mb-6 border-yellow-200 bg-yellow-50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    <CardTitle className="text-yellow-800">低準確率股票警告</CardTitle>
+                  </div>
+                  <CardDescription className="text-yellow-700">
+                    以下股票的 AI 分析準確率低於 50%，建議謹慎參考 AI 建議
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {lowAccuracyWarnings.map((warning) => (
+                      <Card key={warning.symbol} className="bg-white">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-semibold text-lg">
+                              {getMarketFromSymbol(warning.symbol) === 'TW' 
+                                ? cleanTWSymbol(warning.symbol) 
+                                : warning.symbol}
+                            </span>
+                            <Badge variant="destructive">
+                              {(warning.accuracyRate * 100).toFixed(1)}%
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            分析次數: {warning.totalAnalyses}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            最近建議: {warning.recommendation}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => handleViewReport(warning.symbol)}
+                          >
+                            查看詳細報告
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 準確度時間趋勢圖 */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>準確度時間趋勢</CardTitle>
+                <CardDescription>
+                  AI 分析準確率隨時間的變化趋勢（按月份統計）
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isTrendLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : !accuracyTrend || accuracyTrend.overall.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-12">
+                    尚無足夠的歷史數據以生成趋勢圖
+                  </p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={accuracyTrend.overall.map(d => ({
+                      month: d.month,
+                      準確率: d.accuracyRate * 100,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="準確率" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
             {/* 按股票的準確度明細表格 */}
             <Card>
               <CardHeader>
@@ -289,6 +407,7 @@ export default function AnalysisAccuracy() {
                       <TableHead className="text-center">7 天準確率</TableHead>
                       <TableHead className="text-center">30 天準確率</TableHead>
                       <TableHead className="text-center">90 天準確率</TableHead>
+                      <TableHead className="text-center">操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -312,6 +431,15 @@ export default function AnalysisAccuracy() {
                           <Badge variant={stats.accuracyRate90Days >= 0.6 ? 'default' : 'destructive'}>
                             {(stats.accuracyRate90Days * 100).toFixed(1)}%
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewReport(symbol)}
+                          >
+                            查看報告
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -337,6 +465,231 @@ export default function AnalysisAccuracy() {
           </>
         )}
       </div>
+
+      {/* 個股深度分析報告對話框 */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedSymbol && (getMarketFromSymbol(selectedSymbol) === 'TW' 
+                ? cleanTWSymbol(selectedSymbol) 
+                : selectedSymbol)} - AI 分析表現報告
+            </DialogTitle>
+            <DialogDescription>
+              歷史分析建議回顧、準確率統計和案例分析
+            </DialogDescription>
+          </DialogHeader>
+
+          {isReportLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : !stockReport ? (
+            <p className="text-center text-muted-foreground py-12">
+              無法載入報告
+            </p>
+          ) : stockReport.totalAnalyses === 0 ? (
+            <p className="text-center text-muted-foreground py-12">
+              該股票尚無 AI 分析歷史記錄
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {/* 概覽統計 */}
+              <div className="grid md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      總分析次數
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stockReport.totalAnalyses}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      整體準確率
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-primary">
+                      {(stockReport.accuracyRates.overall * 100).toFixed(1)}%
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      最佳預測獲利
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      {stockReport.bestCase 
+                        ? `$${stockReport.bestCase.profit!.toFixed(0)}` 
+                        : 'N/A'}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      最差預測損失
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">
+                      {stockReport.worstCase 
+                        ? `$${stockReport.worstCase.profit!.toFixed(0)}` 
+                        : 'N/A'}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 建議類型統計 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>歷史建議統計</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">買入建議</p>
+                      <p className="text-2xl font-bold">{stockReport.recommendationCounts.買入}</p>
+                      <p className="text-sm text-muted-foreground">
+                        準確率: {(stockReport.accuracyRates.買入 * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">持有建議</p>
+                      <p className="text-2xl font-bold">{stockReport.recommendationCounts.持有}</p>
+                      <p className="text-sm text-muted-foreground">
+                        準確率: {(stockReport.accuracyRates.持有 * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">賣出建議</p>
+                      <p className="text-2xl font-bold">{stockReport.recommendationCounts.賣出}</p>
+                      <p className="text-sm text-muted-foreground">
+                        準確率: {(stockReport.accuracyRates.賣出 * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 最佳/最差案例 */}
+              {(stockReport.bestCase || stockReport.worstCase) && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {stockReport.bestCase && (
+                    <Card className="border-green-200">
+                      <CardHeader>
+                        <CardTitle className="text-green-600">最佳預測案例</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        <p><strong>日期:</strong> {new Date(stockReport.bestCase.date).toLocaleDateString()}</p>
+                        <p><strong>建議:</strong> {stockReport.bestCase.recommendation}</p>
+                        <p><strong>分析時價格:</strong> ${stockReport.bestCase.priceAtAnalysis.toFixed(2)}</p>
+                        <p><strong>30 天後價格:</strong> ${stockReport.bestCase.priceAfter30Days?.toFixed(2)}</p>
+                        <p><strong>價格變化:</strong> 
+                          <span className="text-green-600 font-semibold">
+                            {stockReport.bestCase.priceChange ? `${(stockReport.bestCase.priceChange * 100).toFixed(2)}%` : 'N/A'}
+                          </span>
+                        </p>
+                        <p><strong>假設獲利:</strong> 
+                          <span className="text-green-600 font-semibold">
+                            ${stockReport.bestCase.profit?.toFixed(0)}
+                          </span>
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {stockReport.worstCase && (
+                    <Card className="border-red-200">
+                      <CardHeader>
+                        <CardTitle className="text-red-600">最差預測案例</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        <p><strong>日期:</strong> {new Date(stockReport.worstCase.date).toLocaleDateString()}</p>
+                        <p><strong>建議:</strong> {stockReport.worstCase.recommendation}</p>
+                        <p><strong>分析時價格:</strong> ${stockReport.worstCase.priceAtAnalysis.toFixed(2)}</p>
+                        <p><strong>30 天後價格:</strong> ${stockReport.worstCase.priceAfter30Days?.toFixed(2)}</p>
+                        <p><strong>價格變化:</strong> 
+                          <span className="text-red-600 font-semibold">
+                            {stockReport.worstCase.priceChange ? `${(stockReport.worstCase.priceChange * 100).toFixed(2)}%` : 'N/A'}
+                          </span>
+                        </p>
+                        <p><strong>假設損失:</strong> 
+                          <span className="text-red-600 font-semibold">
+                            ${stockReport.worstCase.profit?.toFixed(0)}
+                          </span>
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* 最近分析記錄 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>最近 10 次分析記錄</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>日期</TableHead>
+                        <TableHead>建議</TableHead>
+                        <TableHead className="text-right">分析時價格</TableHead>
+                        <TableHead className="text-right">30 天後價格</TableHead>
+                        <TableHead className="text-right">價格變化</TableHead>
+                        <TableHead className="text-center">準確性</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stockReport.recentCases.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell>{new Date(c.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{c.recommendation}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">${c.priceAtAnalysis.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">
+                            {c.priceAfter30Days ? `$${c.priceAfter30Days.toFixed(2)}` : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {c.priceChange !== null ? (
+                              <span className={c.priceChange >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {(c.priceChange * 100).toFixed(2)}%
+                              </span>
+                            ) : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {c.isAccurate === null ? (
+                              <Badge variant="outline">N/A</Badge>
+                            ) : c.isAccurate ? (
+                              <Badge variant="default">準確</Badge>
+                            ) : (
+                              <Badge variant="destructive">不準確</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
