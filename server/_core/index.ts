@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startCacheCleanupScheduler } from "../cacheCleanup";
+import { startCacheWarmerScheduler } from "../cacheWarmer";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -63,6 +64,9 @@ async function startServer() {
     
     // 啟動緩存清理排程器
     startCacheCleanupScheduler();
+    
+    // 啟動緩存預熱排程器
+    startCacheWarmerScheduler();
   });
 }
 

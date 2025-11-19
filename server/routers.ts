@@ -1237,6 +1237,14 @@ ${portfolioData.map(h => `
           warningMessage,
         };
       }),
+    
+    // 手動觸發緩存預熱（僅供測試）
+    triggerCacheWarmup: publicProcedure
+      .mutation(async () => {
+        const { manualWarmup } = await import('./cacheWarmer');
+        const stats = await manualWarmup();
+        return stats;
+      }),
   }),
 });
 
