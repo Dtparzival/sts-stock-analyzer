@@ -153,3 +153,24 @@ export const twseStockList = mysqlTable("twseStockList", {
 
 export type TwseStockList = typeof twseStockList.$inferSelect;
 export type InsertTwseStockList = typeof twseStockList.$inferInsert;
+
+/**
+ * AI 分析歷史記錄
+ * 保存每支股票的歷史 AI 分析結果，用於對比和評估準確度
+ */
+export const analysisHistory = mysqlTable("analysisHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  analysisType: varchar("analysisType", { length: 50 }).notNull(),
+  content: text("content").notNull(),
+  recommendation: varchar("recommendation", { length: 20 }),
+  priceAtAnalysis: int("priceAtAnalysis"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+  symbolTypeIdx: index("symbol_type_idx").on(table.symbol, table.analysisType),
+}));
+
+export type AnalysisHistory = typeof analysisHistory.$inferSelect;
+export type InsertAnalysisHistory = typeof analysisHistory.$inferInsert;

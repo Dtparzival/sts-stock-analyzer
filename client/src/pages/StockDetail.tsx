@@ -3,11 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, History } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import StockChart from "@/components/StockChart";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
@@ -120,7 +137,15 @@ export default function StockDetail() {
   const getTrendPrediction = trpc.stock.getTrendPrediction.useMutation();
 
   const [analysis, setAnalysis] = useState<string>("");
+  const [analysisCachedAt, setAnalysisCachedAt] = useState<Date | null>(null);
   const [prediction, setPrediction] = useState<string>("");
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  
+  // 獲取歷史分析記錄
+  const { data: analysisHistory } = trpc.stock.getAnalysisHistory.useQuery(
+    { symbol, analysisType: 'investment_analysis', limit: 10 },
+    { enabled: showHistoryDialog }
+  );
 
   // 格式化圖表數據
   const formatChartData = (data: any) => {
@@ -194,16 +219,20 @@ export default function StockDetail() {
     }
   };
 
-  const handleGetAnalysis = async () => {
+  const handleGetAnalysis = async (forceRefresh: boolean = false) => {
     setIsAnalyzing(true);
     try {
       const result = await getAIAnalysis.mutateAsync({
         symbol,
         companyName,
+        forceRefresh,
       });
       setAnalysis(result.analysis);
+      setAnalysisCachedAt(result.cachedAt ? new Date(result.cachedAt) : null);
       if (result.fromCache) {
         toast.info("顯示緩存的分析結果");
+      } else if (forceRefresh) {
+        toast.success("已重新生成分析結果");
       }
     } catch (error: any) {
       console.error('AI 分析錯誤:', error);
@@ -439,7 +468,7 @@ export default function StockDetail() {
               <CardContent>
                 {!analysis ? (
                   <div className="text-center py-12">
-                    <Button onClick={handleGetAnalysis} disabled={isAnalyzing} size="lg">
+                    <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg">
                       {isAnalyzing ? (
                         <>
                           <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -452,6 +481,94 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-sm text-muted-foreground">
+                        分析時間：{analysisCachedAt ? new Date(analysisCachedAt).toLocaleString('zh-TW') : '剛剛'}
+                      </div>
+                      <div className="flex gap-2">
+                        <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <History className="h-4 w-4 mr-2" />
+                              歷史記錄
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>AI 分析歷史記錄</DialogTitle>
+                              <DialogDescription>
+                                {symbol} 的歷史 AI 分析記錄，可以比較不同時間點的分析結果
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            {!analysisHistory || analysisHistory.length === 0 ? (
+                              <div className="text-center py-8 text-muted-foreground">
+                                尚無歷史分析記錄
+                              </div>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[180px]">分析時間</TableHead>
+                                    <TableHead className="w-[100px]">建議</TableHead>
+                                    <TableHead className="w-[120px]">當時股價</TableHead>
+                                    <TableHead>分析摘要</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {analysisHistory.map((record) => (
+                                    <TableRow key={record.id}>
+                                      <TableCell className="text-sm">
+                                        {new Date(record.createdAt).toLocaleString('zh-TW')}
+                                      </TableCell>
+                                      <TableCell>
+                                        {record.recommendation ? (
+                                          <Badge 
+                                            variant={record.recommendation === '買入' ? 'default' : record.recommendation === '賣出' ? 'destructive' : 'secondary'}
+                                          >
+                                            {record.recommendation}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline">-</Badge>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {record.priceAtAnalysis ? `$${(record.priceAtAnalysis / 100).toFixed(2)}` : '-'}
+                                      </TableCell>
+                                      <TableCell className="text-sm text-muted-foreground">
+                                        {record.content.substring(0, 150)}...
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            )}
+                            
+                            <div className="flex justify-end mt-4">
+                              <Button onClick={() => setShowHistoryDialog(false)}>
+                                關閉
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleGetAnalysis(true)} 
+                          disabled={isAnalyzing}
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              重新分析中...
+                            </>
+                          ) : (
+                            '重新分析'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{analysis}</Streamdown>
                     </div>

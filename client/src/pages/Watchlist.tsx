@@ -2,13 +2,28 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Star, X } from "lucide-react";
+import { ArrowLeft, Loader2, Star, X, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type MarketFilter = 'all' | 'US' | 'TW';
 
@@ -79,12 +94,32 @@ export default function Watchlist() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
+  const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
+  const [batchResults, setBatchResults] = useState<Array<{
+    symbol: string;
+    companyName: string | null;
+    recommendation: string | null;
+    summary: string;
+    error: string | null;
+  }>>([]);
 
   const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
     enabled: !!user,
   });
 
   const utils = trpc.useUtils();
+  
+  const batchAnalyze = trpc.watchlist.batchAnalyze.useMutation({
+    onSuccess: (data) => {
+      setBatchResults(data.results);
+      setShowBatchAnalysis(true);
+      toast.success(`成功分析 ${data.results.length} 支股票`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "批量分析失敗，請稍後再試");
+    },
+  });
+  
   const removeFromWatchlist = trpc.watchlist.remove.useMutation({
     onMutate: async ({ symbol }) => {
       // 樂觀更新：立即從列表中移除
@@ -162,8 +197,31 @@ export default function Watchlist() {
             <h1 className="text-3xl font-bold">我的收藏</h1>
           </div>
           
-          {/* 市場篩選器 */}
-          <div className="flex gap-2">
+          <div className="flex items-center gap-4">
+            {/* 批量分析按鈕 */}
+            {watchlist && watchlist.length > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => batchAnalyze.mutate()}
+                disabled={batchAnalyze.isPending}
+              >
+                {batchAnalyze.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    分析中...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    批量 AI 分析
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {/* 市場篩選器 */}
+            <div className="flex gap-2">
             <Button
               variant={marketFilter === 'all' ? 'default' : 'outline'}
               size="sm"
@@ -185,6 +243,7 @@ export default function Watchlist() {
             >
               台股
             </Button>
+          </div>
           </div>
         </div>
 
@@ -264,6 +323,67 @@ export default function Watchlist() {
             ))}
           </div>
         )}
+        
+        {/* 批量分析結果對話框 */}
+        <Dialog open={showBatchAnalysis} onOpenChange={setShowBatchAnalysis}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>批量 AI 分析結果</DialogTitle>
+              <DialogDescription>
+                已完成 {batchResults.length} 支股票的 AI 投資分析
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">股票代號</TableHead>
+                  <TableHead className="w-[150px]">公司名稱</TableHead>
+                  <TableHead className="w-[100px]">投資建議</TableHead>
+                  <TableHead>分析摘要</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {batchResults.map((result) => (
+                  <TableRow key={result.symbol}>
+                    <TableCell className="font-medium">
+                      {getMarketFromSymbol(result.symbol) === 'TW' ? cleanTWSymbol(result.symbol) : result.symbol}
+                    </TableCell>
+                    <TableCell>
+                      {result.companyName || '-'}
+                    </TableCell>
+                    <TableCell>
+                      {result.error ? (
+                        <Badge variant="destructive">失敗</Badge>
+                      ) : result.recommendation ? (
+                        <Badge 
+                          variant={result.recommendation === '買入' ? 'default' : result.recommendation === '賣出' ? 'destructive' : 'secondary'}
+                        >
+                          {result.recommendation}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">-</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {result.error ? (
+                        <span className="text-destructive">{result.error}</span>
+                      ) : (
+                        <span className="text-muted-foreground">{result.summary}</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setShowBatchAnalysis(false)}>
+                關閉
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

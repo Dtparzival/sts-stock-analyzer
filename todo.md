@@ -1698,3 +1698,59 @@ export function searchTWStockByName(query: string): Array<{ symbol: string; name
 - 將投資組合的 AI 分析 procedure 重命名為 `getPortfolioAIAnalysis`
 - 修正 Portfolio 頁面的調用，改用新的 procedure 名稱
 - 股票詳情頁的 `getAIAnalysis` 保持不變，用於個股分析
+
+## AI 分析優化功能
+
+### 1. 緩存時間戳和重新分析功能
+- [x] 修改 analysis_cache 表，添加 createdAt 和 updatedAt 時間戳（已存在）
+- [x] 修改 getAIAnalysis API，返回緩存時間戳
+- [x] 在股票詳情頁顯示分析生成時間
+- [x] 添加「重新分析」按鈕，強制更新緩存
+- [x] 添加 forceRefresh 參數支持強制更新
+- [x] 保存歷史記錄到 analysisHistory 表
+
+### 2. 批量 AI 分析功能
+- [ ] 創建 batchAnalyzeWatchlist API，批量分析收藏列表
+- [ ] 在收藏列表頁面添加「批量分析」按鈕
+- [ ] 創建批量分析結果對比表格組件
+- [ ] 顯示所有股票的 AI 分析摘要（買入/持有/賣出建議）
+
+### 3. AI 分析歷史記錄功能
+- [ ] 創建 analysis_history 表，保存歷史分析記錄
+- [ ] 修改 getAIAnalysis API，自動保存歷史記錄
+- [ ] 創建 getAnalysisHistory API，獲取歷史記錄
+- [ ] 在股票詳情頁添加「查看歷史分析」按鈕
+- [ ] 創建歷史分析對比視圖，顯示時間軸和建議變化
+
+## 新增功能：AI 分析優化功能
+
+### 1. 緩存時間戳和重新分析功能
+- [x] 修改 getAIAnalysis API 返回緩存時間戳（cachedAt）
+- [x] 在 StockDetail.tsx 顯示分析時間
+- [x] 添加「重新分析」按鈕支援強制刷新（forceRefresh 參數）
+- [x] 測試緩存時間戳顯示功能
+- [x] 測試重新分析功能
+
+### 2. 批量 AI 分析功能
+- [x] 創建 watchlist.batchAnalyze tRPC API
+- [x] 實作並行分析所有收藏股票的邏輯
+- [x] 在 Watchlist.tsx 添加「批量 AI 分析」按鈕
+- [x] 創建批量分析結果對話框（表格顯示）
+- [x] 顯示投資建議（買入/持有/賣出）和分析摘要
+- [x] 測試批量分析功能
+
+### 3. AI 分析歷史記錄功能
+- [x] 確認 analysisHistory 資料庫表結構
+- [x] 實作 saveAnalysisHistory 函數（server/db.ts）
+- [x] 實作 getAnalysisHistory 函數（server/db.ts）
+- [x] 創建 stock.getAnalysisHistory tRPC API
+- [x] 在 getAIAnalysis API 中保存歷史記錄
+- [x] 在 StockDetail.tsx 添加「歷史記錄」按鈕
+- [x] 創建歷史記錄對話框（表格顯示）
+- [x] 顯示分析時間、建議、當時股價和分析摘要
+- [x] 測試歷史記錄功能
+
+**功能說明：**
+- 用戶可以查看 AI 分析的緩存時間，並手動強制重新生成分析
+- 收藏列表頁面可以一鍵批量分析所有收藏股票，提升效率
+- 歷史記錄功能可以追蹤 AI 分析的準確性，比較不同時間點的分析結果

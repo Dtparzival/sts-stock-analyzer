@@ -12,6 +12,9 @@ import {
   analysisCache,
   AnalysisCache,
   InsertAnalysisCache,
+  analysisHistory,
+  AnalysisHistory,
+  InsertAnalysisHistory,
   portfolio,
   Portfolio,
   InsertPortfolio,
@@ -274,6 +277,29 @@ export async function setAnalysisCache(data: InsertAnalysisCache): Promise<void>
   if (!db) throw new Error("Database not available");
   
   await db.insert(analysisCache).values(data);
+}
+
+// Analysis history functions
+export async function saveAnalysisHistory(data: InsertAnalysisHistory): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(analysisHistory).values(data);
+}
+
+export async function getAnalysisHistory(symbol: string, analysisType: string, limit: number = 10): Promise<AnalysisHistory[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(analysisHistory)
+    .where(
+      and(
+        eq(analysisHistory.symbol, symbol),
+        eq(analysisHistory.analysisType, analysisType)
+      )
+    )
+    .orderBy(desc(analysisHistory.createdAt))
+    .limit(limit);
 }
 
 // Portfolio functions

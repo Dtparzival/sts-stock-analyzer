@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { callDataApi } from "./_core/dataApi";
 import { withRateLimit } from "./apiQueue";
@@ -345,6 +346,18 @@ export const appRouter = router({
         }
       }),
 
+    // 獲取 AI 分析歷史記錄
+    getAnalysisHistory: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        analysisType: z.string().optional().default('investment_analysis'),
+        limit: z.number().optional().default(10),
+      }))
+      .query(async ({ input }) => {
+        const { symbol, analysisType, limit } = input;
+        return db.getAnalysisHistory(symbol, analysisType, limit);
+      }),
+
     // AI 投資分析
     getAIAnalysis: publicProcedure
       .input(z.object({
@@ -352,14 +365,21 @@ export const appRouter = router({
         companyName: z.string().optional(),
         currentPrice: z.number().optional(),
         marketData: z.any().optional(),
+        forceRefresh: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { symbol, companyName, currentPrice, marketData } = input;
+        const { symbol, companyName, currentPrice, marketData, forceRefresh } = input;
         
-        // 檢查緩存
-        const cached = await db.getAnalysisCache(symbol, 'investment_analysis');
-        if (cached) {
-          return { analysis: cached.content, fromCache: true };
+        // 檢查緩存（除非強制更新）
+        if (!forceRefresh) {
+          const cached = await db.getAnalysisCache(symbol, 'investment_analysis');
+          if (cached) {
+            return { 
+              analysis: cached.content, 
+              fromCache: true,
+              cachedAt: cached.createdAt,
+            };
+          }
         }
         
         // 準備分析提示
@@ -406,6 +426,18 @@ ${currentPrice ? `當前價格: $${currentPrice}` : ''}
           ? response.choices[0].message.content 
           : "無法生成分析";
         
+        // 提取建議（買入/持有/賣出）
+        let recommendation = null;
+        if (analysis.includes('買入') || analysis.includes('买入')) {
+          recommendation = '買入';
+        } else if (analysis.includes('賣出') || analysis.includes('卖出')) {
+          recommendation = '賣出';
+        } else if (analysis.includes('持有')) {
+          recommendation = '持有';
+        }
+        
+        const now = new Date();
+        
         // 緩存分析結果（24小時）
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
@@ -417,7 +449,20 @@ ${currentPrice ? `當前價格: $${currentPrice}` : ''}
           expiresAt,
         });
         
-        return { analysis, fromCache: false };
+        // 保存歷史記錄
+        await db.saveAnalysisHistory({
+          symbol,
+          analysisType: 'investment_analysis',
+          content: analysis,
+          recommendation,
+          priceAtAnalysis: currentPrice ? Math.round(currentPrice * 100) : null,
+        });
+        
+        return { 
+          analysis, 
+          fromCache: false,
+          cachedAt: now,
+        };
       }),
 
     // 未來趨勢預測
@@ -596,6 +641,116 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
           companyName: input.companyName,
         });
         return { success: true };
+      }),
+
+    // 批量 AI 分析
+    batchAnalyze: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const watchlist = await db.getUserWatchlist(ctx.user.id);
+        
+        if (watchlist.length === 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '收藏列表為空',
+          });
+        }
+        
+        const results: Array<{
+          symbol: string;
+          companyName: string | null;
+          recommendation: string | null;
+          summary: string;
+          error: string | null;
+        }> = [];
+        
+        // 並行分析所有股票
+        await Promise.all(
+          watchlist.map(async (item) => {
+            try {
+              // 檢查緩存
+              const cached = await db.getAnalysisCache(item.symbol, 'investment_analysis');
+              let analysis: string;
+              let recommendation: string | null = null;
+              
+              if (cached) {
+                analysis = cached.content;
+              } else {
+                // 生成新分析
+                const prompt = `你是一位專業的股票投資分析師。請針對 ${item.symbol} (${item.companyName || ''}) 進行簡要的投資分析，包括：
+
+1. 公司概況與業務分析
+2. 財務健康度評估
+3. 技術面分析
+4. 投資建議（買入/持有/賣出）
+5. 風險提示
+
+請以簡潔、專業的角度進行分析，並使用繁體中文回覆。`;
+
+                const response = await invokeLLM({
+                  messages: [
+                    { role: "system", content: "你是一位專業的股票投資分析師。" },
+                    { role: "user", content: prompt },
+                  ],
+                });
+
+                analysis = typeof response.choices[0].message.content === 'string' 
+                  ? response.choices[0].message.content 
+                  : "無法生成分析";
+                
+                // 緩存分析結果（24小時）
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + 24);
+                
+                await db.setAnalysisCache({
+                  symbol: item.symbol,
+                  analysisType: 'investment_analysis',
+                  content: analysis,
+                  expiresAt,
+                });
+              }
+              
+              // 提取建議
+              if (analysis.includes('買入') || analysis.includes('买入')) {
+                recommendation = '買入';
+              } else if (analysis.includes('賣出') || analysis.includes('卖出')) {
+                recommendation = '賣出';
+              } else if (analysis.includes('持有')) {
+                recommendation = '持有';
+              }
+              
+              // 提取摘要（前 200 字）
+              const summary = analysis.substring(0, 200) + '...';
+              
+              // 保存歷史記錄
+              await db.saveAnalysisHistory({
+                symbol: item.symbol,
+                analysisType: 'investment_analysis',
+                content: analysis,
+                recommendation,
+                priceAtAnalysis: null,
+              });
+              
+              results.push({
+                symbol: item.symbol,
+                companyName: item.companyName,
+                recommendation,
+                summary,
+                error: null,
+              });
+            } catch (error: any) {
+              console.error(`批量分析 ${item.symbol} 失敗:`, error);
+              results.push({
+                symbol: item.symbol,
+                companyName: item.companyName,
+                recommendation: null,
+                summary: '',
+                error: error.message || '分析失敗',
+              });
+            }
+          })
+        );
+        
+        return { results };
       }),
 
     // 從收藏中移除
