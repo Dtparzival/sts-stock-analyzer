@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import StockChart from "@/components/StockChart";
+import TradingViewChart from "@/components/TradingViewChart";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
 
@@ -154,12 +154,18 @@ export default function StockDetail() {
     const result = data.chart.result[0];
     const timestamps = result.timestamp || [];
     const quotes = result.indicators?.quote?.[0] || {};
+    const opens = quotes.open || [];
+    const highs = quotes.high || [];
+    const lows = quotes.low || [];
     const closes = quotes.close || [];
     const volumes = quotes.volume || [];
     
     return timestamps.map((timestamp: number, index: number) => {
       const date = new Date(timestamp * 1000);
-      const price = closes[index];
+      const open = opens[index];
+      const high = highs[index];
+      const low = lows[index];
+      const close = closes[index];
       
       // 根據時間範圍決定日期格式
       let dateStr = "";
@@ -172,11 +178,15 @@ export default function StockDetail() {
       }
       
       return {
+        timestamp,
         date: dateStr,
-        price: price ? parseFloat(price.toFixed(2)) : null,
-        volume: volumes[index] ? Math.round(volumes[index] / 1000000) : 0,
+        open: open ? parseFloat(open.toFixed(2)) : null,
+        high: high ? parseFloat(high.toFixed(2)) : null,
+        low: low ? parseFloat(low.toFixed(2)) : null,
+        close: close ? parseFloat(close.toFixed(2)) : null,
+        volume: volumes[index] || 0,
       };
-    }).filter((item: any) => item.price !== null);
+    }).filter((item: any) => item.close !== null && item.open !== null && item.high !== null && item.low !== null);
   };
 
   const meta = (stockData as any)?.chart?.result?.[0]?.meta;
@@ -439,7 +449,7 @@ export default function StockDetail() {
         </Card>
 
         {/* 股價走勢圖 */}
-        <StockChart
+        <TradingViewChart
           symbol={symbol}
           data={chartData}
           isLoading={loadingStock}
