@@ -6,8 +6,6 @@ import {
   XAxis,
   YAxis,
   ComposedChart,
-  Bar,
-  Cell,
 } from "recharts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -156,63 +154,77 @@ export default function StockChart({
     return null;
   };
 
-  // 自定義 K 線形狀
-  const CandlestickShape = (props: any) => {
-    const { x, y, width, height, payload } = props;
+  // 自定義 K 線層
+  const CandlestickLayer = (props: any) => {
+    const { xAxisMap, yAxisMap, chartWidth, chartHeight, margin } = props;
     
-    if (!payload || payload.open === undefined || payload.close === undefined || payload.high === undefined || payload.low === undefined) {
-      return null;
-    }
-
-    const { open, close, high, low } = payload;
-    const isRising = close >= open;
-    const color = isRising ? "#22c55e" : "#ef4444"; // 綠漲紅跌（美股習慣）
+    if (!data || data.length === 0) return null;
     
-    // 計算 Y 坐標（需要根據圖表的 domain 計算）
-    const chartHeight = 400;
-    const yScale = props.yAxis;
+    const xAxis = xAxisMap[0];
+    const yAxis = yAxisMap['price'];
     
-    if (!yScale) return null;
+    if (!xAxis || !yAxis) return null;
     
-    const yHigh = yScale.scale(high);
-    const yLow = yScale.scale(low);
-    const yOpen = yScale.scale(open);
-    const yClose = yScale.scale(close);
+    const xScale = xAxis.scale;
+    const yScale = yAxis.scale;
     
-    const candleWidth = Math.max(width * 0.6, 2);
-    const candleX = x + width / 2 - candleWidth / 2;
+    // 計算每個 K 線的寬度
+    const barWidth = Math.max((chartWidth - margin.left - margin.right) / data.length * 0.6, 2);
     
     return (
-      <g>
-        {/* 上影線（high 到 max(open, close)） */}
-        <line
-          x1={x + width / 2}
-          y1={yHigh}
-          x2={x + width / 2}
-          y2={Math.min(yOpen, yClose)}
-          stroke={color}
-          strokeWidth={1}
-        />
-        {/* 下影線（min(open, close) 到 low） */}
-        <line
-          x1={x + width / 2}
-          y1={Math.max(yOpen, yClose)}
-          x2={x + width / 2}
-          y2={yLow}
-          stroke={color}
-          strokeWidth={1}
-        />
-        {/* K 線實體（open 到 close） */}
-        <rect
-          x={candleX}
-          y={Math.min(yOpen, yClose)}
-          width={candleWidth}
-          height={Math.max(Math.abs(yClose - yOpen), 1)}
-          fill={isRising ? color : color}
-          stroke={color}
-          strokeWidth={1}
-          opacity={isRising ? 0.8 : 1}
-        />
+      <g className="candlestick-layer">
+        {data.map((item: any, index: number) => {
+          if (!item.open || !item.high || !item.low || !item.close) return null;
+          
+          const { open, close, high, low } = item;
+          const isRising = close >= open;
+          const color = isRising ? "#22c55e" : "#ef4444"; // 綠漲紅跌
+          
+          // 計算 X 和 Y 坐標
+          const xPos = xScale(item.date) + xScale.bandwidth() / 2;
+          const yHigh = yScale(high);
+          const yLow = yScale(low);
+          const yOpen = yScale(open);
+          const yClose = yScale(close);
+          
+          const candleX = xPos - barWidth / 2;
+          const candleY = Math.min(yOpen, yClose);
+          const candleHeight = Math.max(Math.abs(yClose - yOpen), 1);
+          
+          return (
+            <g key={`candle-${index}`}>
+              {/* 上影線 */}
+              <line
+                x1={xPos}
+                y1={yHigh}
+                x2={xPos}
+                y2={Math.min(yOpen, yClose)}
+                stroke={color}
+                strokeWidth={1}
+              />
+              {/* 下影線 */}
+              <line
+                x1={xPos}
+                y1={Math.max(yOpen, yClose)}
+                x2={xPos}
+                y2={yLow}
+                stroke={color}
+                strokeWidth={1}
+              />
+              {/* K 線實體 */}
+              <rect
+                x={candleX}
+                y={candleY}
+                width={barWidth}
+                height={candleHeight}
+                fill={color}
+                stroke={color}
+                strokeWidth={1}
+                opacity={1}
+              />
+            </g>
+          );
+        })}
       </g>
     );
   };
@@ -366,13 +378,8 @@ export default function StockChart({
                   yAxisId="price"
                 />
                 <Tooltip content={<CustomTooltip />} />
-                {/* 使用 Bar 組件繪製 K 線 */}
-                <Bar
-                  yAxisId="price"
-                  dataKey="close"
-                  shape={<CandlestickShape />}
-                  isAnimationActive={false}
-                />
+                {/* 使用自定義層繪製 K 線 */}
+                <CandlestickLayer />
               </ComposedChart>
             </ResponsiveContainer>
           </>
