@@ -192,8 +192,22 @@ export default function TradingViewChart({
 
     data.forEach((item) => {
       if (item.open !== undefined && item.high !== undefined && item.low !== undefined && item.close !== undefined) {
+        // 轉換時間格式：日線數據使用 YYYY-MM-DD 格式，分鐘級數據使用 UNIX 時間戳
+        let time: any;
+        if (currentRange === '1d' || currentRange === '5d') {
+          // 分鐘級數據：使用 UNIX 時間戳（秒）
+          time = item.timestamp;
+        } else {
+          // 日線數據：轉換為 YYYY-MM-DD 格式
+          const date = new Date(item.timestamp * 1000);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          time = `${year}-${month}-${day}`;
+        }
+
         candlestickData.push({
-          time: item.timestamp as any,
+          time,
           open: item.open,
           high: item.high,
           low: item.low,
@@ -202,7 +216,7 @@ export default function TradingViewChart({
 
         if (item.volume !== undefined) {
           volumeData.push({
-            time: item.timestamp as any,
+            time,
             value: item.volume,
             color: item.close >= item.open ? "#22c55e80" : "#ef444480",
           });

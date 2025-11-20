@@ -2042,3 +2042,25 @@ K 線圖只顯示上下影線，沒有顯示蠟燭實體部分，導致無法看
 - 更流暢的互動和縮放功能
 - 更清晰的價格和成交量顯示
 - 為未來添加技術指標打下基礎
+
+
+## 修正問題：TradingView Lightweight Charts K 線圖未顯示
+
+**問題描述：**
+股票詳情頁的 K 線圖區域是空白的，TradingView Lightweight Charts 沒有正常渲染。
+
+**待修正項目：**
+- [x] 檢查 TradingViewChart 組件是否正確掛載
+- [x] 檢查數據格式是否符合 Lightweight Charts 要求
+- [x] 檢查圖表容器的尺寸設定
+- [x] 檢查 Console 錯誤訊息
+- [x] 修正圖表渲染問題
+- [x] 測試 TSLA 和其他股票的圖表顯示
+
+**根本原因：**
+時間格式不匹配。TradingView Lightweight Charts 對不同時間範圍有不同的時間格式要求：
+- 日線數據（1個月、3個月11年、5年）：需要使用 `YYYY-MM-DD` 字符串格式
+- 分鐘級數據（1天、5天）：可以使用 UNIX 時間戳（秒）
+
+**修正方案：**
+根據 `currentRange` 判斷數據類型，自動轉換時間格式。
