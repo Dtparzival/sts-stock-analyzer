@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
 import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
+import { useDebounce } from "@shared/hooks/useDebounce";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -18,6 +19,9 @@ export default function Home() {
   const [selectedMarket, setSelectedMarket] = useState<MarketType>('US');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Array<{ symbol: string; name: string }>>([]);
+  
+  // 使用防抖機制，延遲 300ms 更新建議
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   // 獲取用戶最近查看的股票（用於推薦）
   const { data: recentHistory } = trpc.history.list.useQuery(
@@ -67,17 +71,20 @@ export default function Home() {
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
-    
+  };
+  
+  // 使用 useEffect 監聴防抖後的搜尋查詢，更新建議
+  useEffect(() => {
     // 如果是台股市場且輸入中文，顯示建議
-    if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(value)) {
-      const results = searchTWStockByName(value);
+    if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(debouncedSearchQuery)) {
+      const results = searchTWStockByName(debouncedSearchQuery);
       setSuggestions(results.slice(0, 5)); // 最多顯示 5 個建議
       setShowSuggestions(results.length > 0);
     } else {
       setShowSuggestions(false);
       setSuggestions([]);
     }
-  };
+  }, [debouncedSearchQuery, selectedMarket]);
   
   const handleSuggestionClick = (symbol: string) => {
     setLocation(`/stock/${symbol}`);
