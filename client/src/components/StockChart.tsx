@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  ComposedChart,
+  Bar,
+  Cell,
 } from "recharts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -21,6 +22,10 @@ interface ChartDataPoint {
   timestamp: number;
   date: string;
   price: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
   volume?: number;
 }
 
@@ -111,19 +116,36 @@ export default function StockChart({
       : 0;
   const isPositive = priceChange >= 0;
 
-  // 自定義 Tooltip
+  // 自定義 K 線 Tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const hasOHLC = data.open !== undefined && data.high !== undefined && data.low !== undefined && data.close !== undefined;
+      
       return (
         <Card className="p-3 bg-card/95 backdrop-blur border-border">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">{data.date}</p>
-            <p className="text-lg font-semibold">
-              ${data.price.toFixed(2)}
-            </p>
+            {hasOHLC ? (
+              <>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  <span className="text-muted-foreground">開盤:</span>
+                  <span className="font-medium">${data.open.toFixed(2)}</span>
+                  <span className="text-muted-foreground">最高:</span>
+                  <span className="font-medium text-green-500">${data.high.toFixed(2)}</span>
+                  <span className="text-muted-foreground">最低:</span>
+                  <span className="font-medium text-red-500">${data.low.toFixed(2)}</span>
+                  <span className="text-muted-foreground">收盤:</span>
+                  <span className="font-semibold">${data.close.toFixed(2)}</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-lg font-semibold">
+                ${data.price.toFixed(2)}
+              </p>
+            )}
             {data.volume && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-2">
                 成交量: {(data.volume / 1000000).toFixed(2)}M
               </p>
             )}
@@ -132,6 +154,67 @@ export default function StockChart({
       );
     }
     return null;
+  };
+
+  // 自定義 K 線形狀
+  const CandlestickShape = (props: any) => {
+    const { x, y, width, height, payload } = props;
+    
+    if (!payload || payload.open === undefined || payload.close === undefined || payload.high === undefined || payload.low === undefined) {
+      return null;
+    }
+
+    const { open, close, high, low } = payload;
+    const isRising = close >= open;
+    const color = isRising ? "#22c55e" : "#ef4444"; // 綠漲紅跌（美股習慣）
+    
+    // 計算 Y 坐標（需要根據圖表的 domain 計算）
+    const chartHeight = 400;
+    const yScale = props.yAxis;
+    
+    if (!yScale) return null;
+    
+    const yHigh = yScale.scale(high);
+    const yLow = yScale.scale(low);
+    const yOpen = yScale.scale(open);
+    const yClose = yScale.scale(close);
+    
+    const candleWidth = Math.max(width * 0.6, 2);
+    const candleX = x + width / 2 - candleWidth / 2;
+    
+    return (
+      <g>
+        {/* 上影線（high 到 max(open, close)） */}
+        <line
+          x1={x + width / 2}
+          y1={yHigh}
+          x2={x + width / 2}
+          y2={Math.min(yOpen, yClose)}
+          stroke={color}
+          strokeWidth={1}
+        />
+        {/* 下影線（min(open, close) 到 low） */}
+        <line
+          x1={x + width / 2}
+          y1={Math.max(yOpen, yClose)}
+          x2={x + width / 2}
+          y2={yLow}
+          stroke={color}
+          strokeWidth={1}
+        />
+        {/* K 線實體（open 到 close） */}
+        <rect
+          x={candleX}
+          y={Math.min(yOpen, yClose)}
+          width={candleWidth}
+          height={Math.max(Math.abs(yClose - yOpen), 1)}
+          fill={isRising ? color : color}
+          stroke={color}
+          strokeWidth={1}
+          opacity={isRising ? 0.8 : 1}
+        />
+      </g>
+    );
   };
 
   return (
@@ -257,24 +340,10 @@ export default function StockChart({
 
             {/* 圖表 */}
             <ResponsiveContainer width="100%" height={400}>
-              <AreaChart
+              <ComposedChart
                 data={data}
                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
               >
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor={isPositive ? "#22c55e" : "#ef4444"}
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor={isPositive ? "#22c55e" : "#ef4444"}
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="hsl(var(--border))"
@@ -292,19 +361,19 @@ export default function StockChart({
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  domain={["auto", "auto"]}
+                  domain={[(dataMin: number) => dataMin * 0.98, (dataMax: number) => dataMax * 1.02]}
                   tickFormatter={(value) => `$${value.toFixed(0)}`}
+                  yAxisId="price"
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke={isPositive ? "#22c55e" : "#ef4444"}
-                  strokeWidth={2}
-                  fill="url(#colorPrice)"
-                  animationDuration={300}
+                {/* 使用 Bar 組件繪製 K 線 */}
+                <Bar
+                  yAxisId="price"
+                  dataKey="close"
+                  shape={<CandlestickShape />}
+                  isAnimationActive={false}
                 />
-              </AreaChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </>
         )}
