@@ -7,6 +7,7 @@ import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Tar
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
+import sp500Stocks from "@shared/sp500-stocks.json";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
@@ -75,12 +76,35 @@ export default function Home() {
   
   // 使用 useEffect 監聴防抖後的搜尋查詢，更新建議
   useEffect(() => {
+    if (!debouncedSearchQuery.trim()) {
+      setShowSuggestions(false);
+      setSuggestions([]);
+      return;
+    }
+
     // 如果是台股市場且輸入中文，顯示建議
     if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(debouncedSearchQuery)) {
       const results = searchTWStockByName(debouncedSearchQuery);
       setSuggestions(results.slice(0, 5)); // 最多顯示 5 個建議
       setShowSuggestions(results.length > 0);
-    } else {
+    } 
+    // 如果是美股市場，從 S&P 500 清單中搜尋
+    else if (selectedMarket === 'US') {
+      const query = debouncedSearchQuery.toUpperCase();
+      const results = sp500Stocks
+        .filter(stock => 
+          stock.symbol.toUpperCase().includes(query) || 
+          stock.name.toUpperCase().includes(query)
+        )
+        .slice(0, 8) // 美股顯示更多建議（8 個）
+        .map(stock => ({
+          symbol: stock.symbol,
+          name: stock.name
+        }));
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+    } 
+    else {
       setShowSuggestions(false);
       setSuggestions([]);
     }
