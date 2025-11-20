@@ -2014,3 +2014,24 @@ K 線圖只顯示上下影線，沒有顯示蠟燭實體部分，導致無法看
 - 上漲 K 線顯示為綠色實心
 - 下跌 K 線顯示為紅色實心
 - Tooltip 正確顯示 OHLC 數據
+
+
+## 修正問題：K 線圖未顯示（版本 1f8045c8）
+
+**問題描述：**
+股票詳情頁的 K 線圖區域是空白的，只顯示價格和百分比變化，但沒有顯示 K 線蜡燭圖和成交量柱狀圖。
+
+**待修正項目：**
+- [x] 檢查使用的圖表組件類型（StockChart 或 TradingViewChart）
+- [x] 檢查數據格式和數據傳遞
+- [x] 檢查圖表渲染邏輯
+- [x] 修正圖表顯示問題
+- [x] 測試 TSLA 和其他股票的圖表顯示
+
+**根本原因：**
+Recharts 的自定義層沒有正確集成。`CandlestickLayer` 組件作為獨立的元素無法接收到 Recharts 傳遞的 props。
+
+**修正方案：**
+1. 將 `CandlestickLayer` 改為 `CandlestickShape` 作為 Bar 組件的 shape prop
+2. 使用 `<Bar dataKey="close" shape={<CandlestickShape />} />` 來渲染 K 線
+3. 在 `CandlestickShape` 中正確處理 Recharts 傳遞的 props（x, y, width, height, payload, xAxisMap, yAxisMap）
