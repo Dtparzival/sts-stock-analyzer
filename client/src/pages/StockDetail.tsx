@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import StockChart from "@/components/StockChart";
+import TradingViewChart from "@/components/TradingViewChart";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
 
@@ -451,7 +451,7 @@ export default function StockDetail() {
         </Card>
 
         {/* 股價走勢圖 */}
-        <StockChart
+        <TradingViewChart
           symbol={symbol}
           data={chartData}
           isLoading={loadingStock}
