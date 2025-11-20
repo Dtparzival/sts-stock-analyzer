@@ -2057,3 +2057,30 @@ Recharts 的 Bar 組件不會自動傳遞 `xAxisMap` 和 `yAxisMap` 到自定義
 2. 使用 Recharts 的 `Customized` 組件來繪製 K 線
 3. `Customized` 組件會自動傳遞 `xAxisMap`, `yAxisMap`, `width`, `height`, `margin` 等必要信息
 4. 在 `CandlestickLayer` 中正確計算每個 K 線的位置和尺寸
+
+
+## 修正問題：K 線圖持續無法顯示（3個月範圍）
+
+**問題描述：**
+圖表區域仍然是空白的，選擇「3個月」時間範圍時 K 線圖沒有顯示出來。X 軸顯示了日期標籤，但圖表內容區域完全空白。
+
+**待診斷項目：**
+- [x] 檢查 CandlestickLayer 組件是否被正確調用
+- [x] 檢查 xAxisMap 和 yAxisMap 是否正確傳遞
+- [x] 檢查數據格式是否符合 Recharts 要求
+- [x] 添加調試日誌查看組件渲染情況
+- [ ] 驗證 SVG 元素是否正確生成
+- [ ] 修正渲染問題
+
+**當前狀態：**
+已添加詳細的調試日誌到：
+1. StockChart 組件：追蹤傳入的 data, symbol, currentRange
+2. CandlestickLayer 組件：追蹤 props 傳遞、軸映射、每個 K 線的坐標計算
+3. 測試矩形：驗證 Customized 組件能否正常渲染 SVG 元素
+
+**下一步：**
+需要在瀏覽器中打開 Console 面板查看調試日誌，確認：
+- CandlestickLayer 是否被調用
+- xAxisMap 和 yAxisMap 是否正確傳遞
+- 測試矩形是否顯示
+- K 線的坐標計算是否正確

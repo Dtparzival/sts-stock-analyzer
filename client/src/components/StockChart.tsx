@@ -56,6 +56,15 @@ export default function StockChart({
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
   const [isCustomRange, setIsCustomRange] = useState(false);
+  
+  console.log('[StockChart] Render:', {
+    symbol,
+    currentRange,
+    isLoading,
+    dataLength: data.length,
+    firstItem: data[0],
+    lastItem: data[data.length - 1],
+  });
 
   // 同步父組件傳入的 currentRange
   useEffect(() => {
@@ -159,12 +168,36 @@ export default function StockChart({
   const CandlestickLayer = (props: any) => {
     const { xAxisMap, yAxisMap, width, height, margin } = props;
     
-    if (!data || data.length === 0) return null;
+    console.log('[CandlestickLayer] Props:', {
+      hasXAxisMap: !!xAxisMap,
+      hasYAxisMap: !!yAxisMap,
+      xAxisMapKeys: xAxisMap ? Object.keys(xAxisMap) : [],
+      yAxisMapKeys: yAxisMap ? Object.keys(yAxisMap) : [],
+      width,
+      height,
+      margin,
+      dataLength: data?.length || 0,
+    });
+    
+    if (!data || data.length === 0) {
+      console.log('[CandlestickLayer] No data available');
+      return null;
+    }
     
     const xAxis = xAxisMap[0];
     const yAxis = yAxisMap['price'];
     
-    if (!xAxis || !yAxis) return null;
+    console.log('[CandlestickLayer] Axes:', {
+      hasXAxis: !!xAxis,
+      hasYAxis: !!yAxis,
+      xAxisType: xAxis?.type,
+      yAxisType: yAxis?.type,
+    });
+    
+    if (!xAxis || !yAxis) {
+      console.log('[CandlestickLayer] Missing axis');
+      return null;
+    }
     
     const xScale = xAxis.scale;
     const yScale = yAxis.scale;
@@ -172,10 +205,42 @@ export default function StockChart({
     // 計算每個 K 線的寬度
     const barWidth = Math.max((width - margin.left - margin.right) / data.length * 0.6, 2);
     
+    console.log('[CandlestickLayer] Rendering:', {
+      barWidth,
+      dataLength: data.length,
+      firstItem: data[0],
+      lastItem: data[data.length - 1],
+    });
+    
+    // 測試：先繪製一個簡單的矩形來驗證 Customized 組件能工作
     return (
       <g className="candlestick-layer">
+        {/* 測試矩形 */}
+        <rect
+          x={margin.left + 50}
+          y={50}
+          width={100}
+          height={100}
+          fill="#22c55e"
+          stroke="#000"
+          strokeWidth={2}
+        />
+        <text
+          x={margin.left + 100}
+          y={100}
+          textAnchor="middle"
+          fill="#fff"
+          fontSize={14}
+        >
+          TEST
+        </text>
+        
+        {/* K 線繪製 */}
         {data.map((item: any, index: number) => {
-          if (!item.open || !item.high || !item.low || !item.close) return null;
+          if (!item.open || !item.high || !item.low || !item.close) {
+            console.log(`[CandlestickLayer] Skipping item ${index}: missing OHLC data`);
+            return null;
+          }
           
           const { open, close, high, low } = item;
           const isRising = close >= open;
@@ -187,6 +252,15 @@ export default function StockChart({
           const yLow = yScale(low);
           const yOpen = yScale(open);
           const yClose = yScale(close);
+          
+          console.log(`[CandlestickLayer] Item ${index}:`, {
+            date: item.date,
+            xPos,
+            yHigh,
+            yLow,
+            yOpen,
+            yClose,
+          });
           
           const candleX = xPos - barWidth / 2;
           const candleY = Math.min(yOpen, yClose);
@@ -201,7 +275,7 @@ export default function StockChart({
                 x2={xPos}
                 y2={Math.min(yOpen, yClose)}
                 stroke={color}
-                strokeWidth={1}
+                strokeWidth={2}
               />
               {/* 下影線 */}
               <line
@@ -210,7 +284,7 @@ export default function StockChart({
                 x2={xPos}
                 y2={yLow}
                 stroke={color}
-                strokeWidth={1}
+                strokeWidth={2}
               />
               {/* K 線實體 */}
               <rect
