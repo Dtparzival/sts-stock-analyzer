@@ -73,6 +73,7 @@ export default function TradingViewChart({
     high: number;
     low: number;
     close: number;
+    volume: number;
     change: number;
     changePercent: number;
     x: number;
@@ -253,20 +254,22 @@ export default function TradingViewChart({
 
     // 訂閱 Crosshair 事件，實現 Tooltip 功能
     chart.subscribeCrosshairMove((param) => {
-      if (!param.time || !param.point || !candlestickSeriesRef.current) {
+      if (!param.time || !param.point || !candlestickSeriesRef.current || !volumeSeriesRef.current) {
         setTooltipData(null);
         return;
       }
 
-      const data = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
-      if (!data) {
+      const candleData = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
+      const volumeData = param.seriesData.get(volumeSeriesRef.current) as HistogramData | undefined;
+      
+      if (!candleData) {
         setTooltipData(null);
         return;
       }
 
       // 計算漲跌幅
-      const change = data.close - data.open;
-      const changePercent = (change / data.open) * 100;
+      const change = candleData.close - candleData.open;
+      const changePercent = (change / candleData.open) * 100;
 
       // 格式化時間
       const timeStr = typeof param.time === 'number' 
@@ -281,10 +284,11 @@ export default function TradingViewChart({
 
       setTooltipData({
         time: timeStr,
-        open: data.open,
-        high: data.high,
-        low: data.low,
-        close: data.close,
+        open: candleData.open,
+        high: candleData.high,
+        low: candleData.low,
+        close: candleData.close,
+        volume: volumeData?.value || 0,
         change,
         changePercent,
         x: param.point.x,
@@ -559,49 +563,67 @@ export default function TradingViewChart({
           />
           
           {/* Tooltip */}
-          {tooltipData && (
-            <div
-              ref={tooltipRef}
-              className="absolute pointer-events-none z-20 bg-background/95 border border-border rounded-lg shadow-lg p-3 min-w-[200px]"
-              style={{
-                left: `${tooltipData.x + 15}px`,
-                top: `${tooltipData.y - 10}px`,
-              }}
-            >
-              <div className="text-xs text-muted-foreground mb-2">{tooltipData.time}</div>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">O:</span>
-                  <span className="font-mono">{tooltipData.open.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">H:</span>
-                  <span className="font-mono">{tooltipData.high.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">L:</span>
-                  <span className="font-mono">{tooltipData.low.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">C:</span>
-                  <span className="font-mono">{tooltipData.close.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-border pt-1 mt-1">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">漲跌幅:</span>
-                    <span 
-                      className={cn(
-                        "font-mono font-medium",
-                        tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
-                      )}
-                    >
-                      {tooltipData.change >= 0 ? '+' : ''}{tooltipData.change.toFixed(2)} ({tooltipData.changePercent >= 0 ? '+' : ''}{tooltipData.changePercent.toFixed(2)}%)
-                    </span>
+          {tooltipData && (() => {
+            // 格式化成交量（K/M/B）
+            const formatVolume = (vol: number): string => {
+              if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
+              if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
+              if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
+              return vol.toFixed(0);
+            };
+
+            return (
+              <div
+                ref={tooltipRef}
+                className={cn(
+                  "absolute pointer-events-none z-20 rounded-lg shadow-xl p-3.5 min-w-[220px] backdrop-blur-sm",
+                  "bg-background/98 border-2",
+                  tooltipData.change >= 0 ? "border-green-500/50" : "border-red-500/50"
+                )}
+                style={{
+                  left: `${Math.min(tooltipData.x + 15, window.innerWidth - 250)}px`,
+                  top: `${Math.max(tooltipData.y - 10, 10)}px`,
+                }}
+              >
+                <div className="text-xs font-medium text-muted-foreground mb-2.5">{tooltipData.time}</div>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-6">
+                    <span className="text-muted-foreground font-medium">O:</span>
+                    <span className="font-mono font-semibold">{tooltipData.open.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between gap-6">
+                    <span className="text-muted-foreground font-medium">H:</span>
+                    <span className="font-mono font-semibold text-green-600">{tooltipData.high.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between gap-6">
+                    <span className="text-muted-foreground font-medium">L:</span>
+                    <span className="font-mono font-semibold text-red-600">{tooltipData.low.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between gap-6">
+                    <span className="text-muted-foreground font-medium">C:</span>
+                    <span className="font-mono font-semibold">{tooltipData.close.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between gap-6">
+                    <span className="text-muted-foreground font-medium">成交量:</span>
+                    <span className="font-mono font-semibold">{formatVolume(tooltipData.volume)}</span>
+                  </div>
+                  <div className="border-t-2 border-border pt-2 mt-2">
+                    <div className="flex justify-between gap-6">
+                      <span className="text-muted-foreground font-medium">漲跌幅:</span>
+                      <span 
+                        className={cn(
+                          "font-mono font-bold text-base",
+                          tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
+                        )}
+                      >
+                        {tooltipData.change >= 0 ? '+' : ''}{tooltipData.change.toFixed(2)} ({tooltipData.changePercent >= 0 ? '+' : ''}{tooltipData.changePercent.toFixed(2)}%)
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
     </Card>
