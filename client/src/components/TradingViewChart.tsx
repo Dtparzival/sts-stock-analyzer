@@ -79,36 +79,50 @@ export default function TradingViewChart({
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // 獲取計算後的 CSS 顏色值
+    const getComputedColor = (cssVar: string): string => {
+      const root = document.documentElement;
+      const value = getComputedStyle(root).getPropertyValue(cssVar).trim();
+      // 如果是 HSL 格式，轉換為 hsl() 字符串
+      if (value && !value.startsWith('hsl') && !value.startsWith('rgb') && !value.startsWith('#')) {
+        return `hsl(${value})`;
+      }
+      return value || '#888888'; // 降級顏色
+    };
+
+    const textColor = getComputedColor('--muted-foreground');
+    const borderColor = getComputedColor('--border');
+
     // 創建圖表
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { color: "transparent" },
-        textColor: "hsl(var(--muted-foreground))",
+        textColor: textColor,
       },
       grid: {
-        vertLines: { color: "hsl(var(--border))" },
-        horzLines: { color: "hsl(var(--border))" },
+        vertLines: { color: borderColor },
+        horzLines: { color: borderColor },
       },
       width: chartContainerRef.current.clientWidth,
       height: 400,
       timeScale: {
-        borderColor: "hsl(var(--border))",
+        borderColor: borderColor,
         timeVisible: true,
         secondsVisible: false,
       },
       rightPriceScale: {
-        borderColor: "hsl(var(--border))",
+        borderColor: borderColor,
       },
       crosshair: {
         mode: 1, // Normal crosshair
         vertLine: {
           width: 1,
-          color: "hsl(var(--muted-foreground))",
+          color: textColor,
           style: 3, // Dashed
         },
         horzLine: {
           width: 1,
-          color: "hsl(var(--muted-foreground))",
+          color: textColor,
           style: 3, // Dashed
         },
       },
