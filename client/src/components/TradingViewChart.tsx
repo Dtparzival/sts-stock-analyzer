@@ -226,6 +226,7 @@ export default function TradingViewChart({
         top: 0.85, // 成交量佔 15% 的空間，K 線圖佔 85%
         bottom: 0,
       },
+      visible: false, // 隱藏成交量的價格標籤，避免與 K 線圖重疊
     });
 
     // 響應式調整（帶 debounce 防抖機制）
