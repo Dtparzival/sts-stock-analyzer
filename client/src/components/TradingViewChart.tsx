@@ -11,7 +11,7 @@ import {
 } from "lightweight-charts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Calendar as CalendarIcon, Maximize2, Minimize2 } from "lucide-react";
+import { Calendar as CalendarIcon, Maximize2, Minimize2, ChevronsRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
@@ -62,6 +62,7 @@ export default function TradingViewChart({
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
+  const [jumpToDate, setJumpToDate] = useState<Date | undefined>();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
   const chartCardRef = useRef<HTMLDivElement>(null);
@@ -389,6 +390,51 @@ export default function TradingViewChart({
     onRangeChange?.(customRange, "1d");
   };
 
+  // 跳至最新數據
+  const handleJumpToLatest = () => {
+    if (!chartRef.current) return;
+    
+    try {
+      // 使用 TradingView API 的 scrollToRealTime() 跳至最新時間
+      chartRef.current.timeScale().scrollToRealTime();
+    } catch (error) {
+      console.error('[TradingView] Failed to jump to latest:', error);
+    }
+  };
+
+  // 跳至特定日期
+  const handleJumpToDate = (date: Date | undefined) => {
+    if (!date || !chartRef.current) return;
+    
+    try {
+      // 將日期轉換為 Unix 時間戳（秒）
+      const timestamp = Math.floor(date.getTime() / 1000);
+      
+      // 使用 TradingView API 的 scrollToPosition() 跳至指定時間
+      chartRef.current.timeScale().scrollToPosition(0, true);
+      
+      // 然後使用 setVisibleLogicalRange 設置可見範圍
+      const logicalRange = chartRef.current.timeScale().getVisibleLogicalRange();
+      if (logicalRange) {
+        const barsInfo = candlestickSeriesRef.current?.barsInLogicalRange(logicalRange);
+        if (barsInfo && barsInfo.barsBefore !== null) {
+          // 尋找最接近目標日期的數據點
+          const targetIndex = data.findIndex(d => {
+            return d.timestamp >= timestamp;
+          });
+          
+          if (targetIndex !== -1) {
+            // 計算需要滾動的位置
+            const scrollPosition = targetIndex - Math.floor((logicalRange.to - logicalRange.from) / 2);
+            chartRef.current.timeScale().scrollToPosition(scrollPosition, false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[TradingView] Failed to jump to date:', error);
+    }
+  };
+
   // 全螢幕模式處理
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -463,6 +509,18 @@ export default function TradingViewChart({
           className="mr-2"
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+        
+        {/* 跳至最新按鈕 */}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleJumpToLatest}
+          disabled={isLoading}
+          className="mr-2"
+          title="跳至最新數據"
+        >
+          <ChevronsRight className="h-4 w-4" />
         </Button>
         
         {timeRanges.map((range) => (
@@ -541,6 +599,39 @@ export default function TradingViewChart({
           >
             查詢
           </Button>
+          
+          {/* 快速跳轉日期 */}
+          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !jumpToDate && "text-muted-foreground"
+                  )}
+                  disabled={isLoading}
+                  title="跳至特定日期"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {jumpToDate ? format(jumpToDate, "yyyy/MM/dd", { locale: zhTW }) : "跳至日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={jumpToDate}
+                  onSelect={(date) => {
+                    setJumpToDate(date);
+                    handleJumpToDate(date);
+                  }}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
 
