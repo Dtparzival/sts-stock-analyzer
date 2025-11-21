@@ -84,14 +84,25 @@ export default function TradingViewChart({
       const root = document.documentElement;
       const value = getComputedStyle(root).getPropertyValue(cssVar).trim();
       
-      // 如果是 OKLCH 格式，創建一個臨時元素來讓瀏覽器轉換為 RGB
+      // 如果是 OKLCH 格式，使用 Canvas API 強制轉換為 RGB
       if (value && value.startsWith('oklch')) {
-        const tempDiv = document.createElement('div');
-        tempDiv.style.color = value;
-        document.body.appendChild(tempDiv);
-        const computedColor = getComputedStyle(tempDiv).color;
-        document.body.removeChild(tempDiv);
-        return computedColor || '#888888';
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 1;
+          canvas.height = 1;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = value;
+            ctx.fillRect(0, 0, 1, 1);
+            const imageData = ctx.getImageData(0, 0, 1, 1).data;
+            const rgb = `rgb(${imageData[0]}, ${imageData[1]}, ${imageData[2]})`;
+            console.log(`[TradingView] OKLCH conversion: ${value} -> ${rgb}`);
+            return rgb;
+          }
+        } catch (error) {
+          console.error(`[TradingView] Failed to convert OKLCH: ${value}`, error);
+        }
+        return '#888888';
       }
       
       // 如果是 HSL 格式，轉換為 hsl() 字符串
