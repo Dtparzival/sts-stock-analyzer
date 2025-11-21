@@ -2050,3 +2050,13 @@ TwelveData Basic 8 方案限制：
 - [x] 添加 ESC 鍵快捷鍵退出全螢幕
 - [x] 優化全螢幕模式下的圖表尺寸自適應
 - [x] 測試全螢幕模式的進入和退出流暢度
+
+## 修正全螢幕 API 權限錯誤
+
+- [x] 分析 Fullscreen API 權限政策錯誤原因（iframe 環境限制）
+- [x] 設計降級策略：當 Fullscreen API 不可用時使用 CSS fixed 定位模擬全螢幕
+- [x] 實作權限檢查邏輯（檢查 document.fullscreenEnabled）
+- [x] 實作降級方案（CSS fixed 定位 + z-index: 9999）
+- [x] 添加友好的錯誤提示（當 Fullscreen API 不可用時）
+- [x] 測試降級方案在 iframe 環境中的表現
+- [x] 測試在支援 Fullscreen API 的環境中仍優先使用原生 API

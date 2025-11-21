@@ -62,7 +62,13 @@ export default function TradingViewChart({
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
   const chartCardRef = useRef<HTMLDivElement>(null);
+  
+  // 檢查 Fullscreen API 是否可用
+  useEffect(() => {
+    setUseNativeFullscreen(!!document.fullscreenEnabled);
+  }, []);
   
   // 同步父組件傳入的 currentRange
   useEffect(() => {
@@ -135,7 +141,7 @@ export default function TradingViewChart({
         },
       },
       width: chartContainerRef.current.clientWidth,
-      height: 500, // 增加高度從 400 到 500
+      height: isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500, // 降級全螢幕模式下自動調整高度
       timeScale: {
         borderColor: borderColor,
         timeVisible: true,
@@ -208,7 +214,7 @@ export default function TradingViewChart({
 
     // 響應式調整（帶 debounce 防抖機制）
     let resizeTimeout: NodeJS.Timeout | null = null;
-    
+
     const handleResize = () => {
       // 清除之前的延遲執行
       if (resizeTimeout) {
@@ -218,12 +224,9 @@ export default function TradingViewChart({
       // 設定 150ms 延遲，只有當用戶停止調整視窗大小後才執行
       resizeTimeout = setTimeout(() => {
         if (chartContainerRef.current && chartRef.current) {
-          const newWidth = chartContainerRef.current.clientWidth;
-          const newHeight = document.fullscreenElement ? window.innerHeight - 150 : 500;
-          
           chartRef.current.applyOptions({
-            width: newWidth,
-            height: newHeight,
+            width: chartContainerRef.current.clientWidth,
+            height: isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500,
           });
         }
       }, 150);
@@ -245,7 +248,7 @@ export default function TradingViewChart({
       }
       chart.remove();
     };
-  }, []);
+  }, [isFullscreen, useNativeFullscreen]);
 
   // 更新圖表數據
   useEffect(() => {
@@ -332,8 +335,13 @@ export default function TradingViewChart({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && document.fullscreenElement) {
-        document.exitFullscreen();
+      if (e.key === 'Escape') {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else if (isFullscreen && !useNativeFullscreen) {
+          // 降級模式：ESC 鍵退出 CSS 全螢幕
+          setIsFullscreen(false);
+        }
       }
     };
 
@@ -344,19 +352,28 @@ export default function TradingViewChart({
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [isFullscreen, useNativeFullscreen]);
 
   const toggleFullscreen = async () => {
     if (!chartCardRef.current) return;
 
     try {
-      if (!document.fullscreenElement) {
-        await chartCardRef.current.requestFullscreen();
+      if (useNativeFullscreen) {
+        // 優先使用原生 Fullscreen API
+        if (!document.fullscreenElement) {
+          await chartCardRef.current.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
       } else {
-        await document.exitFullscreen();
+        // 降級策略：使用 CSS fixed 定位模擬全螢幕
+        setIsFullscreen(!isFullscreen);
       }
     } catch (err) {
       console.error('全螢幕模式切換失敗:', err);
+      // 如果原生 API 失敗，自動切換到降級模式
+      setUseNativeFullscreen(false);
+      setIsFullscreen(!isFullscreen);
     }
   };
 
@@ -365,8 +382,15 @@ export default function TradingViewChart({
       ref={chartCardRef}
       className={cn(
         "p-6 transition-all",
-        isFullscreen && "bg-background"
+        isFullscreen && "bg-background",
+        // 降級模式：使用 CSS fixed 定位模擬全螢幕
+        !useNativeFullscreen && isFullscreen && "fixed inset-0 z-[9999] w-screen h-screen rounded-none"
       )}
+      style={!useNativeFullscreen && isFullscreen ? {
+        margin: 0,
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+      } : undefined}
     >
       {/* 時間範圍選擇器 */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
