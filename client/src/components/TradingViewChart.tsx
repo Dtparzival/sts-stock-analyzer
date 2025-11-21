@@ -11,7 +11,7 @@ import {
 } from "lightweight-charts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Maximize2, Minimize2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
@@ -57,11 +57,12 @@ export default function TradingViewChart({
   const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   
-  const [selectedRange, setSelectedRange] = useState(currentRange);
-  const [customStartDate, setCustomStartDate] = useState<Date>();
-  const [customEndDate, setCustomEndDate] = useState<Date>();
+  const [selectedRange, setSelectedRange] = useState<string>(currentRange);
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
-
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   // 同步父組件傳入的 currentRange
   useEffect(() => {
     if (currentRange.includes("-")) {
@@ -123,11 +124,17 @@ export default function TradingViewChart({
         textColor: textColor,
       },
       grid: {
-        vertLines: { color: borderColor },
-        horzLines: { color: borderColor },
+        vertLines: { 
+          color: borderColor,
+          style: 1, // Dotted
+        },
+        horzLines: { 
+          color: borderColor,
+          style: 1, // Dotted
+        },
       },
       width: chartContainerRef.current.clientWidth,
-      height: 400,
+      height: 500, // 增加高度從 400 到 500
       timeScale: {
         borderColor: borderColor,
         timeVisible: true,
@@ -135,19 +142,33 @@ export default function TradingViewChart({
       },
       rightPriceScale: {
         borderColor: borderColor,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.2, // 留出空間給成交量
+        },
       },
       crosshair: {
         mode: 1, // Normal crosshair
         vertLine: {
           width: 1,
           color: textColor,
-          style: 3, // Dashed
+          style: 2, // Dashed
+          labelBackgroundColor: textColor,
         },
         horzLine: {
           width: 1,
           color: textColor,
-          style: 3, // Dashed
+          style: 2, // Dashed
+          labelBackgroundColor: textColor,
         },
+      },
+      handleScroll: {
+        mouseWheel: true, // 啟用滑鼠滾輪縮放
+        pressedMouseMove: true, // 啟用滑鼠拖曳
+      },
+      handleScale: {
+        mouseWheel: true, // 啟用滑鼠滾輪縮放
+        pinch: true, // 啟用觸控縮放
       },
     });
 
@@ -179,7 +200,7 @@ export default function TradingViewChart({
     // 設置成交量的價格比例
     chart.priceScale("volume").applyOptions({
       scaleMargins: {
-        top: 0.8, // 成交量佔 20% 的空間
+        top: 0.85, // 成交量佔 15% 的空間，K 線圖佔 85%
         bottom: 0,
       },
     });
@@ -254,6 +275,22 @@ export default function TradingViewChart({
     candlestickSeriesRef.current.setData(candlestickData);
     volumeSeriesRef.current.setData(volumeData);
 
+    // 添加當前價格水平線
+    if (candlestickData.length > 0) {
+      const lastCandle = candlestickData[candlestickData.length - 1];
+      const currentPrice = lastCandle.close;
+      const isUp = lastCandle.close >= lastCandle.open;
+      
+      candlestickSeriesRef.current.createPriceLine({
+        price: currentPrice,
+        color: isUp ? "#22c55e" : "#ef4444", // 綠漲紅跌
+        lineWidth: 2,
+        lineStyle: 2, // Dashed
+        axisLabelVisible: true,
+        title: "",
+      });
+    }
+
     // 自動調整視圖
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();
@@ -277,10 +314,27 @@ export default function TradingViewChart({
     onRangeChange?.(customRange, "1d");
   };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
   return (
-    <Card className="p-6">
+    <Card className={cn(
+      "p-6 transition-all",
+      isFullscreen && "fixed inset-4 z-50 overflow-auto"
+    )}>
       {/* 時間範圍選擇器 */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
+        {/* 全螢幕按鈕 */}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={toggleFullscreen}
+          className="mr-2"
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+        
         {timeRanges.map((range) => (
           <Button
             key={range.value}
