@@ -83,10 +83,22 @@ export default function TradingViewChart({
     const getComputedColor = (cssVar: string): string => {
       const root = document.documentElement;
       const value = getComputedStyle(root).getPropertyValue(cssVar).trim();
+      
+      // 如果是 OKLCH 格式，創建一個臨時元素來讓瀏覽器轉換為 RGB
+      if (value && value.startsWith('oklch')) {
+        const tempDiv = document.createElement('div');
+        tempDiv.style.color = value;
+        document.body.appendChild(tempDiv);
+        const computedColor = getComputedStyle(tempDiv).color;
+        document.body.removeChild(tempDiv);
+        return computedColor || '#888888';
+      }
+      
       // 如果是 HSL 格式，轉換為 hsl() 字符串
       if (value && !value.startsWith('hsl') && !value.startsWith('rgb') && !value.startsWith('#')) {
         return `hsl(${value})`;
       }
+      
       return value || '#888888'; // 降級顏色
     };
 
