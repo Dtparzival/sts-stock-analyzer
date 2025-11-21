@@ -2060,3 +2060,40 @@ TwelveData Basic 8 方案限制：
 - [x] 添加友好的錯誤提示（當 Fullscreen API 不可用時）
 - [x] 測試降級方案在 iframe 環境中的表現
 - [x] 測試在支援 Fullscreen API 的環境中仍優先使用原生 API
+
+## 後續優化：圖表載入體驗和互動性提升
+
+### 1. 骨架屏載入動畫
+- [ ] 設計圖表骨架屏 UI（顯示圖表輪廓、時間軸、價格軸）
+- [ ] 創建 ChartSkeleton 組件
+- [ ] 添加脈動動畫效果（Pulse animation）
+- [ ] 整合到 TradingViewChart 組件
+- [ ] 測試載入動畫效果
+
+### 2. K 線圖互動優化
+- [ ] 研究 TradingView Lightweight Charts 的 Tooltip API
+- [ ] 實作滑鼠懸停事件監聽
+- [ ] 創建自訂 Tooltip 組件
+- [ ] 顯示 OHLC 數據（開盤 O、最高 H、最低 L、收盤 C）
+- [ ] 添加日期時間顯示
+- [ ] 優化 Tooltip 定位邏輯（跟隨滑鼠）
+- [ ] 測試互動體驗
+
+## 後續優化：圖表載入體驗和互動性提升
+
+### 1. 骨架屏載入動畫
+- [x] 設計圖表骨架屏 UI（顯示圖表輪廓、時間軸、價格軸）
+- [x] 創建 ChartSkeleton 組件
+- [x] 添加脈動動畫效果（Pulse animation）
+- [x] 整合到 TradingViewChart 組件
+- [x] 測試載入動畫效果
+
+### 2. K 線圖互動優化
+- [x] 研究 TradingView Lightweight Charts 的 Crosshair 事件 API
+- [x] 實作滑鼠懸停事件監聽（subscribeCrosshairMove）
+- [x] 創建自訂 Tooltip 組件
+- [x] 顯示 OHLC 數據（開盤 O、最高 H、最低 L、收盤 C）
+- [x] 計算並顯示漲跌幅百分比
+- [x] 添加日期時間顯示
+- [x] 優化 Tooltip 定位邏輯（跟隨滑鼠）
+- [x] 測試互動體驗

@@ -11,12 +11,13 @@ import {
 } from "lightweight-charts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Loader2, Calendar as CalendarIcon, Maximize2, Minimize2 } from "lucide-react";
+import { Calendar as CalendarIcon, Maximize2, Minimize2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import ChartSkeleton from "./ChartSkeleton";
 
 interface ChartDataPoint {
   timestamp: number;
@@ -64,6 +65,20 @@ export default function TradingViewChart({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
   const chartCardRef = useRef<HTMLDivElement>(null);
+  
+  // Tooltip 狀態
+  const [tooltipData, setTooltipData] = useState<{
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    change: number;
+    changePercent: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   
   // 檢查 Fullscreen API 是否可用
   useEffect(() => {
@@ -235,6 +250,47 @@ export default function TradingViewChart({
     const handleFullscreenChange = () => {
       handleResize();
     };
+
+    // 訂閱 Crosshair 事件，實現 Tooltip 功能
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time || !param.point || !candlestickSeriesRef.current) {
+        setTooltipData(null);
+        return;
+      }
+
+      const data = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
+      if (!data) {
+        setTooltipData(null);
+        return;
+      }
+
+      // 計算漲跌幅
+      const change = data.close - data.open;
+      const changePercent = (change / data.open) * 100;
+
+      // 格式化時間
+      const timeStr = typeof param.time === 'number' 
+        ? new Date(param.time * 1000).toLocaleString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : String(param.time);
+
+      setTooltipData({
+        time: timeStr,
+        open: data.open,
+        high: data.high,
+        low: data.low,
+        close: data.close,
+        change,
+        changePercent,
+        x: param.point.x,
+        y: param.point.y,
+      });
+    });
 
     window.addEventListener("resize", handleResize);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -484,30 +540,70 @@ export default function TradingViewChart({
       </div>
 
       {/* 圖表容器 */}
-      <div className="relative">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        
-        {!isLoading && (!data || data.length === 0) && (
-          <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+      {isLoading ? (
+        <ChartSkeleton />
+      ) : !data || data.length === 0 ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-center h-[500px] text-muted-foreground">
             <div className="text-center">
               <p className="text-lg font-medium">暫無數據</p>
               <p className="text-sm mt-2">請選擇其他時間範圍或稍後再試</p>
             </div>
           </div>
-        )}
-        
-        <div
-          ref={chartContainerRef}
-          className={cn(
-            "w-full",
-            (!data || data.length === 0 || isLoading) && "hidden"
+        </Card>
+      ) : (
+        <div className="relative">
+          <div
+            ref={chartContainerRef}
+            className="w-full"
+          />
+          
+          {/* Tooltip */}
+          {tooltipData && (
+            <div
+              ref={tooltipRef}
+              className="absolute pointer-events-none z-20 bg-background/95 border border-border rounded-lg shadow-lg p-3 min-w-[200px]"
+              style={{
+                left: `${tooltipData.x + 15}px`,
+                top: `${tooltipData.y - 10}px`,
+              }}
+            >
+              <div className="text-xs text-muted-foreground mb-2">{tooltipData.time}</div>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">O:</span>
+                  <span className="font-mono">{tooltipData.open.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">H:</span>
+                  <span className="font-mono">{tooltipData.high.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">L:</span>
+                  <span className="font-mono">{tooltipData.low.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">C:</span>
+                  <span className="font-mono">{tooltipData.close.toFixed(2)}</span>
+                </div>
+                <div className="border-t border-border pt-1 mt-1">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">漲跌幅:</span>
+                    <span 
+                      className={cn(
+                        "font-mono font-medium",
+                        tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
+                      )}
+                    >
+                      {tooltipData.change >= 0 ? '+' : ''}{tooltipData.change.toFixed(2)} ({tooltipData.changePercent >= 0 ? '+' : ''}{tooltipData.changePercent.toFixed(2)}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
-        />
-      </div>
+        </div>
+      )}
     </Card>
   );
 }
