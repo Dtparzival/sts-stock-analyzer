@@ -576,43 +576,43 @@ export default function TradingViewChart({
               <div
                 ref={tooltipRef}
                 className={cn(
-                  "absolute pointer-events-none z-20 rounded-lg shadow-xl p-3.5 min-w-[220px] backdrop-blur-sm",
-                  "bg-background/98 border-2",
+                  "absolute pointer-events-none z-20 rounded-md shadow-lg p-2 min-w-[160px] backdrop-blur-sm",
+                  "bg-background/98 border",
                   tooltipData.change >= 0 ? "border-green-500/50" : "border-red-500/50"
                 )}
                 style={{
-                  left: `${Math.min(tooltipData.x + 15, window.innerWidth - 250)}px`,
+                  left: `${Math.min(tooltipData.x + 15, window.innerWidth - 200)}px`,
                   top: `${Math.max(tooltipData.y - 10, 10)}px`,
                 }}
               >
-                <div className="text-xs font-medium text-muted-foreground mb-2.5">{tooltipData.time}</div>
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between gap-6">
-                    <span className="text-muted-foreground font-medium">O:</span>
+                <div className="text-[10px] font-medium text-muted-foreground mb-1.5">{tooltipData.time}</div>
+                <div className="space-y-0.5 text-xs">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">O:</span>
                     <span className="font-mono font-semibold">{tooltipData.open.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-6">
-                    <span className="text-muted-foreground font-medium">H:</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">H:</span>
                     <span className="font-mono font-semibold text-green-600">{tooltipData.high.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-6">
-                    <span className="text-muted-foreground font-medium">L:</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">L:</span>
                     <span className="font-mono font-semibold text-red-600">{tooltipData.low.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-6">
-                    <span className="text-muted-foreground font-medium">C:</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">C:</span>
                     <span className="font-mono font-semibold">{tooltipData.close.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-6">
-                    <span className="text-muted-foreground font-medium">成交量:</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">成交量:</span>
                     <span className="font-mono font-semibold">{formatVolume(tooltipData.volume)}</span>
                   </div>
-                  <div className="border-t-2 border-border pt-2 mt-2">
-                    <div className="flex justify-between gap-6">
-                      <span className="text-muted-foreground font-medium">漲跌幅:</span>
+                  <div className="border-t border-border pt-1 mt-1">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">漲跌幅:</span>
                       <span 
                         className={cn(
-                          "font-mono font-bold text-base",
+                          "font-mono font-bold text-xs",
                           tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
                         )}
                       >
