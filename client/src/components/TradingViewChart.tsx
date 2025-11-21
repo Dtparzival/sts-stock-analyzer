@@ -62,6 +62,7 @@ export default function TradingViewChart({
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const chartCardRef = useRef<HTMLDivElement>(null);
   
   // 同步父組件傳入的 currentRange
   useEffect(() => {
@@ -217,17 +218,27 @@ export default function TradingViewChart({
       // 設定 150ms 延遲，只有當用戶停止調整視窗大小後才執行
       resizeTimeout = setTimeout(() => {
         if (chartContainerRef.current && chartRef.current) {
+          const newWidth = chartContainerRef.current.clientWidth;
+          const newHeight = document.fullscreenElement ? window.innerHeight - 150 : 500;
+          
           chartRef.current.applyOptions({
-            width: chartContainerRef.current.clientWidth,
+            width: newWidth,
+            height: newHeight,
           });
         }
       }, 150);
     };
 
+    const handleFullscreenChange = () => {
+      handleResize();
+    };
+
     window.addEventListener("resize", handleResize);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
       // 清除延遲執行
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
@@ -314,15 +325,49 @@ export default function TradingViewChart({
     onRangeChange?.(customRange, "1d");
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  // 全螢幕模式處理
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (!chartCardRef.current) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await chartCardRef.current.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('全螢幕模式切換失敗:', err);
+    }
   };
 
   return (
-    <Card className={cn(
-      "p-6 transition-all",
-      isFullscreen && "fixed inset-4 z-50 overflow-auto"
-    )}>
+    <Card 
+      ref={chartCardRef}
+      className={cn(
+        "p-6 transition-all",
+        isFullscreen && "bg-background"
+      )}
+    >
       {/* 時間範圍選擇器 */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {/* 全螢幕按鈕 */}
