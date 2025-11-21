@@ -184,19 +184,33 @@ export default function TradingViewChart({
       },
     });
 
-    // 響應式調整
+    // 響應式調整（帶 debounce 防抖機制）
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
+      // 清除之前的延遲執行
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
       }
+      
+      // 設定 150ms 延遲，只有當用戶停止調整視窗大小後才執行
+      resizeTimeout = setTimeout(() => {
+        if (chartContainerRef.current && chartRef.current) {
+          chartRef.current.applyOptions({
+            width: chartContainerRef.current.clientWidth,
+          });
+        }
+      }, 150);
     };
 
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      // 清除延遲執行
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
       chart.remove();
     };
   }, []);
