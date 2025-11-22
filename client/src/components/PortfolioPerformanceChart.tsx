@@ -1,8 +1,9 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush, ReferenceDot } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
+import { TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface PerformanceData {
@@ -10,6 +11,18 @@ interface PerformanceData {
   totalValue: number;
   totalCost: number;
   gainLossPercent: number;
+}
+
+interface Transaction {
+  id: number;
+  symbol: string;
+  companyName: string | null;
+  transactionType: 'buy' | 'sell';
+  shares: number;
+  price: number;
+  totalAmount: number;
+  transactionDate: Date;
+  notes: string | null;
 }
 
 interface PortfolioPerformanceChartProps {
@@ -30,6 +43,14 @@ export function PortfolioPerformanceChart({
   periodGainLossPercent = 0,
 }: PortfolioPerformanceChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
+  const [brushStartIndex, setBrushStartIndex] = useState<number | undefined>(undefined);
+  const [brushEndIndex, setBrushEndIndex] = useState<number | undefined>(undefined);
+
+  // 獲取交易歷史
+  const { data: transactions = [] } = trpc.portfolio.getTransactions.useQuery(
+    { days: timeRange === 'all' ? undefined : parseInt(timeRange) },
+    { enabled: data.length > 0 }
+  );
 
   // 根據時間範圍過濾數據
   const getFilteredData = () => {
@@ -51,13 +72,71 @@ export function PortfolioPerformanceChart({
 
   const filteredData = getFilteredData();
 
+  // 計算 Brush 的初始索引範圍
+  const calculateBrushIndices = () => {
+    if (timeRange === 'all' || filteredData.length === 0) {
+      return { start: 0, end: filteredData.length - 1 };
+    }
+    const days = parseInt(timeRange);
+    const totalDays = filteredData.length;
+    const startIndex = Math.max(0, totalDays - days);
+    return { start: startIndex, end: totalDays - 1 };
+  };
+
+  // 當時間範圍改變時，更新 Brush 索引
+  const handleTimeRangeChange = (value: TimeRange) => {
+    setTimeRange(value);
+    const indices = calculateBrushIndices();
+    setBrushStartIndex(indices.start);
+    setBrushEndIndex(indices.end);
+  };
+
+  // 處理 Brush 拖動事件
+  const handleBrushChange = (range: { startIndex?: number; endIndex?: number }) => {
+    if (range.startIndex !== undefined && range.endIndex !== undefined) {
+      setBrushStartIndex(range.startIndex);
+      setBrushEndIndex(range.endIndex);
+      // 根據拖動範圍更新時間範圍選擇器（可選）
+      const rangeLength = range.endIndex - range.startIndex + 1;
+      if (rangeLength <= 7) {
+        setTimeRange('7');
+      } else if (rangeLength <= 30) {
+        setTimeRange('30');
+      } else if (rangeLength <= 90) {
+        setTimeRange('90');
+      } else {
+        setTimeRange('all');
+      }
+    }
+  };
+
   // 格式化數據供圖表使用
   const chartData = filteredData.map(item => ({
     date: new Date(item.recordDate).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' }),
+    fullDate: new Date(item.recordDate).toISOString().split('T')[0],
     value: item.totalValue,
     cost: item.totalCost,
     returnRate: item.gainLossPercent,
   }));
+
+  // 處理交易標註：將交易日期對應到圖表數據點
+  const transactionAnnotations = transactions.map(transaction => {
+    const transactionDate = new Date(transaction.transactionDate).toISOString().split('T')[0];
+    const dataPoint = chartData.find(d => d.fullDate === transactionDate);
+    
+    if (!dataPoint) return null;
+    
+    return {
+      date: dataPoint.date,
+      value: dataPoint.value,
+      type: transaction.transactionType,
+      symbol: transaction.symbol,
+      shares: transaction.shares,
+      price: transaction.price,
+      totalAmount: transaction.totalAmount,
+      notes: transaction.notes,
+    };
+  }).filter(Boolean);
 
   return (
     <motion.div
@@ -74,7 +153,7 @@ export function PortfolioPerformanceChart({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">時間範圍：</span>
-            <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+            <Select value={timeRange} onValueChange={(value) => handleTimeRangeChange(value as TimeRange)}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue />
               </SelectTrigger>
@@ -137,12 +216,45 @@ export function PortfolioPerformanceChart({
                     }
                     return [`$${value.toLocaleString()}`, name === 'value' ? '總價值' : '總成本'];
                   }}
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
+                  content={(props: any) => {
+                    if (!props.active || !props.payload || props.payload.length === 0) return null;
+                    
+                    const data = props.payload[0].payload;
+                    const dateTransactions = transactionAnnotations.filter((t: any) => t.date === data.date);
+                    
+                    return (
+                      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                        <p className="font-semibold mb-2 text-foreground">{data.date}</p>
+                        <div className="space-y-1">
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">總價值:</span> ${data.value.toLocaleString()}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium">總成本:</span> ${data.cost.toLocaleString()}
+                          </p>
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">報酬率:</span> {data.returnRate.toFixed(2)}%
+                          </p>
+                        </div>
+                        
+                        {dateTransactions.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-xs font-semibold mb-2 text-foreground">交易記錄</p>
+                            {dateTransactions.map((transaction: any, index: number) => (
+                              <div key={index} className="text-xs mb-1">
+                                <span className={`font-medium ${transaction.type === 'buy' ? 'text-green-600' : 'text-red-600'}`}>
+                                  {transaction.type === 'buy' ? '▲ 買入' : '▼ 賣出'}
+                                </span>
+                                <span className="text-foreground ml-1">
+                                  {transaction.symbol} {transaction.shares}股 @ ${transaction.price.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
                   }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '20px' }}
@@ -169,6 +281,37 @@ export function PortfolioPerformanceChart({
                   activeDot={{ r: 6, strokeWidth: 2 }}
                   animationDuration={1000}
                   animationEasing="ease-in-out"
+                />
+                
+                {/* 交易標註 */}
+                {transactionAnnotations.map((annotation: any, index: number) => (
+                  <ReferenceDot
+                    key={index}
+                    x={annotation.date}
+                    y={annotation.value}
+                    r={8}
+                    fill={annotation.type === 'buy' ? '#10b981' : '#ef4444'}
+                    stroke="white"
+                    strokeWidth={2}
+                    label={{
+                      value: annotation.type === 'buy' ? '▲' : '▼',
+                      position: annotation.type === 'buy' ? 'top' : 'bottom',
+                      fill: annotation.type === 'buy' ? '#10b981' : '#ef4444',
+                      fontSize: 16,
+                      fontWeight: 'bold',
+                    }}
+                  />
+                ))}
+                
+                <Brush
+                  dataKey="date"
+                  height={30}
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--muted))"
+                  startIndex={brushStartIndex}
+                  endIndex={brushEndIndex}
+                  onChange={handleBrushChange}
+                  travellerWidth={10}
                 />
               </LineChart>
             </ResponsiveContainer>

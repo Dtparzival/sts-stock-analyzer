@@ -872,15 +872,33 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         notes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        const priceInCents = Math.round(input.purchasePrice * 100);
+        const totalAmount = priceInCents * input.shares;
+        
+        // 添加持倉
         await db.addToPortfolio({
           userId: ctx.user.id,
           symbol: input.symbol,
           companyName: input.companyName,
           shares: input.shares,
-          purchasePrice: Math.round(input.purchasePrice * 100), // 轉換為美分
+          purchasePrice: priceInCents,
           purchaseDate: input.purchaseDate,
           notes: input.notes,
         });
+        
+        // 記錄買入交易
+        await db.addPortfolioTransaction({
+          userId: ctx.user.id,
+          symbol: input.symbol,
+          companyName: input.companyName,
+          transactionType: 'buy',
+          shares: input.shares,
+          price: priceInCents,
+          totalAmount: totalAmount,
+          transactionDate: input.purchaseDate,
+          notes: input.notes,
+        });
+        
         return { success: true };
       }),
 
@@ -908,7 +926,25 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         id: z.number(),
       }))
       .mutation(async ({ input, ctx }) => {
-        await db.deleteFromPortfolio(input.id, ctx.user.id);
+        // 獲取持倉資訊並刪除
+        const holding = await db.deleteFromPortfolio(input.id, ctx.user.id);
+        
+        // 如果持倉存在，記錄賣出交易
+        if (holding) {
+          const totalAmount = holding.purchasePrice * holding.shares;
+          await db.addPortfolioTransaction({
+            userId: ctx.user.id,
+            symbol: holding.symbol,
+            companyName: holding.companyName,
+            transactionType: 'sell',
+            shares: holding.shares,
+            price: holding.purchasePrice, // 使用購買價作為賣出價（實際應用中可能需要用戶輸入賣出價）
+            totalAmount: totalAmount,
+            transactionDate: new Date(),
+            notes: `賣出持倉 (ID: ${holding.id})`,
+          });
+        }
+        
         return { success: true };
       }),
 
@@ -926,6 +962,21 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
           totalCost: record.totalCost / 100,
           totalGainLoss: record.totalGainLoss / 100,
           gainLossPercent: record.gainLossPercent / 100, // 從萬分之一轉換為百分比
+        }));
+      }),
+
+    // 獲取交易歷史
+    getTransactions: protectedProcedure
+      .input(z.object({
+        days: z.number().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const transactions = await db.getPortfolioTransactions(ctx.user.id, input.days);
+        // 轉換數據格式（從分轉換為美元）
+        return transactions.map(transaction => ({
+          ...transaction,
+          price: transaction.price / 100,
+          totalAmount: transaction.totalAmount / 100,
         }));
       }),
 

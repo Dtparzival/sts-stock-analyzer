@@ -1,4 +1,4 @@
-import { eq, desc, and, gt, sql, count } from "drizzle-orm";
+import { eq, desc, and, gt, gte, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -20,7 +20,10 @@ import {
   InsertPortfolio,
   portfolioHistory,
   PortfolioHistory,
-  InsertPortfolioHistory
+  InsertPortfolioHistory,
+  portfolioTransactions,
+  PortfolioTransaction,
+  InsertPortfolioTransaction
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -335,9 +338,19 @@ export async function updatePortfolio(id: number, data: Partial<InsertPortfolio>
   await db.update(portfolio).set(data).where(eq(portfolio.id, id));
 }
 
-export async function deleteFromPortfolio(id: number, userId: number): Promise<void> {
+export async function deleteFromPortfolio(id: number, userId: number): Promise<Portfolio | null> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // 先獲取持倉資訊，用於記錄賣出交易
+  const holding = await db.select().from(portfolio).where(
+    and(
+      eq(portfolio.id, id),
+      eq(portfolio.userId, userId)
+    )
+  ).limit(1);
+  
+  if (holding.length === 0) return null;
   
   await db.delete(portfolio).where(
     and(
@@ -345,6 +358,8 @@ export async function deleteFromPortfolio(id: number, userId: number): Promise<v
       eq(portfolio.userId, userId)
     )
   );
+  
+  return holding[0];
 }
 
 // Portfolio history functions
@@ -391,4 +406,48 @@ export async function addPortfolioHistory(data: InsertPortfolioHistory): Promise
     // 插入新記錄
     await db.insert(portfolioHistory).values(data);
   }
+}
+
+// Portfolio transactions functions
+export async function addPortfolioTransaction(data: InsertPortfolioTransaction): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(portfolioTransactions).values(data);
+}
+
+export async function getPortfolioTransactions(userId: number, days?: number): Promise<PortfolioTransaction[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (days) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    return await db.select().from(portfolioTransactions)
+      .where(
+        and(
+          eq(portfolioTransactions.userId, userId),
+          gte(portfolioTransactions.transactionDate, cutoffDate)
+        )
+      )
+      .orderBy(desc(portfolioTransactions.transactionDate));
+  }
+  
+  return await db.select().from(portfolioTransactions)
+    .where(eq(portfolioTransactions.userId, userId))
+    .orderBy(desc(portfolioTransactions.transactionDate));
+}
+
+export async function getPortfolioTransactionsBySymbol(userId: number, symbol: string): Promise<PortfolioTransaction[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(portfolioTransactions)
+    .where(
+      and(
+        eq(portfolioTransactions.userId, userId),
+        eq(portfolioTransactions.symbol, symbol)
+      )
+    )
+    .orderBy(desc(portfolioTransactions.transactionDate));
 }

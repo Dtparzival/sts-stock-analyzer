@@ -116,6 +116,32 @@ export type PortfolioHistory = typeof portfolioHistory.$inferSelect;
 export type InsertPortfolioHistory = typeof portfolioHistory.$inferInsert;
 
 /**
+ * 投資組合交易歷史
+ * 記錄所有買入/賣出操作，用於圖表標註和交易統計
+ */
+export const portfolioTransactions = mysqlTable("portfolioTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  companyName: text("companyName"),
+  transactionType: mysqlEnum("transactionType", ["buy", "sell"]).notNull(), // 交易類型：買入或賣出
+  shares: int("shares").notNull(), // 交易數量
+  price: int("price").notNull(), // 交易價格（以分為單位）
+  totalAmount: int("totalAmount").notNull(), // 交易總金額（以分為單位）
+  transactionDate: timestamp("transactionDate").notNull(), // 交易日期
+  notes: text("notes"), // 備註
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  transactionDateIdx: index("transactionDate_idx").on(table.transactionDate),
+  userDateIdx: index("user_date_idx").on(table.userId, table.transactionDate),
+}));
+
+export type PortfolioTransaction = typeof portfolioTransactions.$inferSelect;
+export type InsertPortfolioTransaction = typeof portfolioTransactions.$inferInsert;
+
+/**
  * 股票數據緩存表
  * 用於持久化存儲 API 請求結果，減少對外部 API 的請求頻率
  */

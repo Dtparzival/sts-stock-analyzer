@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
-// import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart"; // 已移除
+import { PortfolioPerformanceChart } from "@/components/PortfolioPerformanceChart";
 import { PortfolioAnalysisDashboard } from "@/components/PortfolioAnalysisDashboard";
 import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ export default function Portfolio() {
   const [currency, setCurrency] = useState<Currency>('USD'); // 預設顯示美元
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null); // 選中的日期，用於聯動高亮
 
   // 獲取即時匯率
   const { data: exchangeRateData } = trpc.exchangeRate.getUSDToTWD.useQuery();
@@ -737,6 +738,19 @@ export default function Portfolio() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* 投資組合績效圖表 */}
+        {historyData.length > 0 && (
+          <div className="mb-6">
+            <PortfolioPerformanceChart
+              data={historyData}
+              currentValue={stats.totalCurrentValue}
+              currentCost={stats.totalInvestment}
+              periodGainLoss={stats.totalGainLoss}
+              periodGainLossPercent={stats.totalGainLossPercent}
+            />
+          </div>
         )}
 
         {/* 持倉分析儀表板 */}
