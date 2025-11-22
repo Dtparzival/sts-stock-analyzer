@@ -168,9 +168,18 @@ export default function TradingViewChart({
         borderColor: borderColor,
         scaleMargins: {
           top: 0.1,
-          bottom: 0.25, // 留出更多空間給成交量，避免重疊
+          bottom: 0.1,
         },
         // 禁用 Y 軸拖曳，防止 K 線圖和成交量交錯
+        mode: 0, // 0 = Normal mode (no dragging)
+      },
+      leftPriceScale: {
+        visible: true,
+        borderColor: borderColor,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
         mode: 0, // 0 = Normal mode (no dragging)
       },
       crosshair: {
@@ -212,27 +221,16 @@ export default function TradingViewChart({
 
     candlestickSeriesRef.current = candlestickSeriesInstance as any;
 
-    // 創建成交量系列
+    // 創建成交量系列（使用左側 Y 軸）
     const volumeSeriesInstance = chart.addSeries(HistogramSeries, {
       color: "#26a69a",
       priceFormat: {
         type: "volume",
       },
-      priceScaleId: "volume",
+      priceScaleId: "left", // 使用左側 Y 軸顯示成交量
     });
 
     volumeSeriesRef.current = volumeSeriesInstance as any;
-
-    // 設置成交量的價格比例
-    chart.priceScale("volume").applyOptions({
-      scaleMargins: {
-        top: 0.80, // 成交量佔 20% 的空間，K 線圖佔 80%
-        bottom: 0,
-      },
-      visible: false, // 隱藏成交量的價格標籤，避免與 K 線圖重疊
-      // 禁用 Y 軸拖曳，防止成交量和 K 線圖交錯
-      mode: 0, // 0 = Normal mode (no dragging)
-    });
 
     // 響應式調整（帶 debounce 防抖機制）
     let resizeTimeout: NodeJS.Timeout | null = null;
