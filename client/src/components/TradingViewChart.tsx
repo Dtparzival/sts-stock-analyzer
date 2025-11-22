@@ -53,8 +53,15 @@ export default function TradingViewChart({
   isLoading = false,
   currentRange = "1mo",
 }: TradingViewChartProps) {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
+  // 兩個圖表容器
+  const priceChartContainerRef = useRef<HTMLDivElement>(null);
+  const volumeChartContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 兩個圖表實例
+  const priceChartRef = useRef<IChartApi | null>(null);
+  const volumeChartRef = useRef<IChartApi | null>(null);
+  
+  // 系列引用
   const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   
@@ -67,7 +74,7 @@ export default function TradingViewChart({
   const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
   const chartCardRef = useRef<HTMLDivElement>(null);
   
-  // Tooltip 狀態
+  // Tooltip 狀態（只在價格圖表上顯示）
   const [tooltipData, setTooltipData] = useState<{
     time: string;
     open: number;
@@ -100,9 +107,9 @@ export default function TradingViewChart({
     }
   }, [currentRange]);
 
-  // 初始化圖表
+  // 初始化雙圖表
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!priceChartContainerRef.current || !volumeChartContainerRef.current) return;
 
     // 獲取計算後的 CSS 顏色值
     const getComputedColor = (cssVar: string): string => {
@@ -121,7 +128,6 @@ export default function TradingViewChart({
             ctx.fillRect(0, 0, 1, 1);
             const imageData = ctx.getImageData(0, 0, 1, 1).data;
             const rgb = `rgb(${imageData[0]}, ${imageData[1]}, ${imageData[2]})`;
-            console.log(`[TradingView] OKLCH conversion: ${value} -> ${rgb}`);
             return rgb;
           }
         } catch (error) {
@@ -141,8 +147,8 @@ export default function TradingViewChart({
     const textColor = getComputedColor('--muted-foreground');
     const borderColor = getComputedColor('--border');
 
-    // 創建圖表
-    const chart = createChart(chartContainerRef.current, {
+    // 共用的圖表配置
+    const commonOptions = {
       layout: {
         background: { color: "transparent" },
         textColor: textColor,
@@ -157,51 +163,44 @@ export default function TradingViewChart({
           style: 1, // Dotted
         },
       },
-      width: chartContainerRef.current.clientWidth,
-      height: isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500, // 降級全螢幕模式下自動調整高度
+      width: priceChartContainerRef.current.clientWidth,
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+      },
+      handleScale: {
+        mouseWheel: true,
+        pinch: true,
+      },
+    } as const;
+
+    // 創建價格圖表（上方，佔 75% 高度）
+    const priceChartHeight = isFullscreen && !useNativeFullscreen ? (window.innerHeight - 150) * 0.75 : 375;
+    const priceChart = createChart(priceChartContainerRef.current, {
+      ...commonOptions,
+      height: priceChartHeight,
       timeScale: {
         borderColor: borderColor,
         timeVisible: true,
         secondsVisible: false,
+        visible: false, // 隱藏價格圖表的時間軸（由成交量圖表顯示）
       },
       rightPriceScale: {
         borderColor: borderColor,
         scaleMargins: {
           top: 0.1,
-          bottom: 0.25, // 留出更多空間給成交量，避免重疊
+          bottom: 0.1,
         },
-        // 禁用 Y 軸拖曳，防止 K 線圖和成交量交錯
-        mode: 0, // 0 = Normal mode (no dragging)
       },
       crosshair: {
-        mode: 1, // Normal crosshair
-        vertLine: {
-          width: 1,
-          color: textColor,
-          style: 2, // Dashed
-          labelBackgroundColor: textColor,
-        },
-        horzLine: {
-          width: 1,
-          color: textColor,
-          style: 2, // Dashed
-          labelBackgroundColor: textColor,
-        },
-      },
-      handleScroll: {
-        mouseWheel: true, // 啟用滑鼠滾輪縮放
-        pressedMouseMove: true, // 啟用滑鼠拖曳
-      },
-      handleScale: {
-        mouseWheel: true, // 啟用滑鼠滾輪縮放
-        pinch: true, // 啟用觸控縮放
+        mode: 1,
       },
     });
 
-    chartRef.current = chart;
+    priceChartRef.current = priceChart;
 
     // 創建 K 線系列
-    const candlestickSeriesInstance = chart.addSeries(CandlestickSeries, {
+    const candlestickSeriesInstance = priceChart.addSeries(CandlestickSeries, {
       upColor: "#22c55e", // 綠色（上漲）
       downColor: "#ef4444", // 紅色（下跌）
       borderUpColor: "#22c55e",
@@ -212,43 +211,155 @@ export default function TradingViewChart({
 
     candlestickSeriesRef.current = candlestickSeriesInstance as any;
 
+    // 創建成交量圖表（下方，佔 25% 高度）
+    const volumeChartHeight = isFullscreen && !useNativeFullscreen ? (window.innerHeight - 150) * 0.25 : 125;
+    const volumeChart = createChart(volumeChartContainerRef.current, {
+      ...commonOptions,
+      height: volumeChartHeight,
+      timeScale: {
+        borderColor: borderColor,
+        timeVisible: true,
+        secondsVisible: false,
+        visible: true, // 顯示成交量圖表的時間軸
+      },
+      rightPriceScale: {
+        borderColor: borderColor,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+      },
+      crosshair: {
+        mode: 1,
+      },
+    });
+
+    volumeChartRef.current = volumeChart;
+
     // 創建成交量系列
-    const volumeSeriesInstance = chart.addSeries(HistogramSeries, {
+    const volumeSeriesInstance = volumeChart.addSeries(HistogramSeries, {
       color: "#26a69a",
       priceFormat: {
         type: "volume",
       },
-      priceScaleId: "volume",
     });
 
     volumeSeriesRef.current = volumeSeriesInstance as any;
 
-    // 設置成交量的價格比例
-    chart.priceScale("volume").applyOptions({
-      scaleMargins: {
-        top: 0.80, // 成交量佔 20% 的空間，K 線圖佔 80%
-        bottom: 0,
-      },
-      visible: false, // 隱藏成交量的價格標籤，避免與 K 線圖重疊
-      // 禁用 Y 軸拖曳，防止成交量和 K 線圖交錯
-      mode: 0, // 0 = Normal mode (no dragging)
-    });
+    // 同步兩個圖表的時間軸（縮放和拖曳）
+    const syncTimeScales = () => {
+      const priceTimeScale = priceChart.timeScale();
+      const volumeTimeScale = volumeChart.timeScale();
+
+      // 價格圖表 -> 成交量圖表
+      priceTimeScale.subscribeVisibleLogicalRangeChange((logicalRange) => {
+        if (logicalRange) {
+          volumeTimeScale.setVisibleLogicalRange(logicalRange);
+        }
+      });
+
+      // 成交量圖表 -> 價格圖表
+      volumeTimeScale.subscribeVisibleLogicalRangeChange((logicalRange) => {
+        if (logicalRange) {
+          priceTimeScale.setVisibleLogicalRange(logicalRange);
+        }
+      });
+    };
+
+    syncTimeScales();
+
+    // 同步兩個圖表的十字線（滑鼠移動）
+    const syncCrosshairs = () => {
+      // 價格圖表的十字線事件
+      priceChart.subscribeCrosshairMove((param) => {
+        if (!param.time || !param.point || !candlestickSeriesRef.current || !volumeSeriesRef.current) {
+          setTooltipData(null);
+          // 清除成交量圖表的十字線
+          volumeChart.clearCrosshairPosition();
+          return;
+        }
+
+        // 同步成交量圖表的十字線位置
+        volumeChart.setCrosshairPosition(param.point.y, param.time, volumeSeriesRef.current);
+
+        const candleData = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
+        const volumeData = param.seriesData.get(volumeSeriesRef.current) as HistogramData | undefined;
+        
+        if (!candleData) {
+          setTooltipData(null);
+          return;
+        }
+
+        // 計算漲跌幅
+        const change = candleData.close - candleData.open;
+        const changePercent = (change / candleData.open) * 100;
+
+        // 格式化時間
+        const timeStr = typeof param.time === 'number' 
+          ? new Date(param.time * 1000).toLocaleString('zh-TW', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : String(param.time);
+
+        setTooltipData({
+          time: timeStr,
+          open: candleData.open,
+          high: candleData.high,
+          low: candleData.low,
+          close: candleData.close,
+          volume: volumeData?.value || 0,
+          change,
+          changePercent,
+          x: param.point.x,
+          y: param.point.y,
+        });
+      });
+
+      // 成交量圖表的十字線事件
+      volumeChart.subscribeCrosshairMove((param) => {
+        if (!param.time || !param.point) {
+          // 清除價格圖表的十字線
+          priceChart.clearCrosshairPosition();
+          setTooltipData(null);
+          return;
+        }
+
+        // 同步價格圖表的十字線位置
+        if (candlestickSeriesRef.current) {
+          priceChart.setCrosshairPosition(param.point.y, param.time, candlestickSeriesRef.current);
+        }
+      });
+    };
+
+    syncCrosshairs();
 
     // 響應式調整（帶 debounce 防抖機制）
     let resizeTimeout: NodeJS.Timeout | null = null;
 
     const handleResize = () => {
-      // 清除之前的延遲執行
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
       
-      // 設定 150ms 延遲，只有當用戶停止調整視窗大小後才執行
       resizeTimeout = setTimeout(() => {
-        if (chartContainerRef.current && chartRef.current) {
-          chartRef.current.applyOptions({
-            width: chartContainerRef.current.clientWidth,
-            height: isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500,
+        if (priceChartContainerRef.current && priceChartRef.current && volumeChartRef.current) {
+          const width = priceChartContainerRef.current.clientWidth;
+          const totalHeight = isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500;
+          const priceHeight = totalHeight * 0.75;
+          const volumeHeight = totalHeight * 0.25;
+
+          priceChartRef.current.applyOptions({
+            width,
+            height: priceHeight,
+          });
+
+          volumeChartRef.current.applyOptions({
+            width,
+            height: volumeHeight,
           });
         }
       }, 150);
@@ -258,61 +369,17 @@ export default function TradingViewChart({
       handleResize();
     };
 
-    // 訂閱 Crosshair 事件，實現 Tooltip 功能
-    chart.subscribeCrosshairMove((param) => {
-      if (!param.time || !param.point || !candlestickSeriesRef.current || !volumeSeriesRef.current) {
-        setTooltipData(null);
-        return;
-      }
-
-      const candleData = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
-      const volumeData = param.seriesData.get(volumeSeriesRef.current) as HistogramData | undefined;
-      
-      if (!candleData) {
-        setTooltipData(null);
-        return;
-      }
-
-      // 計算漲跌幅
-      const change = candleData.close - candleData.open;
-      const changePercent = (change / candleData.open) * 100;
-
-      // 格式化時間
-      const timeStr = typeof param.time === 'number' 
-        ? new Date(param.time * 1000).toLocaleString('zh-TW', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : String(param.time);
-
-      setTooltipData({
-        time: timeStr,
-        open: candleData.open,
-        high: candleData.high,
-        low: candleData.low,
-        close: candleData.close,
-        volume: volumeData?.value || 0,
-        change,
-        changePercent,
-        x: param.point.x,
-        y: param.point.y,
-      });
-    });
-
     window.addEventListener("resize", handleResize);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      // 清除延遲執行
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
-      chart.remove();
+      priceChart.remove();
+      volumeChart.remove();
     };
   }, [isFullscreen, useNativeFullscreen]);
 
@@ -372,8 +439,9 @@ export default function TradingViewChart({
     }
 
     // 自動調整視圖
-    if (chartRef.current) {
-      chartRef.current.timeScale().fitContent();
+    if (priceChartRef.current && volumeChartRef.current) {
+      priceChartRef.current.timeScale().fitContent();
+      volumeChartRef.current.timeScale().fitContent();
     }
   }, [data]);
 
@@ -396,16 +464,15 @@ export default function TradingViewChart({
 
   // 跳至最新數據
   const handleJumpToLatest = () => {
-    if (!chartRef.current) return;
+    if (!priceChartRef.current || !volumeChartRef.current) return;
     
     try {
-      // 使用 TradingView API 的 scrollToRealTime() 跳至最新時間
-      chartRef.current.timeScale().scrollToRealTime();
+      priceChartRef.current.timeScale().scrollToRealTime();
+      volumeChartRef.current.timeScale().scrollToRealTime();
     } catch (error) {
       console.error('[TradingView] Failed to jump to latest:', error);
     }
   };
-
 
   // 全螢幕模式處理
   useEffect(() => {
@@ -418,7 +485,6 @@ export default function TradingViewChart({
         if (document.fullscreenElement) {
           document.exitFullscreen();
         } else if (isFullscreen && !useNativeFullscreen) {
-          // 降級模式：ESC 鍵退出 CSS 全螢幕
           setIsFullscreen(false);
         }
       }
@@ -438,19 +504,16 @@ export default function TradingViewChart({
 
     try {
       if (useNativeFullscreen) {
-        // 優先使用原生 Fullscreen API
         if (!document.fullscreenElement) {
           await chartCardRef.current.requestFullscreen();
         } else {
           await document.exitFullscreen();
         }
       } else {
-        // 降級策略：使用 CSS fixed 定位模擬全螢幕
         setIsFullscreen(!isFullscreen);
       }
     } catch (err) {
       console.error('全螢幕模式切換失敗:', err);
-      // 如果原生 API 失敗，自動切換到降級模式
       setUseNativeFullscreen(false);
       setIsFullscreen(!isFullscreen);
     }
@@ -462,7 +525,6 @@ export default function TradingViewChart({
       className={cn(
         "p-6 transition-all",
         isFullscreen && "bg-background",
-        // 降級模式：使用 CSS fixed 定位模擬全螢幕
         !useNativeFullscreen && isFullscreen && "fixed inset-0 z-[9999] w-screen h-screen rounded-none"
       )}
       style={!useNativeFullscreen && isFullscreen ? {
@@ -588,74 +650,83 @@ export default function TradingViewChart({
           </div>
         </Card>
       ) : (
-        <div className="relative">
-          <div
-            ref={chartContainerRef}
-            className="w-full"
-          />
-          
-          {/* Tooltip */}
-          {tooltipData && (() => {
-            // 格式化成交量（K/M/B）
-            const formatVolume = (vol: number): string => {
-              if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
-              if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
-              if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
-              return vol.toFixed(0);
-            };
+        <div className="relative space-y-2">
+          {/* 價格圖表（上方） */}
+          <div className="relative">
+            <div
+              ref={priceChartContainerRef}
+              className="w-full"
+            />
+            
+            {/* Tooltip（只在價格圖表上顯示） */}
+            {tooltipData && (() => {
+              // 格式化成交量（K/M/B）
+              const formatVolume = (vol: number): string => {
+                if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
+                if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
+                if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
+                return vol.toFixed(0);
+              };
 
-            return (
-              <div
-                ref={tooltipRef}
-                className={cn(
-                  "absolute pointer-events-none z-20 rounded shadow-md p-1.5 min-w-[130px] backdrop-blur-sm",
-                  "bg-background/95 border",
-                  tooltipData.change >= 0 ? "border-green-500/40" : "border-red-500/40"
-                )}
-                style={{
-                  left: `${Math.min(tooltipData.x + 15, window.innerWidth - 200)}px`,
-                  top: `${Math.max(tooltipData.y - 10, 10)}px`,
-                }}
-              >
-                <div className="text-[9px] font-medium text-muted-foreground mb-1 leading-tight">{tooltipData.time}</div>
-                <div className="space-y-0.5 text-[10px]">
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">O:</span>
-                    <span className="font-mono font-semibold">{tooltipData.open.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">H:</span>
-                    <span className="font-mono font-semibold text-green-600">{tooltipData.high.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">L:</span>
-                    <span className="font-mono font-semibold text-red-600">{tooltipData.low.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">C:</span>
-                    <span className="font-mono font-semibold">{tooltipData.close.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">量:</span>
-                    <span className="font-mono font-semibold">{formatVolume(tooltipData.volume)}</span>
-                  </div>
-                  <div className="border-t border-border/50 pt-0.5 mt-0.5">
+              return (
+                <div
+                  ref={tooltipRef}
+                  className={cn(
+                    "absolute pointer-events-none z-20 rounded shadow-md p-1.5 min-w-[130px] backdrop-blur-sm",
+                    "bg-background/95 border",
+                    tooltipData.change >= 0 ? "border-green-500/40" : "border-red-500/40"
+                  )}
+                  style={{
+                    left: `${Math.min(tooltipData.x + 15, window.innerWidth - 200)}px`,
+                    top: `${Math.max(tooltipData.y - 10, 10)}px`,
+                  }}
+                >
+                  <div className="text-[9px] font-medium text-muted-foreground mb-1 leading-tight">{tooltipData.time}</div>
+                  <div className="space-y-0.5 text-[10px]">
                     <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">漲跌:</span>
-                      <span 
-                        className={cn(
-                          "font-mono font-bold text-[10px]",
-                          tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
-                        )}
-                      >
-                        {tooltipData.change >= 0 ? '+' : ''}{tooltipData.change.toFixed(2)} ({tooltipData.changePercent >= 0 ? '+' : ''}{tooltipData.changePercent.toFixed(2)}%)
-                      </span>
+                      <span className="text-muted-foreground">O:</span>
+                      <span className="font-mono font-semibold">{tooltipData.open.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">H:</span>
+                      <span className="font-mono font-semibold text-green-600">{tooltipData.high.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">L:</span>
+                      <span className="font-mono font-semibold text-red-600">{tooltipData.low.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">C:</span>
+                      <span className="font-mono font-semibold">{tooltipData.close.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">量:</span>
+                      <span className="font-mono font-semibold">{formatVolume(tooltipData.volume)}</span>
+                    </div>
+                    <div className="border-t border-border/50 pt-0.5 mt-0.5">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">漲跌:</span>
+                        <span 
+                          className={cn(
+                            "font-mono font-bold text-[10px]",
+                            tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
+                          )}
+                        >
+                          {tooltipData.change >= 0 ? '+' : ''}{tooltipData.change.toFixed(2)} ({tooltipData.changePercent >= 0 ? '+' : ''}{tooltipData.changePercent.toFixed(2)}%)
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
+          </div>
+
+          {/* 成交量圖表（下方） */}
+          <div
+            ref={volumeChartContainerRef}
+            className="w-full"
+          />
         </div>
       )}
     </Card>

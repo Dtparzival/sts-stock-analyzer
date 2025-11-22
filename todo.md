@@ -2180,3 +2180,25 @@ TwelveData Basic 8 方案限制：
 - 邊框透明度：50% → 40%
 - 成交量標籤：「成交量」→ 「量」
 - 漲跌幅標籤：「漲跌幅」→ 「漲跌」
+
+
+## 新增功能：調整 K 線圖及成交量圖為上下分開的兩張圖表
+
+- [x] 分析當前 TradingView 圖表架構（單一圖表容器，K 線和成交量共用）
+- [x] 規劃雙圖表佈局方案（上方 K 線圖 + 下方成交量圖）
+- [x] 創建兩個獨立的圖表容器（priceChartContainerRef 和 volumeChartContainerRef）
+- [x] 實作 K 線圖（上方，佔 75% 高度，獨立 Y 軸顯示價格）
+- [x] 實作成交量圖（下方，佔 25% 高度，獨立 Y 軸顯示成交量）
+- [x] 同步兩個圖表的 X 軸時間範圍（縮放、拖曳時保持同步）
+- [x] 同步兩個圖表的十字線位置（滑鼠移動時同步顯示）
+- [x] 優化 Tooltip 顯示邏輯（只在 K 線圖上顯示完整資訊）
+- [x] 測試圖表響應式調整（視窗大小改變時兩個圖表都能正確調整）
+- [x] 測試全螢幕模式下的雙圖表顯示效果
+
+**實作細節：**
+- 創建兩個獨立的 TradingView 圖表實例（priceChart 和 volumeChart）
+- K 線圖隱藏時間軸標籤（visible: false），成交量圖顯示時間軸
+- 使用 subscribeVisibleLogicalRangeChange 同步兩個圖表的時間範圍
+- 使用 subscribeCrosshairMove 和 setCrosshairPosition 同步十字線
+- Tooltip 只在價格圖表上顯示，包含 K 線和成交量數據
+- 響應式調整時同步更新兩個圖表的寬度和高度
