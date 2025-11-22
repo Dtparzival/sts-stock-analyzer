@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Star, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Star, X, Sparkles, TrendingUp, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
@@ -16,14 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { motion, AnimatePresence } from "framer-motion";
 
 type MarketFilter = 'all' | 'US' | 'TW';
 
@@ -102,6 +95,19 @@ export default function Watchlist() {
     summary: string;
     error: string | null;
   }>>([]);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (symbol: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(symbol)) {
+        newSet.delete(symbol);
+      } else {
+        newSet.add(symbol);
+      }
+      return newSet;
+    });
+  };
 
   const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
     enabled: !!user,
@@ -357,61 +363,185 @@ export default function Watchlist() {
           </div>
         )}
         
-        {/* 批量分析結果對話框 */}
+        {/* 批量分析結果對話框 - 卡片式設計 */}
         <Dialog open={showBatchAnalysis} onOpenChange={setShowBatchAnalysis}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>批量 AI 分析結果</DialogTitle>
-              <DialogDescription>
-                已完成 {batchResults.length} 支股票的 AI 投資分析
-              </DialogDescription>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader className="pb-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-primary">
+                    <Sparkles className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      批量 AI 分析結果
+                    </DialogTitle>
+                    <DialogDescription className="text-base mt-1">
+                      已完成 {batchResults.length} 支股票的 AI 投資分析
+                    </DialogDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowBatchAnalysis(false)}
+                  className="hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </DialogHeader>
             
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">股票代號</TableHead>
-                  <TableHead className="w-[150px]">公司名稱</TableHead>
-                  <TableHead className="w-[100px]">投資建議</TableHead>
-                  <TableHead>分析摘要</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {batchResults.map((result) => (
-                  <TableRow key={result.symbol}>
-                    <TableCell className="font-medium">
-                      {getMarketFromSymbol(result.symbol) === 'TW' ? cleanTWSymbol(result.symbol) : result.symbol}
-                    </TableCell>
-                    <TableCell>
-                      {result.companyName || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {result.error ? (
-                        <Badge variant="destructive">失敗</Badge>
-                      ) : result.recommendation ? (
-                        <Badge 
-                          variant={result.recommendation === '買入' ? 'default' : result.recommendation === '賣出' ? 'destructive' : 'secondary'}
-                        >
-                          {result.recommendation}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">-</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {result.error ? (
-                        <span className="text-destructive">{result.error}</span>
-                      ) : (
-                        <span className="text-muted-foreground">{result.summary}</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="grid gap-4 py-4">
+              <AnimatePresence>
+                {batchResults.map((result, index) => {
+                  const displaySymbol = getMarketFromSymbol(result.symbol) === 'TW' ? cleanTWSymbol(result.symbol) : result.symbol;
+                  const isExpanded = expandedCards.has(result.symbol);
+                  const summaryPreview = result.summary.length > 80 ? result.summary.slice(0, 80) + '...' : result.summary;
+                  
+                  // 投資建議樣式
+                  const getRecommendationStyle = (rec: string | null) => {
+                    if (!rec) return { bg: 'bg-muted', text: 'text-muted-foreground', gradient: 'from-gray-400 to-gray-500' };
+                    if (rec === '買入') return { bg: 'bg-green-50', text: 'text-green-700', gradient: 'from-green-400 to-emerald-500' };
+                    if (rec === '賣出') return { bg: 'bg-red-50', text: 'text-red-700', gradient: 'from-red-400 to-rose-500' };
+                    return { bg: 'bg-yellow-50', text: 'text-yellow-700', gradient: 'from-yellow-400 to-amber-500' };
+                  };
+                  
+                  const recStyle = getRecommendationStyle(result.recommendation);
+                  
+                  return (
+                    <motion.div
+                      key={result.symbol}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                    >
+                      <Card className="border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="flex flex-col md:flex-row">
+                            {/* 左側：股票資訊和投資建議 */}
+                            <div className={`flex-shrink-0 p-6 ${recStyle.bg} border-b md:border-b-0 md:border-r border-border`}>
+                              <div className="flex flex-col items-center md:items-start gap-4 md:w-48">
+                                {/* 股票圖標 */}
+                                <div className={`p-3 rounded-xl bg-gradient-to-br ${recStyle.gradient} shadow-md`}>
+                                  <TrendingUp className="h-8 w-8 text-white" />
+                                </div>
+                                
+                                {/* 股票代號和名稱 */}
+                                <div className="text-center md:text-left w-full">
+                                  <div className="text-2xl font-bold text-foreground mb-1">
+                                    {displaySymbol}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground line-clamp-2">
+                                    {result.companyName || '-'}
+                                  </div>
+                                </div>
+                                
+                                {/* 投資建議標籤 */}
+                                <div className="w-full">
+                                  {result.error ? (
+                                    <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white text-center font-semibold shadow-md">
+                                      分析失敗
+                                    </div>
+                                  ) : result.recommendation ? (
+                                    <div className={`px-4 py-2 rounded-lg bg-gradient-to-r ${recStyle.gradient} text-white text-center text-lg font-bold shadow-md`}>
+                                      {result.recommendation}
+                                    </div>
+                                  ) : (
+                                    <div className="px-4 py-2 rounded-lg bg-muted text-muted-foreground text-center font-semibold">
+                                      無建議
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* 右側：分析摘要和操作按鈕 */}
+                            <div className="flex-1 p-6">
+                              <div className="space-y-4">
+                                {/* 分析摘要 */}
+                                <div>
+                                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">分析摘要</h4>
+                                  {result.error ? (
+                                    <p className="text-destructive text-sm">{result.error}</p>
+                                  ) : (
+                                    <div className="text-sm text-foreground leading-relaxed">
+                                      <AnimatePresence mode="wait">
+                                        {isExpanded ? (
+                                          <motion.div
+                                            key="expanded"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                          >
+                                            {result.summary}
+                                          </motion.div>
+                                        ) : (
+                                          <motion.div
+                                            key="collapsed"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                          >
+                                            {summaryPreview}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* 操作按鈕 */}
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                  {!result.error && result.summary.length > 80 && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleExpand(result.symbol)}
+                                      className="hover:bg-primary/5 hover:border-primary/50 button-hover"
+                                    >
+                                      {isExpanded ? (
+                                        <>
+                                          <ChevronUp className="h-4 w-4 mr-1" />
+                                          收合
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ChevronDown className="h-4 w-4 mr-1" />
+                                          展開詳情
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => setLocation(`/stock/${result.symbol}`)}
+                                    className="bg-gradient-primary text-white border-0 shadow-md button-hover"
+                                  >
+                                    <ExternalLink className="h-4 w-4 mr-1" />
+                                    查看詳情
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
             
-            <div className="flex justify-end mt-4">
-              <Button onClick={() => setShowBatchAnalysis(false)}>
+            <div className="flex justify-end pt-4 border-t">
+              <Button 
+                onClick={() => setShowBatchAnalysis(false)}
+                className="bg-gradient-primary text-white border-0 shadow-md button-hover"
+              >
                 關閉
               </Button>
             </div>
