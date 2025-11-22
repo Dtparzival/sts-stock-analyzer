@@ -529,13 +529,13 @@ export default function StockDetail() {
           <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-muted/30 rounded-xl gap-2">
             <TabsTrigger 
               value="analysis" 
-              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
+              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
             >
               AI 投資分析
             </TabsTrigger>
             <TabsTrigger 
               value="prediction" 
-              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
+              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
             >
               未來趨勢預測
             </TabsTrigger>
