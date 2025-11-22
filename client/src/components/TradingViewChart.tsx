@@ -51,6 +51,74 @@ const timeRanges = [
   { label: "5年", value: "5y", interval: "1mo" },
 ];
 
+// 數據轉換函數：將日線圖數據轉換為週線圖或月線圖
+function aggregateData(
+  data: ChartDataPoint[],
+  period: 'daily' | 'weekly' | 'monthly'
+): ChartDataPoint[] {
+  if (period === 'daily' || data.length === 0) {
+    return data;
+  }
+
+  const aggregated: ChartDataPoint[] = [];
+  let currentGroup: ChartDataPoint[] = [];
+  
+  // 根據週期類型分組
+  const getGroupKey = (date: Date, period: 'weekly' | 'monthly') => {
+    if (period === 'weekly') {
+      // 每週一為一週的開始
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(date.setDate(diff));
+      return `${monday.getFullYear()}-W${Math.ceil((monday.getDate()) / 7)}`;
+    } else {
+      // 每月的第一天
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+  };
+
+  let currentKey = '';
+  
+  data.forEach((point, index) => {
+    const date = new Date(point.timestamp * 1000);
+    const key = getGroupKey(date, period);
+    
+    if (key !== currentKey) {
+      // 開始新的分組
+      if (currentGroup.length > 0) {
+        aggregated.push(aggregateGroup(currentGroup));
+      }
+      currentGroup = [point];
+      currentKey = key;
+    } else {
+      currentGroup.push(point);
+    }
+    
+    // 最後一個分組
+    if (index === data.length - 1 && currentGroup.length > 0) {
+      aggregated.push(aggregateGroup(currentGroup));
+    }
+  });
+  
+  return aggregated;
+}
+
+// 合併一組數據點
+function aggregateGroup(group: ChartDataPoint[]): ChartDataPoint {
+  const first = group[0];
+  const last = group[group.length - 1];
+  
+  return {
+    timestamp: first.timestamp,
+    date: first.date,
+    open: first.open,
+    high: Math.max(...group.map(d => d.high)),
+    low: Math.min(...group.map(d => d.low)),
+    close: last.close,
+    volume: group.reduce((sum, d) => sum + (d.volume || 0), 0),
+  };
+}
+
 export default function TradingViewChart({
   symbol,
   onRangeChange,
@@ -71,6 +139,7 @@ export default function TradingViewChart({
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
@@ -254,8 +323,9 @@ export default function TradingViewChart({
           })
         : String(param.time);
 
-      // 從原始數據中查找對應的成交量
-      const dataPoint = data.find(d => {
+      // 從處理後的數據中查找對應的成交量
+      const processedData = aggregateData(data, chartPeriod);
+      const dataPoint = processedData.find(d => {
         if (typeof param.time === 'number') {
           return d.timestamp === param.time;
         } else {
@@ -312,8 +382,11 @@ export default function TradingViewChart({
   useEffect(() => {
     if (!candlestickSeriesRef.current || data.length === 0) return;
 
+    // 根據選擇的時間週期轉換數據
+    const processedData = aggregateData(data, chartPeriod);
+
     // 轉換數據格式
-    const candlestickData: CandlestickData[] = data.map((d) => ({
+    const candlestickData: CandlestickData[] = processedData.map((d) => ({
       time: (d.timestamp || new Date(d.date).getTime() / 1000) as Time,
       open: d.open,
       high: d.high,
@@ -328,7 +401,7 @@ export default function TradingViewChart({
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();
     }
-  }, [data]);
+  }, [data, chartPeriod]);
 
   // 處理時間範圍變更
   const handleRangeChange = (range: string) => {
@@ -512,7 +585,42 @@ export default function TradingViewChart({
       {/* 控制欄 */}
       <div className="space-y-3 mb-4">
         {/* 手機版：時間範圍下拉選單 */}
-        <div className="md:hidden">
+        <div className="md:hidden space-y-2">
+          {/* 時間週期切換 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">週期：</span>
+            <div className="flex gap-1 flex-1">
+              <Button
+                variant={chartPeriod === 'daily' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod('daily')}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                日線
+              </Button>
+              <Button
+                variant={chartPeriod === 'weekly' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod('weekly')}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                週線
+              </Button>
+              <Button
+                variant={chartPeriod === 'monthly' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod('monthly')}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                月線
+              </Button>
+            </div>
+          </div>
+          
+          {/* 時間範圍選擇 */}
           <Select
             value={isCustomRange ? "custom" : selectedRange}
             onValueChange={(value) => {
@@ -539,7 +647,43 @@ export default function TradingViewChart({
         </div>
 
         {/* 桌面版：時間範圍按鈕組 */}
-        <div className="hidden md:flex flex-wrap items-center gap-2">
+        <div className="hidden md:flex flex-wrap items-center gap-4">
+          {/* 時間週期切換 */}
+          <div className="flex items-center gap-2 border-r border-border pr-4">
+            <span className="text-sm text-muted-foreground">週期：</span>
+            <div className="flex gap-1">
+              <Button
+                variant={chartPeriod === 'daily' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod('daily')}
+                disabled={isLoading}
+                className="px-3"
+              >
+                日線
+              </Button>
+              <Button
+                variant={chartPeriod === 'weekly' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod('weekly')}
+                disabled={isLoading}
+                className="px-3"
+              >
+                週線
+              </Button>
+              <Button
+                variant={chartPeriod === 'monthly' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod('monthly')}
+                disabled={isLoading}
+                className="px-3"
+              >
+                月線
+              </Button>
+            </div>
+          </div>
+          
+          {/* 時間範圍按鈕 */}
+          <div className="flex flex-wrap items-center gap-2">
           {timeRanges.map((range) => (
             <Button
               key={range.value}
@@ -551,6 +695,7 @@ export default function TradingViewChart({
               {range.label}
             </Button>
           ))}
+          </div>
         </div>
 
         {/* 自訂日期範圍和功能按鈕 */}

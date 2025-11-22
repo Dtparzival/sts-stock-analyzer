@@ -358,7 +358,7 @@ export default function StockDetail() {
         {/* 價格資訊卡片 */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">當前價格</p>
                 <p className="text-3xl font-bold">{currencySymbol}{currentPrice?.toFixed(2)}</p>
