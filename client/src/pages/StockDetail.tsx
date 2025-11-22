@@ -320,97 +320,122 @@ export default function StockDetail() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* 返回按鈕 */}
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
+        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6 hover:bg-primary/10">
           <ArrowLeft className="h-4 w-4 mr-2" />
           返回首頁
         </Button>
 
-        {/* 股票標題和收藏按鈕 */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold">{displaySymbol}</h1>
-            </div>
-            <p className="text-2xl text-muted-foreground">
-              {companyName}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleWatchlistToggle}
-            disabled={!user}
-          >
-            {watchlistCheck?.isInWatchlist ? (
-              <>
-                <StarOff className="h-5 w-5 mr-2" />
-                取消收藏
-              </>
-            ) : (
-              <>
-                <Star className="h-5 w-5 mr-2" />
-                加入收藏
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* 價格資訊卡片 */}
-        <Card className="mb-6">
+        {/* 股票標題和收藏按鈕 - 優化設計 */}
+        <Card className="mb-6 border-2 shadow-lg">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">當前價格</p>
-                <p className="text-3xl font-bold">{currencySymbol}{currentPrice?.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">漲跌</p>
-                <div className="flex items-center gap-2">
-                  {priceChange >= 0 ? (
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <TrendingDown className="h-5 w-5 text-red-500" />
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-3">
+                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{displaySymbol}</h1>
+                  {market === 'TW' && (
+                    <Badge variant="outline" className="text-sm px-3 py-1">台股</Badge>
                   )}
-                  <p className={`text-2xl font-bold ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {priceChange >= 0 ? '+' : ''}{currencySymbol}{priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
-                  </p>
+                  {market === 'US' && (
+                    <Badge variant="outline" className="text-sm px-3 py-1">美股</Badge>
+                  )}
+                </div>
+                <p className="text-xl text-muted-foreground font-medium">
+                  {companyName}
+                </p>
+              </div>
+              <Button
+                variant={watchlistCheck?.isInWatchlist ? "default" : "outline"}
+                size="lg"
+                onClick={handleWatchlistToggle}
+                disabled={!user}
+                className={watchlistCheck?.isInWatchlist ? "bg-gradient-primary text-white border-0 shadow-md button-hover" : "button-hover"}
+              >
+                {watchlistCheck?.isInWatchlist ? (
+                  <>
+                    <StarOff className="h-5 w-5 mr-2" />
+                    取消收藏
+                  </>
+                ) : (
+                  <>
+                    <Star className="h-5 w-5 mr-2" />
+                    加入收藏
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 價格資訊卡片 - 優化設計 */}
+        <Card className="mb-6 border-2 shadow-lg">
+          <CardContent className="pt-8">
+            {/* 主要價格資訊 - 突出顯示 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-border">
+              <div className="text-center md:text-left">
+                <p className="text-sm font-medium text-muted-foreground mb-2">當前價格</p>
+                <p className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{currencySymbol}{currentPrice?.toFixed(2)}</p>
+              </div>
+              <div className="text-center md:text-left">
+                <p className="text-sm font-medium text-muted-foreground mb-2">漲跌幅</p>
+                <div className="flex items-center justify-center md:justify-start gap-3">
+                  {priceChange >= 0 ? (
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <TrendingUp className="h-6 w-6 text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-lg bg-red-500/10">
+                      <TrendingDown className="h-6 w-6 text-red-600" />
+                    </div>
+                  )}
+                  <div>
+                    <p className={`text-3xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {priceChange >= 0 ? '+' : ''}{currencySymbol}{priceChange.toFixed(2)}
+                    </p>
+                    <p className={`text-xl font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ({priceChangePercent.toFixed(2)}%)
+                    </p>
+                  </div>
                 </div>
               </div>
+            </div>
+            
+            {/* 其他價格資訊 */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">開盤價</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">開盤價</p>
                 <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">昨收價</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">昨收價</p>
                 <p className="text-2xl font-semibold">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">最高價</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">最高價</p>
                 <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">最低價</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">最低價</p>
                 <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">成交量</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">成交量</p>
                 <p className="text-2xl font-semibold">{meta?.regularMarketVolume?.toLocaleString() || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">市值</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">市值</p>
                 <p className="text-2xl font-semibold">
                   {meta?.marketCap ? `$${(meta.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
                 </p>
               </div>
             </div>
             
-            {/* 數據更新時間戳 */}
+            {/* 數據更新時間戳 - 優化設計 */}
             {(stockData as any)?._metadata && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex flex-wrap items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">數據更新時間:</span>
-                    <span>
+                    <span className="font-semibold text-foreground">數據更新時間:</span>
+                    <span className="text-muted-foreground">
                       {new Date((stockData as any)._metadata.lastUpdated).toLocaleString('zh-TW', {
                         year: 'numeric',
                         month: '2-digit',
@@ -422,20 +447,20 @@ export default function StockDetail() {
                     </span>
                   </div>
                   {(stockData as any)._metadata.isFromCache && (
-                    <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1.5">
                       <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span>使用緩存數據</span>
-                    </div>
+                      使用緩存數據
+                    </Badge>
                   )}
                   {!(stockData as any)._metadata.isFromCache && (
-                    <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1.5">
                       <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-                      <span>即時數據</span>
-                    </div>
+                      即時數據
+                    </Badge>
                   )}
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">緩存過期時間:</span>
-                    <span>
+                    <span className="font-semibold text-foreground">緩存過期時間:</span>
+                    <span className="text-muted-foreground">
                       {new Date((stockData as any)._metadata.expiresAt).toLocaleString('zh-TW', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -460,25 +485,25 @@ export default function StockDetail() {
           }}
         />
 
-        {/* 分析和預測標籤頁 */}
-        <Tabs defaultValue="analysis" className="mt-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="analysis">AI 投資分析</TabsTrigger>
-            <TabsTrigger value="prediction">未來趨勢預測</TabsTrigger>
+        {/* 分析和預測標籤頁 - 優化設計 */}
+        <Tabs defaultValue="analysis" className="mt-8">
+          <TabsList className="grid w-full grid-cols-2 h-14 p-1 bg-muted/50">
+            <TabsTrigger value="analysis" className="text-base font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-white">AI 投資分析</TabsTrigger>
+            <TabsTrigger value="prediction" className="text-base font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-white">未來趋勢預測</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analysis">
-            <Card>
+            <Card className="border-2 shadow-lg">
               <CardHeader>
-                <CardTitle>AI 投資分析</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-2xl">AI 投資分析</CardTitle>
+                <CardDescription className="text-base">
                   基於公司基本面、技術面和市場情緒的綜合分析
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {!analysis ? (
-                  <div className="text-center py-12">
-                    <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg">
+                  <div className="text-center py-16">
+                    <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
                       {isAnalyzing ? (
                         <>
                           <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -589,17 +614,17 @@ export default function StockDetail() {
           </TabsContent>
 
           <TabsContent value="prediction">
-            <Card>
+            <Card className="border-2 shadow-lg">
               <CardHeader>
-                <CardTitle>未來趨勢預測</CardTitle>
-                <CardDescription>
-                  基於歷史數據和市場趨勢的未來走勢預測
+                <CardTitle className="text-2xl">未來趋勢預測</CardTitle>
+                <CardDescription className="text-base">
+                  基於歷史數據和市場趋勢的未來走勢預測
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {!prediction ? (
-                  <div className="text-center py-12">
-                    <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg">
+                  <div className="text-center py-16">
+                    <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
                       {isPredicting ? (
                         <>
                           <Loader2 className="h-5 w-5 mr-2 animate-spin" />

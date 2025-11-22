@@ -185,35 +185,41 @@ export default function Watchlist() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
+      <div className="container mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-8 hover:bg-primary/10">
           <ArrowLeft className="h-4 w-4 mr-2" />
           返回首頁
         </Button>
 
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Star className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">我的收藏</h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-secondary">
+              <Star className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">我的收藏</h1>
+              <p className="text-muted-foreground mt-1">追蹤您關注的股票</p>
+            </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* 批量分析按鈕 */}
             {watchlist && watchlist.length > 0 && (
               <Button
                 variant="default"
-                size="sm"
+                size="default"
                 onClick={() => batchAnalyze.mutate()}
                 disabled={batchAnalyze.isPending}
+                className="bg-gradient-primary text-white border-0 shadow-md button-hover"
               >
                 {batchAnalyze.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                     分析中...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4 mr-2" />
+                    <Sparkles className="h-5 w-5 mr-2" />
                     批量 AI 分析
                   </>
                 )}
@@ -224,22 +230,25 @@ export default function Watchlist() {
             <div className="flex gap-2">
             <Button
               variant={marketFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setMarketFilter('all')}
+              className={marketFilter === 'all' ? 'bg-gradient-primary text-white border-0 shadow-md' : 'hover:border-primary/50 hover:bg-primary/5'}
             >
               全部
             </Button>
             <Button
               variant={marketFilter === 'US' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setMarketFilter('US')}
+              className={marketFilter === 'US' ? 'bg-gradient-primary text-white border-0 shadow-md' : 'hover:border-primary/50 hover:bg-primary/5'}
             >
               美股
             </Button>
             <Button
               variant={marketFilter === 'TW' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setMarketFilter('TW')}
+              className={marketFilter === 'TW' ? 'bg-gradient-primary text-white border-0 shadow-md' : 'hover:border-primary/50 hover:bg-primary/5'}
             >
               台股
             </Button>
@@ -252,23 +261,42 @@ export default function Watchlist() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : !watchlist || watchlist.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground">尚未收藏任何股票</p>
+          <Card className="border-2 shadow-lg">
+            <CardContent className="py-20 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-muted">
+                  <Star className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-xl font-semibold mb-2">尚未收藏任何股票</p>
+                  <p className="text-muted-foreground">開始搜尋並收藏您關注的股票</p>
+                </div>
+                <Button onClick={() => setLocation("/")} className="mt-4 bg-gradient-primary text-white border-0 shadow-md button-hover">
+                  前往首頁搜尋
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : filteredWatchlist.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground">沒有符合篩選條件的股票</p>
+          <Card className="border-2 shadow-lg">
+            <CardContent className="py-20 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-muted">
+                  <Star className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-xl font-semibold mb-2">沒有符合篩選條件的股票</p>
+                  <p className="text-muted-foreground">請嘗試切換其他市場篩選器</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredWatchlist.map((item) => (
               <Card
                 key={item.id}
-                className="cursor-pointer hover:border-primary/50 transition-colors relative group"
+                className="cursor-pointer card-hover border-2 hover:border-primary/50 hover:shadow-xl transition-all relative group"
                 onClick={() => setLocation(`/stock/${item.symbol}`)}
               >
                 <CardContent className="py-6">
