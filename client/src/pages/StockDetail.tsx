@@ -347,11 +347,15 @@ export default function StockDetail() {
         animate="visible"
         variants={containerVariants}
       >
-        {/* 返回按鈕 */}
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6 hover:bg-primary/10">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首頁
-        </Button>
+        {/* 返回按鈕 - 優化設計 */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg bg-gradient-primary">
+            <ArrowLeft className="h-5 w-5 text-white" />
+          </div>
+          <Button variant="ghost" onClick={() => setLocation("/")} className="hover:bg-primary/10 font-semibold">
+            返回首頁
+          </Button>
+        </div>
 
         {/* 股票標題和收藏按鈕 - 優化設計 */}
         <motion.div variants={itemVariants}>
@@ -558,7 +562,7 @@ export default function StockDetail() {
                       <div className="flex gap-2">
                         <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="button-hover font-semibold">
                               <History className="h-4 w-4 mr-2" />
                               歷史記錄
                             </Button>
@@ -627,6 +631,7 @@ export default function StockDetail() {
                           size="sm"
                           onClick={() => handleGetAnalysis(true)} 
                           disabled={isAnalyzing}
+                          className="button-hover font-semibold"
                         >
                           {isAnalyzing ? (
                             <>

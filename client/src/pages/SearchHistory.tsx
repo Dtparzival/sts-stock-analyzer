@@ -124,15 +124,20 @@ export default function SearchHistory() {
             {/* 第一行：返回按鈕和標題 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setLocation("/")}
-                  className="flex-shrink-0 hover:bg-primary/10 transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="ml-2 hidden sm:inline">返回首頁</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-primary">
+                    <ArrowLeft className="h-4 w-4 text-white" />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLocation("/")}
+                    className="flex-shrink-0 hover:bg-primary/10 transition-colors font-semibold"
+                  >
+                    <span className="hidden sm:inline">返回首頁</span>
+                    <span className="sm:hidden">首頁</span>
+                  </Button>
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg blur-sm" />
@@ -155,7 +160,7 @@ export default function SearchHistory() {
                 variant="destructive"
                 size="sm"
                 onClick={() => setDeleteAllDialogOpen(true)}
-                className="hover:bg-red-600 transition-colors"
+                className="hover:bg-red-600 transition-colors button-hover font-semibold"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 清空所有
@@ -165,7 +170,7 @@ export default function SearchHistory() {
               variant={marketFilter === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMarketFilter('all')}
-              className={marketFilter === 'all' ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' : 'hover:border-blue-500/50 transition-all'}
+              className={marketFilter === 'all' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               全部
             </Button>
@@ -173,7 +178,7 @@ export default function SearchHistory() {
               variant={marketFilter === 'US' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMarketFilter('US')}
-              className={marketFilter === 'US' ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' : 'hover:border-blue-500/50 transition-all'}
+              className={marketFilter === 'US' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               美股
             </Button>
@@ -181,7 +186,7 @@ export default function SearchHistory() {
               variant={marketFilter === 'TW' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMarketFilter('TW')}
-              className={marketFilter === 'TW' ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' : 'hover:border-blue-500/50 transition-all'}
+              className={marketFilter === 'TW' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               台股
             </Button>
@@ -304,7 +309,7 @@ export default function SearchHistory() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                        className="h-8 w-8 hover:bg-red-500/10 hover:text-red-600 transition-colors button-hover"
                         onClick={(e) => handleDeleteOne(item.id, e)}
                       >
                         <Trash2 className="h-4 w-4" />

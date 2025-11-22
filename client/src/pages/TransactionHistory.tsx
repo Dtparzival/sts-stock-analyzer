@@ -46,14 +46,18 @@ export default function TransactionHistory() {
       {/* 頂部導航 */}
       <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-4">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/portfolio")}
-            className="mb-2"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            返回投資組合
-          </Button>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-gradient-primary">
+              <ArrowLeft className="h-5 w-5 text-white" />
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/portfolio")}
+              className="hover:bg-primary/10 font-semibold"
+            >
+              返回投資組合
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold">交易歷史統計</h1>
           <p className="text-muted-foreground mt-1">
             分析您的交易記錄，提升投資決策

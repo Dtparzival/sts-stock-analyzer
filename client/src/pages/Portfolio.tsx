@@ -284,15 +284,20 @@ export default function Portfolio() {
             {/* 第一行：標題和返回按鈕 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setLocation("/")}
-                  className="flex-shrink-0 hover:bg-primary/10 transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="ml-2 hidden sm:inline">返回首頁</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-primary">
+                    <ArrowLeft className="h-4 w-4 text-white" />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLocation("/")}
+                    className="flex-shrink-0 hover:bg-primary/10 transition-colors font-semibold"
+                  >
+                    <span className="hidden sm:inline">返回首頁</span>
+                    <span className="sm:hidden">首頁</span>
+                  </Button>
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg blur-sm" />
@@ -317,6 +322,7 @@ export default function Portfolio() {
                     variant={currency === 'USD' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrency('USD')}
+                    className={currency === 'USD' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
                   >
                     USD ($)
                   </Button>
@@ -324,6 +330,7 @@ export default function Portfolio() {
                     variant={currency === 'TWD' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrency('TWD')}
+                    className={currency === 'TWD' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
                   >
                     TWD (NT$)
                   </Button>
@@ -345,7 +352,7 @@ export default function Portfolio() {
               <Button
                 variant="outline"
                 onClick={() => setLocation("/portfolio/transactions")}
-                className="relative overflow-hidden group hover:border-green-500/50 transition-all"
+                className="relative overflow-hidden group hover:border-green-500/50 transition-all button-hover font-semibold"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <TrendingUpIcon className="h-4 w-4 mr-2 relative z-10" />
@@ -356,7 +363,7 @@ export default function Portfolio() {
                 variant="outline"
                 onClick={handleAIAnalysis}
                 disabled={isAnalyzing || portfolio.length === 0}
-                className="relative overflow-hidden group hover:border-blue-500/50 transition-all"
+                className="relative overflow-hidden group hover:border-blue-500/50 transition-all button-hover font-semibold"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 {isAnalyzing ? (
@@ -374,7 +381,7 @@ export default function Portfolio() {
               
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="relative overflow-hidden group bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all">
+                    <Button className="relative overflow-hidden group bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all button-hover font-semibold">
                       <Plus className="h-4 w-4 mr-2" />
                       添加持倉
                     </Button>

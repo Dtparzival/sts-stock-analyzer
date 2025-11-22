@@ -186,10 +186,15 @@ export default function Watchlist() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-8 hover:bg-primary/10">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首頁
-        </Button>
+        {/* 返回按鈕 - 優化設計 */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2 rounded-lg bg-gradient-primary">
+            <ArrowLeft className="h-5 w-5 text-white" />
+          </div>
+          <Button variant="ghost" onClick={() => setLocation("/")} className="hover:bg-primary/10 font-semibold">
+            返回首頁
+          </Button>
+        </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
           <div className="flex items-center gap-4">
@@ -232,7 +237,7 @@ export default function Watchlist() {
               variant={marketFilter === 'all' ? 'default' : 'outline'}
               size="default"
               onClick={() => setMarketFilter('all')}
-              className={marketFilter === 'all' ? 'bg-gradient-primary text-white border-0 shadow-md' : 'hover:border-primary/50 hover:bg-primary/5'}
+              className={marketFilter === 'all' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               全部
             </Button>
@@ -240,7 +245,7 @@ export default function Watchlist() {
               variant={marketFilter === 'US' ? 'default' : 'outline'}
               size="default"
               onClick={() => setMarketFilter('US')}
-              className={marketFilter === 'US' ? 'bg-gradient-primary text-white border-0 shadow-md' : 'hover:border-primary/50 hover:bg-primary/5'}
+              className={marketFilter === 'US' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               美股
             </Button>
@@ -248,7 +253,7 @@ export default function Watchlist() {
               variant={marketFilter === 'TW' ? 'default' : 'outline'}
               size="default"
               onClick={() => setMarketFilter('TW')}
-              className={marketFilter === 'TW' ? 'bg-gradient-primary text-white border-0 shadow-md' : 'hover:border-primary/50 hover:bg-primary/5'}
+              className={marketFilter === 'TW' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               台股
             </Button>
@@ -336,7 +341,7 @@ export default function Watchlist() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors button-hover"
                         onClick={(e) => handleRemove(e, item.symbol)}
                         title="移除收藏"
                       >
