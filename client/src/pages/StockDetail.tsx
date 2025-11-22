@@ -526,9 +526,19 @@ export default function StockDetail() {
         {/* 分析和預測標籤頁 - 優化設計 */}
         <motion.div variants={itemVariants}>
         <Tabs defaultValue="analysis" className="mt-8">
-          <TabsList className="grid w-full grid-cols-2 h-14 p-1 bg-muted/50">
-            <TabsTrigger value="analysis" className="text-base font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-white">AI 投資分析</TabsTrigger>
-            <TabsTrigger value="prediction" className="text-base font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-white">未來趋勢預測</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-muted/30 rounded-xl gap-2">
+            <TabsTrigger 
+              value="analysis" 
+              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
+            >
+              AI 投資分析
+            </TabsTrigger>
+            <TabsTrigger 
+              value="prediction" 
+              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
+            >
+              未來趨勢預測
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analysis">
