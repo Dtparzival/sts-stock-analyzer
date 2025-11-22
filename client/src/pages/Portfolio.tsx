@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, TrendingUp, TrendingDown, Loader2, Briefcase, DollarSign, PieChart, TrendingUpIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, TrendingUp, TrendingDown, Loader2, Briefcase, DollarSign, PieChart, TrendingUpIcon, Search, Calendar, Hash, DollarSign as DollarSignIcon, FileText, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
@@ -43,7 +43,11 @@ export default function Portfolio() {
     purchasePrice: "",
     purchaseDate: new Date().toISOString().split('T')[0],
     notes: "",
+    market: "US" as "US" | "TW", // 市場選擇
   });
+  const [stockSuggestions, setStockSuggestions] = useState<Array<{ symbol: string; name: string }>>([]);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
   const { data: portfolio = [], isLoading, refetch } = trpc.portfolio.list.useQuery(undefined, {
     enabled: !!user,
@@ -98,6 +102,9 @@ export default function Portfolio() {
     aiAnalysisMutation.mutate({ currentPrices: stockPrices });
   };
 
+  // 獲取 tRPC utils
+  const utils = trpc.useUtils();
+
   const resetForm = () => {
     setFormData({
       symbol: "",
@@ -105,7 +112,64 @@ export default function Portfolio() {
       purchasePrice: "",
       purchaseDate: new Date().toISOString().split('T')[0],
       notes: "",
+      market: "US",
     });
+    setStockSuggestions([]);
+    setCurrentPrice(null);
+  };
+
+  // 當股票代碼輸入時，搜尋建議和獲取即時價格
+  useEffect(() => {
+    const debounceTimer = setTimeout(async () => {
+      if (!formData.symbol || formData.symbol.length < 1) {
+        setStockSuggestions([]);
+        setCurrentPrice(null);
+        return;
+      }
+
+      // 台股：搜尋中文名稱建議（暫時禁用，因為 API 路徑問題）
+      // if (formData.market === "TW" && formData.symbol.length >= 2) {
+      //   try {
+      //     const results = await utils.stock.searchTWStock.fetch({ query: formData.symbol });
+      //     setStockSuggestions(results.slice(0, 5)); // 最多 5 個建議
+      //   } catch (error) {
+      //     console.error("Search failed:", error);
+      //   }
+      // }
+
+      // 獲取即時價格（當代碼長度足夠時）
+      if ((formData.market === "US" && formData.symbol.length >= 2) || 
+          (formData.market === "TW" && formData.symbol.length >= 4)) {
+        setIsLoadingPrice(true);
+        try {
+          const fullSymbol = formData.market === "TW" ? `${formData.symbol}.TW` : formData.symbol;
+          const data = await utils.stock.getStockData.fetch({
+            symbol: fullSymbol,
+            range: "1d",
+            interval: "1d"
+          }) as any;
+          
+          if (data?.chart?.result?.[0]?.meta?.regularMarketPrice) {
+            setCurrentPrice(data.chart.result[0].meta.regularMarketPrice);
+          } else {
+            setCurrentPrice(null);
+          }
+        } catch (error) {
+          console.error("Failed to fetch price:", error);
+          setCurrentPrice(null);
+        } finally {
+          setIsLoadingPrice(false);
+        }
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(debounceTimer);
+  }, [formData.symbol, formData.market, utils]);
+
+  // 選擇建議股票
+  const handleSelectSuggestion = (symbol: string) => {
+    setFormData({ ...formData, symbol });
+    setStockSuggestions([]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -116,8 +180,11 @@ export default function Portfolio() {
       return;
     }
 
+    // 台股需要添加 .TW 後綴
+    const fullSymbol = formData.market === "TW" ? `${formData.symbol}.TW` : formData.symbol.toUpperCase();
+
     addMutation.mutate({
-      symbol: formData.symbol.toUpperCase(),
+      symbol: fullSymbol,
       shares: parseInt(formData.shares),
       purchasePrice: parseFloat(formData.purchasePrice),
       purchaseDate: new Date(formData.purchaseDate),
@@ -132,7 +199,6 @@ export default function Portfolio() {
   };
 
   // 獲取當前股價
-  const utils = trpc.useUtils();
   
   useEffect(() => {
     if (portfolio.length === 0) return;
@@ -383,71 +449,214 @@ export default function Portfolio() {
                       添加持倉
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>添加新持倉</DialogTitle>
-                      <DialogDescription>
-                    輸入您的股票持倉資訊
-                  </DialogDescription>
-                </DialogHeader>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500">
+                          <Sparkles className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            添加新持倉
+                          </DialogTitle>
+                          <DialogDescription className="text-sm mt-1">
+                            輸入您的股票持倉資訊
+                          </DialogDescription>
+                        </div>
+                      </div>
+                    </DialogHeader>
                 <form onSubmit={handleSubmit}>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="symbol">股票代碼 *</Label>
-                      <Input
-                        id="symbol"
-                        placeholder="例如: AAPL"
-                        value={formData.symbol}
-                        onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
-                        required
-                      />
+                  <div className="space-y-5 py-6">
+                    {/* 市場選擇器 */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-foreground">選擇市場 *</Label>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant={formData.market === "US" ? "default" : "outline"}
+                          className={`flex-1 h-12 font-semibold transition-all ${
+                            formData.market === "US"
+                              ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md"
+                              : "hover:bg-blue-50 hover:border-blue-300"
+                          }`}
+                          onClick={() => {
+                            setFormData({ ...formData, market: "US", symbol: "" });
+                            setStockSuggestions([]);
+                            setCurrentPrice(null);
+                          }}
+                        >
+                          <span className="text-lg mr-2">🇺🇸</span>
+                          美股市場
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={formData.market === "TW" ? "default" : "outline"}
+                          className={`flex-1 h-12 font-semibold transition-all ${
+                            formData.market === "TW"
+                              ? "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-md"
+                              : "hover:bg-purple-50 hover:border-purple-300"
+                          }`}
+                          onClick={() => {
+                            setFormData({ ...formData, market: "TW", symbol: "" });
+                            setStockSuggestions([]);
+                            setCurrentPrice(null);
+                          }}
+                        >
+                          <span className="text-lg mr-2">🇹🇼</span>
+                          台股市場
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="shares">持股數量 *</Label>
-                      <Input
-                        id="shares"
-                        type="number"
-                        min="1"
-                        placeholder="例如: 100"
-                        value={formData.shares}
-                        onChange={(e) => setFormData({ ...formData, shares: e.target.value })}
-                        required
-                      />
+                    {/* 股票代碼輸入 */}
+                    <div className="space-y-3">
+                      <Label htmlFor="symbol" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Search className="h-4 w-4 text-blue-500" />
+                        股票代碼 *
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="symbol"
+                          placeholder={formData.market === "US" ? "例如: AAPL" : "例如: 2330"}
+                          value={formData.symbol}
+                          onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                          required
+                          className="h-12 pl-10 pr-4 text-base border-2 focus:border-blue-400 transition-colors"
+                          autoComplete="off"
+                        />
+                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        
+                        {/* 自動完成建議下拉列表 */}
+                        {stockSuggestions.length > 0 && (
+                          <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                            {stockSuggestions.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleSelectSuggestion(suggestion.symbol)}
+                                className="w-full px-4 py-3 text-left hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
+                              >
+                                <div className="flex-shrink-0 w-16 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-md flex items-center justify-center">
+                                  <span className="text-white font-bold text-sm">{suggestion.symbol}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-foreground truncate">{suggestion.symbol}</div>
+                                  <div className="text-xs text-muted-foreground truncate">{suggestion.name}</div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 即時價格顯示 */}
+                      {isLoadingPrice && (
+                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            正在獲取即時價格...
+                          </span>
+                        </div>
+                      )}
+                      {!isLoadingPrice && currentPrice !== null && (
+                        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                            當前市價: {formData.market === "TW" ? "NT$" : "$"}{currentPrice.toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, purchasePrice: currentPrice.toString() })}
+                            className="ml-auto text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
+                          >
+                            使用此價格
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="purchasePrice">購買價格 (USD) *</Label>
-                      <Input
-                        id="purchasePrice"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="例如: 150.50"
-                        value={formData.purchasePrice}
-                        onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-                        required
-                      />
+                    {/* 持股數量 */}
+                    <div className="space-y-3">
+                      <Label htmlFor="shares" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-purple-500" />
+                        持股數量 *
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="shares"
+                          type="number"
+                          min="1"
+                          placeholder="例如: 100"
+                          value={formData.shares}
+                          onChange={(e) => setFormData({ ...formData, shares: e.target.value })}
+                          required
+                          className="h-12 pl-4 pr-4 text-base border-2 focus:border-purple-400 transition-colors"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="purchaseDate">購買日期 *</Label>
-                      <Input
-                        id="purchaseDate"
-                        type="date"
-                        value={formData.purchaseDate}
-                        onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
-                        required
-                      />
+                    {/* 購買價格 */}
+                    <div className="space-y-3">
+                      <Label htmlFor="purchasePrice" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <DollarSignIcon className="h-4 w-4 text-green-500" />
+                        購買價格 ({formData.market === "TW" ? "TWD" : "USD"}) *
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="purchasePrice"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          placeholder={formData.market === "TW" ? "例如: 500" : "例如: 150.50"}
+                          value={formData.purchasePrice}
+                          onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                          required
+                          className="h-12 pl-10 pr-4 text-base border-2 focus:border-green-400 transition-colors"
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">
+                          {formData.market === "TW" ? "NT$" : "$"}
+                        </span>
+                      </div>
+                      {formData.shares && formData.purchasePrice && (
+                        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                          <DollarSignIcon className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                            總成本: {formData.market === "TW" ? "NT$" : "$"}{(parseFloat(formData.shares) * parseFloat(formData.purchasePrice)).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">備註</Label>
+                    {/* 購買日期 */}
+                    <div className="space-y-3">
+                      <Label htmlFor="purchaseDate" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-orange-500" />
+                        購買日期 *
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="purchaseDate"
+                          type="date"
+                          value={formData.purchaseDate}
+                          onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                          required
+                          className="h-12 pl-10 pr-4 text-base border-2 focus:border-orange-400 transition-colors"
+                        />
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </div>
+                    {/* 備註 */}
+                    <div className="space-y-3">
+                      <Label htmlFor="notes" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        備註
+                      </Label>
                       <Textarea
                         id="notes"
                         placeholder="選填：記錄購買原因或其他資訊"
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        className="min-h-[100px] text-base border-2 focus:border-gray-400 transition-colors resize-none"
                       />
                     </div>
                   </div>
-                  <DialogFooter>
+                  <DialogFooter className="gap-3 sm:gap-2">
                     <Button
                       type="button"
                       variant="outline"
@@ -455,12 +664,17 @@ export default function Portfolio() {
                         setIsAddDialogOpen(false);
                         resetForm();
                       }}
+                      className="h-12 px-6 font-semibold border-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
                     >
                       取消
                     </Button>
-                    <Button type="submit" disabled={addMutation.isPending}>
-                      {addMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      添加
+                    <Button 
+                      type="submit" 
+                      disabled={addMutation.isPending}
+                      className="h-12 px-8 font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
+                    >
+                      {addMutation.isPending && <Loader2 className="h-5 w-5 mr-2 animate-spin" />}
+                      {addMutation.isPending ? "添加中..." : "添加持倉"}
                     </Button>
                   </DialogFooter>
                   </form>
