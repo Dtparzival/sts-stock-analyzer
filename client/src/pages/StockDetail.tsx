@@ -26,12 +26,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TradingViewChart from "@/components/TradingViewChart";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
 import StockDetailSkeleton from "@/components/StockDetailSkeleton";
 import ShareButton from "@/components/ShareButton";
-import { ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, Filter, SortAsc, GitCompare, BarChart3 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import CompareAnalysisDialog from "@/components/CompareAnalysisDialog";
 
 // AI 分析歷史記錄卡片組件
 interface AnalysisHistoryCardProps {
@@ -43,9 +46,11 @@ interface AnalysisHistoryCardProps {
     content: string;
   };
   index: number;
+  isSelected?: boolean;
+  onToggleSelect?: (id: number) => void;
 }
 
-function AnalysisHistoryCard({ record, index }: AnalysisHistoryCardProps) {
+function AnalysisHistoryCard({ record, index, isSelected = false, onToggleSelect }: AnalysisHistoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const summary = record.content.substring(0, 80);
   const hasMore = record.content.length > 80;
@@ -70,11 +75,19 @@ function AnalysisHistoryCard({ record, index }: AnalysisHistoryCardProps) {
       <div className="p-5">
         {/* 標頭區域 */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${style.gradient} flex items-center justify-center`}>
+          <div className="flex items-center gap-3 flex-1">
+            {/* 選擇框 */}
+            {onToggleSelect && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect(record.id)}
+                className="h-5 w-5 flex-shrink-0"
+              />
+            )}
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${style.gradient} flex items-center justify-center flex-shrink-0`}>
               <Clock className="h-5 w-5 text-white" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-muted-foreground">
                 {new Date(record.createdAt).toLocaleString('zh-TW', {
                   year: 'numeric',
@@ -145,6 +158,14 @@ export default function StockDetail() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [chartRange, setChartRange] = useState("1mo");
   const [chartInterval, setChartInterval] = useState("1d");
+  
+  // 歷史記錄篩選和排序狀態
+  const [filterRecommendation, setFilterRecommendation] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("time-desc");
+  
+  // 分析對比功能狀態
+  const [selectedRecords, setSelectedRecords] = useState<number[]>([]);
+  const [showCompareDialog, setShowCompareDialog] = useState(false);
 
   const { data: stockData, isLoading: loadingStock, error: stockError, refetch: refetchStockData } = trpc.stock.getStockData.useQuery(
     { symbol, range: chartRange, interval: chartInterval },
@@ -742,6 +763,64 @@ export default function StockDetail() {
                               </div>
                             </DialogHeader>
                             
+                            {/* 篩選和排序控制區 */}
+                            <div className="border-b pb-4 space-y-3">
+                              <div className="flex flex-col sm:flex-row gap-3">
+                                {/* 篩選器 */}
+                                <div className="flex-1">
+                                  <label className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                                    <Filter className="h-4 w-4" />
+                                    投資建議篩選
+                                  </label>
+                                  <Select value={filterRecommendation} onValueChange={setFilterRecommendation}>
+                                    <SelectTrigger className="w-full bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-purple-200 dark:border-purple-800">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="all">全部</SelectItem>
+                                      <SelectItem value="買入">買入</SelectItem>
+                                      <SelectItem value="持有">持有</SelectItem>
+                                      <SelectItem value="賣出">賣出</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                {/* 排序器 */}
+                                <div className="flex-1">
+                                  <label className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                                    <SortAsc className="h-4 w-4" />
+                                    排序方式
+                                  </label>
+                                  <Select value={sortBy} onValueChange={setSortBy}>
+                                    <SelectTrigger className="w-full bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-purple-200 dark:border-purple-800">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="time-desc">時間（新到舊）</SelectItem>
+                                      <SelectItem value="time-asc">時間（舊到新）</SelectItem>
+                                      <SelectItem value="price-desc">股價（高到低）</SelectItem>
+                                      <SelectItem value="price-asc">股價（低到高）</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              
+                              {/* 重置按鈕 */}
+                              {(filterRecommendation !== "all" || sortBy !== "time-desc") && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setFilterRecommendation("all");
+                                    setSortBy("time-desc");
+                                  }}
+                                  className="w-full sm:w-auto"
+                                >
+                                  重置篩選
+                                </Button>
+                              )}
+                            </div>
+                            
                             <div className="flex-1 overflow-y-auto py-4 px-1">
                               {!analysisHistory || analysisHistory.length === 0 ? (
                                 <div className="text-center py-16 text-muted-foreground">
@@ -750,20 +829,75 @@ export default function StockDetail() {
                                 </div>
                               ) : (
                                 <div className="space-y-4">
-                                  {analysisHistory.map((record, index) => (
-                                    <AnalysisHistoryCard 
-                                      key={record.id} 
-                                      record={record} 
-                                      index={index}
-                                    />
-                                  ))}
+                                  {(() => {
+                                    // 篩選邏輯
+                                    let filtered = analysisHistory;
+                                    if (filterRecommendation !== "all") {
+                                      filtered = filtered.filter(record => record.recommendation === filterRecommendation);
+                                    }
+                                    
+                                    // 排序邏輯
+                                    const sorted = [...filtered].sort((a, b) => {
+                                      switch (sortBy) {
+                                        case "time-asc":
+                                          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                                        case "time-desc":
+                                          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                                        case "price-asc":
+                                          return (a.priceAtAnalysis || 0) - (b.priceAtAnalysis || 0);
+                                        case "price-desc":
+                                          return (b.priceAtAnalysis || 0) - (a.priceAtAnalysis || 0);
+                                        default:
+                                          return 0;
+                                      }
+                                    });
+                                    
+                                    if (sorted.length === 0) {
+                                      return (
+                                        <div className="text-center py-16 text-muted-foreground">
+                                          <Filter className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                                          <p className="text-lg">沒有符合條件的記錄</p>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    return sorted.map((record, index) => (
+                                      <AnalysisHistoryCard 
+                                        key={record.id} 
+                                        record={record} 
+                                        index={index}
+                                        isSelected={selectedRecords.includes(record.id)}
+                                        onToggleSelect={(id) => {
+                                          if (selectedRecords.includes(id)) {
+                                            setSelectedRecords(selectedRecords.filter(rid => rid !== id));
+                                          } else if (selectedRecords.length < 2) {
+                                            setSelectedRecords([...selectedRecords, id]);
+                                          } else {
+                                            toast.error("最多只能選擇 2 筆記錄進行對比");
+                                          }
+                                        }}
+                                      />
+                                    ));
+                                  })()}
                                 </div>
                               )}
                             </div>
                             
-                            <div className="border-t pt-4 flex justify-end">
+                            <div className="border-t pt-4 flex justify-between items-center">
+                              <Button
+                                onClick={() => setShowCompareDialog(true)}
+                                disabled={selectedRecords.length !== 2}
+                                className="button-hover bg-gradient-primary text-white"
+                              >
+                                <GitCompare className="h-4 w-4 mr-2" />
+                                對比分析 ({selectedRecords.length}/2)
+                              </Button>
                               <Button 
-                                onClick={() => setShowHistoryDialog(false)}
+                                onClick={() => {
+                                  setShowHistoryDialog(false);
+                                  setSelectedRecords([]);
+                                }}
+                                variant="outline"
                                 className="button-hover"
                               >
                                 關閉
@@ -771,6 +905,14 @@ export default function StockDetail() {
                             </div>
                           </DialogContent>
                         </Dialog>
+                        
+                        {/* 分析對比對話框 */}
+                        <CompareAnalysisDialog
+                          open={showCompareDialog}
+                          onOpenChange={setShowCompareDialog}
+                          records={analysisHistory?.filter(r => selectedRecords.includes(r.id)) || []}
+                          symbol={symbol}
+                        />
                         
                         <Button 
                           variant="outline" 
