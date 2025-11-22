@@ -170,6 +170,8 @@ export default function TradingViewChart({
           top: 0.1,
           bottom: 0.2, // 留出空間給成交量
         },
+        // 禁用 Y 軸拖曳，防止 K 線圖和成交量交錯
+        mode: 0, // 0 = Normal mode (no dragging)
       },
       crosshair: {
         mode: 1, // Normal crosshair
@@ -228,6 +230,8 @@ export default function TradingViewChart({
         bottom: 0,
       },
       visible: false, // 隱藏成交量的價格標籤，避免與 K 線圖重疊
+      // 禁用 Y 軸拖曳，防止成交量和 K 線圖交錯
+      mode: 0, // 0 = Normal mode (no dragging)
     });
 
     // 響應式調整（帶 debounce 防抖機制）
