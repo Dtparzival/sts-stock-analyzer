@@ -2,12 +2,13 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, History, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, History, Trash2, Clock, TrendingUp } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,14 +128,22 @@ export default function SearchHistory() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setLocation("/")}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 hover:bg-primary/10 transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="ml-2 hidden sm:inline">返回首頁</span>
                 </Button>
                 <div className="flex items-center gap-3">
-                  <History className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                  <h1 className="text-xl sm:text-3xl font-bold">搜尋歷史</h1>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg blur-sm" />
+                    <div className="relative bg-gradient-to-br from-blue-500 to-purple-500 p-2 rounded-lg">
+                      <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">搜尋歷史</h1>
+                    <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">查看您的搜尋記錄</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -146,6 +155,7 @@ export default function SearchHistory() {
                 variant="destructive"
                 size="sm"
                 onClick={() => setDeleteAllDialogOpen(true)}
+                className="hover:bg-red-600 transition-colors"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 清空所有
@@ -155,6 +165,7 @@ export default function SearchHistory() {
               variant={marketFilter === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMarketFilter('all')}
+              className={marketFilter === 'all' ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' : 'hover:border-blue-500/50 transition-all'}
             >
               全部
             </Button>
@@ -162,6 +173,7 @@ export default function SearchHistory() {
               variant={marketFilter === 'US' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMarketFilter('US')}
+              className={marketFilter === 'US' ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' : 'hover:border-blue-500/50 transition-all'}
             >
               美股
             </Button>
@@ -169,6 +181,7 @@ export default function SearchHistory() {
               variant={marketFilter === 'TW' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMarketFilter('TW')}
+              className={marketFilter === 'TW' ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' : 'hover:border-blue-500/50 transition-all'}
             >
               台股
             </Button>
@@ -180,17 +193,27 @@ export default function SearchHistory() {
       <div className="container mx-auto px-4 py-6">
         {/* 熱門追蹤區塊 */}
         {topStocks && topStocks.length > 0 && (
-          <Card className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+          <Card className="mb-6 border-2 hover:shadow-lg transition-shadow relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-500" />
             <CardContent className="py-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="text-2xl">🔥</span>
-                熱門追蹤
-              </h2>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-orange-600" />
+                </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  熱門追蹤
+                </h2>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {topStocks.map((stock, index) => (
                   <div
                     key={stock.symbol}
-                    className="flex items-center justify-between p-3 bg-background rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    className="flex items-center justify-between p-3 bg-background rounded-lg cursor-pointer hover:bg-gradient-to-r hover:from-blue-500/5 hover:to-purple-500/5 hover:border-blue-500/20 border border-transparent transition-all"
                     onClick={() => setLocation(`/stock/${stock.symbol}`)}
                   >
                     <div className="flex items-center gap-3">
@@ -214,6 +237,7 @@ export default function SearchHistory() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {isLoading ? (
@@ -221,23 +245,41 @@ export default function SearchHistory() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : !history || history.length === 0 ? (
-          <Card>
+          <Card className="border-2">
             <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground">尚無搜尋記錄</p>
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full">
+                  <History className="h-12 w-12 text-blue-500" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">尚無搜尋記錄</h3>
+              <p className="text-sm text-muted-foreground">開始搜尋股票，您的搜尋歷史將顯示在這裡</p>
             </CardContent>
           </Card>
         ) : filteredHistory.length === 0 ? (
-          <Card>
+          <Card className="border-2">
             <CardContent className="py-12 text-center">
-              <p className="text-lg text-muted-foreground">沒有符合篩選條件的搜尋記錄</p>
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full">
+                  <History className="h-12 w-12 text-blue-500" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">沒有符合篩選條件的搜尋記錄</h3>
+              <p className="text-sm text-muted-foreground">請嘗試切換到其他市場篩選器</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-2">
-            {filteredHistory.map((item) => (
-              <Card
+            {filteredHistory.map((item, index) => (
+              <motion.div
                 key={item.id}
-                className="cursor-pointer hover:border-primary/50 transition-colors"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                whileHover={{ scale: 1.01, x: 4 }}
+              >
+              <Card
+                className="cursor-pointer hover:border-blue-500/50 hover:shadow-md transition-all border-2"
                 onClick={() => setLocation(`/stock/${item.symbol}`)}
               >
                 <CardContent className="py-4">
@@ -262,7 +304,7 @@ export default function SearchHistory() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 hover:bg-red-500/10 hover:text-red-600 transition-colors"
                         onClick={(e) => handleDeleteOne(item.id, e)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -271,6 +313,7 @@ export default function SearchHistory() {
                   </div>
                 </CardContent>
               </Card>
+              </motion.div>
             ))}
           </div>
         )}

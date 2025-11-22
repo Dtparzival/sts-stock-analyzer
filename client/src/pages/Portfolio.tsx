@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, TrendingUp, TrendingDown, Loader2, Briefcase, DollarSign, PieChart, TrendingUpIcon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
@@ -286,12 +287,23 @@ export default function Portfolio() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setLocation("/")}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 hover:bg-primary/10 transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="ml-2 hidden sm:inline">返回首頁</span>
                 </Button>
-                <h1 className="text-xl sm:text-2xl font-bold">投資組合</h1>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg blur-sm" />
+                    <div className="relative bg-gradient-to-br from-blue-500 to-purple-500 p-2 rounded-lg">
+                      <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">投資組合</h1>
+                    <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">追蹤您的投資表現</p>
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -333,23 +345,25 @@ export default function Portfolio() {
                 variant="outline"
                 onClick={handleAIAnalysis}
                 disabled={isAnalyzing || portfolio.length === 0}
+                className="relative overflow-hidden group hover:border-blue-500/50 transition-all"
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    分析中...
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin relative z-10" />
+                    <span className="relative z-10">分析中...</span>
                   </>
                 ) : (
                   <>
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    AI 智能分析
+                    <TrendingUp className="h-4 w-4 mr-2 relative z-10" />
+                    <span className="relative z-10">AI 智能分析</span>
                   </>
                 )}
               </Button>
               
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="relative overflow-hidden group bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all">
                       <Plus className="h-4 w-4 mr-2" />
                       添加持倉
                     </Button>
@@ -446,21 +460,44 @@ export default function Portfolio() {
       <main className="container mx-auto px-4 py-8">
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>總投資金額</CardDescription>
-              <CardTitle className="text-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            whileHover={{ scale: 1.02, y: -4 }}
+          >
+            <Card className="relative overflow-hidden border-2 hover:shadow-lg transition-all group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-blue-600" />
+            <CardHeader className="pb-3 relative">
+              <div className="flex items-center justify-between mb-2">
+                <CardDescription className="text-xs font-medium">總投資金額</CardDescription>
+                <DollarSign className="h-4 w-4 text-blue-500" />
+              </div>
+              <CardTitle className="text-2xl sm:text-3xl font-bold">
                 {getCurrencySymbol()}{convertCurrency(stats.totalInvestment).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
+          </motion.div>
           
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>當前總價值</CardDescription>
-              <CardTitle className="text-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            whileHover={{ scale: 1.02, y: -4 }}
+          >
+            <Card className="relative overflow-hidden border-2 hover:shadow-lg transition-all group">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-purple-600" />
+            <CardHeader className="pb-3 relative">
+              <div className="flex items-center justify-between mb-2">
+                <CardDescription className="text-xs font-medium">當前總價值</CardDescription>
+                <PieChart className="h-4 w-4 text-purple-500" />
+              </div>
+              <CardTitle className="text-2xl sm:text-3xl font-bold">
                 {!allPricesLoaded ? (
-                  <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="flex items-center gap-2 text-muted-foreground text-xl">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     載入中...
                   </span>
@@ -470,32 +507,55 @@ export default function Portfolio() {
               </CardTitle>
             </CardHeader>
           </Card>
+          </motion.div>
           
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>總損益</CardDescription>
-              <CardTitle className={`text-2xl flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            whileHover={{ scale: 1.02, y: -4 }}
+          >
+            <Card className="relative overflow-hidden border-2 hover:shadow-lg transition-all group">
+            <div className={`absolute inset-0 ${stats.totalGainLoss >= 0 ? 'bg-gradient-to-br from-green-500/5' : 'bg-gradient-to-br from-red-500/5'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+            <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${stats.totalGainLoss >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'}`} />
+            <CardHeader className="pb-3 relative">
+              <div className="flex items-center justify-between mb-2">
+                <CardDescription className="text-xs font-medium">總損益</CardDescription>
+                {stats.totalGainLoss >= 0 ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
+              </div>
+              <CardTitle className={`text-2xl sm:text-3xl font-bold flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {!allPricesLoaded ? (
-                  <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="flex items-center gap-2 text-muted-foreground text-xl">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     載入中...
                   </span>
                 ) : (
                   <>
-                    {stats.totalGainLoss >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                     {stats.totalGainLoss >= 0 ? '+' : '-'}{getCurrencySymbol()}{Math.abs(convertCurrency(stats.totalGainLoss)).toFixed(2)}
                   </>
                 )}
               </CardTitle>
             </CardHeader>
           </Card>
+          </motion.div>
           
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>總報酬率</CardDescription>
-              <CardTitle className={`text-2xl ${stats.totalGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            whileHover={{ scale: 1.02, y: -4 }}
+          >
+            <Card className="relative overflow-hidden border-2 hover:shadow-lg transition-all group">
+            <div className={`absolute inset-0 ${stats.totalGainLossPercent >= 0 ? 'bg-gradient-to-br from-green-500/5' : 'bg-gradient-to-br from-red-500/5'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+            <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${stats.totalGainLossPercent >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'}`} />
+            <CardHeader className="pb-3 relative">
+              <div className="flex items-center justify-between mb-2">
+                <CardDescription className="text-xs font-medium">總報酬率</CardDescription>
+                <TrendingUpIcon className={`h-4 w-4 ${stats.totalGainLossPercent >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              </div>
+              <CardTitle className={`text-2xl sm:text-3xl font-bold ${stats.totalGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {!allPricesLoaded ? (
-                  <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="flex items-center gap-2 text-muted-foreground text-xl">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     載入中...
                   </span>
@@ -505,15 +565,23 @@ export default function Portfolio() {
               </CardTitle>
             </CardHeader>
           </Card>
+          </motion.div>
         </div>
 
         {/* 持倉列表 */}
-        <Card className="mb-8">
+        <Card className="mb-8 border-2 hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>持倉明細</CardTitle>
-            <CardDescription>
-              您的股票投資組合詳情
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg">
+                <PieChart className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">持倉明細</CardTitle>
+                <CardDescription className="text-sm">
+                  您的股票投資組合詳情
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -521,15 +589,27 @@ export default function Portfolio() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : portfolio.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>尚無持倉記錄</p>
-                <p className="text-sm mt-2">點擊上方「添加持倉」按鈕開始記錄您的投資</p>
+              <div className="text-center py-12">
+                <div className="flex justify-center mb-4">
+                  <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full">
+                    <Briefcase className="h-12 w-12 text-blue-500" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">尚無持倉記錄</h3>
+                <p className="text-sm text-muted-foreground mb-6">點擊上方「添加持倉」按鈕開始記錄您的投資</p>
+                <Button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  開始添加持倉
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <Table className="min-w-[800px] sm:min-w-full">
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="bg-muted/50 hover:bg-muted/70 transition-colors">
                       <TableHead className="min-w-[120px]">股票</TableHead>
                       <TableHead className="text-right min-w-[80px]">持股數量</TableHead>
                       <TableHead className="text-right min-w-[100px]">購買價格</TableHead>
@@ -575,7 +655,7 @@ export default function Portfolio() {
                       const gainLossPercent = (gainLoss / costBasis) * 100;
 
                       return (
-                        <TableRow key={item.id}>
+                        <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
                           <TableCell className="font-medium">
                             <button
                               onClick={() => setLocation(`/stock/${item.symbol}`)}
@@ -619,8 +699,9 @@ export default function Portfolio() {
                               size="sm"
                               onClick={() => handleDelete(item.id)}
                               disabled={deleteMutation.isPending}
+                              className="hover:bg-red-500/10 hover:text-red-600 transition-colors"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -635,13 +716,20 @@ export default function Portfolio() {
 
         {/* AI 分析結果 */}
         {aiAnalysis && (
-          <Card className="mb-6">
+          <Card className="mb-6 border-2 hover:shadow-lg transition-shadow relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <TrendingUp className="h-5 w-5 flex-shrink-0" />
-                AI 智能分析報告
-              </CardTitle>
-              <CardDescription className="text-sm">基於您的持倉組合提供的風險評估和優化建議</CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg sm:text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    AI 智能分析報告
+                  </CardTitle>
+                  <CardDescription className="text-sm">基於您的持倉組合提供的風險評估和優化建議</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="prose prose-sm max-w-none dark:prose-invert [&>*]:mb-3 [&>h1]:text-lg [&>h2]:text-base [&>h3]:text-sm [&>ul]:pl-4 [&>ol]:pl-4">

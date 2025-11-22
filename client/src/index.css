@@ -233,3 +233,75 @@
     }
   }
 }
+@layer utilities {
+  /* 響應式文字大小 */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+  
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+  
+  /* 響應式間距 */
+  .gap-responsive {
+    @apply gap-2 sm:gap-3 md:gap-4;
+  }
+  
+  .p-responsive {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  /* 響應式網格 */
+  .grid-responsive-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+  
+  .grid-responsive-3 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  .grid-responsive-4 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+  
+  /* 手機版隱藏/顯示 */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden sm:block;
+  }
+  
+  /* 觸控友好的按鈕尺寸 */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* 平滑滾動 */
+  .smooth-scroll {
+    @apply scroll-smooth;
+  }
+  
+  /* 優化的卡片間距 */
+  .card-spacing {
+    @apply space-y-3 sm:space-y-4 md:space-y-6;
+  }
+}
