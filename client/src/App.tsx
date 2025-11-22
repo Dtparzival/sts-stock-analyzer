@@ -11,6 +11,7 @@ import Portfolio from "./pages/Portfolio";
 import SearchHistory from "./pages/SearchHistory";
 import AIAdvisor from "./pages/AIAdvisor";
 import AnalysisAccuracy from "./pages/AnalysisAccuracy";
+import TransactionHistory from "./pages/TransactionHistory";
 import { ApiMonitor } from "./components/ApiMonitor";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/stock/:symbol"} component={StockDetail} />
       <Route path={"/watchlist"} component={Watchlist} />
       <Route path={"/portfolio"} component={Portfolio} />
+      <Route path={"/portfolio/transactions"} component={TransactionHistory} />
       <Route path={"/history"} component={SearchHistory} />
       <Route path={"/ai-advisor"} component={AIAdvisor} />
       <Route path={"/analysis-accuracy"} component={AnalysisAccuracy} />

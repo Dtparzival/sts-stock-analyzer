@@ -1234,6 +1234,70 @@ ${portfolioData.map(h => `
           holdings: holdingsWithCurrentPrice,
         };
       }),
+
+    // 獲取交易統計數據
+    getTransactionStats: protectedProcedure.query(async ({ ctx }) => {
+      const stats = await db.getTransactionStats(ctx.user.id);
+      return stats;
+    }),
+
+    // 獲取基準指數數據
+    getBenchmarkIndex: publicProcedure
+      .input(z.object({
+        indexType: z.enum(['SPX', 'NASDAQ', 'DOW']),
+        range: z.string().optional().default('1y'),
+      }))
+      .query(async ({ input }) => {
+        const { getBenchmarkIndexHistory } = await import('./benchmarkIndex');
+        const data = await getBenchmarkIndexHistory(input.indexType, input.range);
+        return data;
+      }),
+
+    // 獲取投資組合相對基準指數的表現對比
+    getBenchmarkComparison: protectedProcedure
+      .input(z.object({
+        indexType: z.enum(['SPX', 'NASDAQ', 'DOW']),
+        days: z.number().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const { getBenchmarkIndexHistory, calculateBenchmarkComparison } = await import('./benchmarkIndex');
+        
+        // 獲取投資組合歷史
+        const portfolioHistory = await db.getPortfolioHistory(ctx.user.id, input.days);
+        
+        if (portfolioHistory.length === 0) {
+          return {
+            portfolioReturn: 0,
+            benchmarkReturn: 0,
+            alpha: 0,
+            beta: 0,
+          };
+        }
+        
+        // 獲取基準指數數據
+        const rangeMap: Record<number, string> = {
+          7: '5d',
+          30: '1mo',
+          90: '3mo',
+        };
+        const range = input.days ? (rangeMap[input.days] || '1y') : '1y';
+        const benchmarkData = await getBenchmarkIndexHistory(input.indexType, range);
+        
+        // 計算對比
+        const portfolioChartData = portfolioHistory.map(h => ({
+          date: new Date(h.recordDate),
+          value: h.totalValue / 100,
+        }));
+        
+        const benchmarkChartData = benchmarkData.timestamps.map((ts: number, i: number) => ({
+          timestamp: ts,
+          price: benchmarkData.prices[i],
+        }));
+        
+        const comparison = calculateBenchmarkComparison(portfolioChartData, benchmarkChartData);
+        
+        return comparison;
+      }),
   }),
 
   analysis: router({

@@ -34,6 +34,7 @@ interface PortfolioPerformanceChartProps {
 }
 
 type TimeRange = '7' | '30' | '90' | 'all';
+type BenchmarkIndex = 'none' | 'SPX' | 'NASDAQ' | 'DOW';
 
 export function PortfolioPerformanceChart({ 
   data, 
@@ -43,6 +44,7 @@ export function PortfolioPerformanceChart({
   periodGainLossPercent = 0,
 }: PortfolioPerformanceChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
+  const [benchmarkIndex, setBenchmarkIndex] = useState<BenchmarkIndex>('none');
   const [brushStartIndex, setBrushStartIndex] = useState<number | undefined>(undefined);
   const [brushEndIndex, setBrushEndIndex] = useState<number | undefined>(undefined);
 
@@ -50,6 +52,22 @@ export function PortfolioPerformanceChart({
   const { data: transactions = [] } = trpc.portfolio.getTransactions.useQuery(
     { days: timeRange === 'all' ? undefined : parseInt(timeRange) },
     { enabled: data.length > 0 }
+  );
+
+  // 獲取基準指數數據
+  const rangeMap: Record<TimeRange, string> = {
+    '7': '5d',
+    '30': '1mo',
+    '90': '3mo',
+    'all': '1y',
+  };
+  
+  const { data: benchmarkData } = trpc.portfolio.getBenchmarkIndex.useQuery(
+    {
+      indexType: benchmarkIndex as 'SPX' | 'NASDAQ' | 'DOW',
+      range: rangeMap[timeRange],
+    },
+    { enabled: benchmarkIndex !== 'none' && data.length > 0 }
   );
 
   // 根據時間範圍過濾數據
@@ -117,7 +135,25 @@ export function PortfolioPerformanceChart({
     value: item.totalValue,
     cost: item.totalCost,
     returnRate: item.gainLossPercent,
+    benchmarkValue: undefined as number | undefined,
   }));
+
+  // 處理基準指數數據：標準化為與投資組合相同的起始值
+  if (benchmarkData && benchmarkData.timestamps && benchmarkData.prices && chartData.length > 0) {
+    const portfolioStartValue = chartData[0].value;
+    const benchmarkStartPrice = benchmarkData.prices[0];
+    
+    benchmarkData.timestamps.forEach((timestamp: number, index: number) => {
+      const benchmarkDate = new Date(timestamp * 1000).toISOString().split('T')[0];
+      const matchingDataPoint = chartData.find(d => d.fullDate === benchmarkDate);
+      
+      if (matchingDataPoint) {
+        const benchmarkPrice = benchmarkData.prices[index];
+        const normalizedValue = (benchmarkPrice / benchmarkStartPrice) * portfolioStartValue;
+        (matchingDataPoint as any).benchmarkValue = normalizedValue;
+      }
+    });
+  }
 
   // 處理交易標註：將交易日期對應到圖表數據點
   const transactionAnnotations = transactions.map(transaction => {
@@ -151,19 +187,35 @@ export function PortfolioPerformanceChart({
             <CardTitle className="text-2xl font-bold">投資組合績效</CardTitle>
             <CardDescription className="mt-1">追蹤您的投資組合價值變化</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">時間範圍：</span>
-            <Select value={timeRange} onValueChange={(value) => handleTimeRangeChange(value as TimeRange)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">最近 7 天</SelectItem>
-                <SelectItem value="30">最近 30 天</SelectItem>
-                <SelectItem value="90">最近 90 天</SelectItem>
-                <SelectItem value="all">全部</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">時間範圍：</span>
+              <Select value={timeRange} onValueChange={(value) => handleTimeRangeChange(value as TimeRange)}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">最近 7 天</SelectItem>
+                  <SelectItem value="30">最近 30 天</SelectItem>
+                  <SelectItem value="90">最近 90 天</SelectItem>
+                  <SelectItem value="all">全部</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">基準指數：</span>
+              <Select value={benchmarkIndex} onValueChange={(value) => setBenchmarkIndex(value as BenchmarkIndex)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">無對比</SelectItem>
+                  <SelectItem value="SPX">S&P 500</SelectItem>
+                  <SelectItem value="NASDAQ">NASDAQ</SelectItem>
+                  <SelectItem value="DOW">DOW</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -282,6 +334,22 @@ export function PortfolioPerformanceChart({
                   animationDuration={1000}
                   animationEasing="ease-in-out"
                 />
+                
+                {/* 基準指數曲線 */}
+                {benchmarkIndex !== 'none' && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="benchmarkValue" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2}
+                    strokeDasharray="3 3"
+                    name={benchmarkIndex === 'SPX' ? 'S&P 500' : benchmarkIndex === 'NASDAQ' ? 'NASDAQ' : 'DOW'}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
+                    animationDuration={1000}
+                    animationEasing="ease-in-out"
+                  />
+                )}
                 
                 {/* 交易標註 */}
                 {transactionAnnotations.map((annotation: any, index: number) => (

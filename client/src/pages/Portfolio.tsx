@@ -344,6 +344,16 @@ export default function Portfolio() {
               <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
+                onClick={() => setLocation("/portfolio/transactions")}
+                className="relative overflow-hidden group hover:border-green-500/50 transition-all"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <TrendingUpIcon className="h-4 w-4 mr-2 relative z-10" />
+                <span className="relative z-10">交易歷史</span>
+              </Button>
+              
+              <Button
+                variant="outline"
                 onClick={handleAIAnalysis}
                 disabled={isAnalyzing || portfolio.length === 0}
                 className="relative overflow-hidden group hover:border-blue-500/50 transition-all"

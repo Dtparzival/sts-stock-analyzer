@@ -451,3 +451,157 @@ export async function getPortfolioTransactionsBySymbol(userId: number, symbol: s
     )
     .orderBy(desc(portfolioTransactions.transactionDate));
 }
+
+/**
+ * 計算交易統計數據
+ * 包括總交易次數、平均持有時間、勝率、總獲利/虧損等
+ */
+export async function getTransactionStats(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // 獲取所有交易記錄
+  const transactions = await getPortfolioTransactions(userId);
+  
+  if (transactions.length === 0) {
+    return {
+      totalTransactions: 0,
+      buyCount: 0,
+      sellCount: 0,
+      avgHoldingDays: 0,
+      winRate: 0,
+      totalProfit: 0,
+      totalLoss: 0,
+      netProfitLoss: 0,
+      bestTrade: null,
+      worstTrade: null,
+    };
+  }
+  
+  // 統計買入和賣出次數
+  const buyCount = transactions.filter(t => t.transactionType === 'buy').length;
+  const sellCount = transactions.filter(t => t.transactionType === 'sell').length;
+  
+  // 計算平均持有時間（需要配對買入和賣出記錄）
+  const holdingPeriods: number[] = [];
+  const profitableTrades: { symbol: string; profit: number; buyDate: Date; sellDate: Date }[] = [];
+  const losingTrades: { symbol: string; loss: number; buyDate: Date; sellDate: Date }[] = [];
+  
+  // 按股票分組
+  const transactionsBySymbol = new Map<string, PortfolioTransaction[]>();
+  transactions.forEach(t => {
+    if (!transactionsBySymbol.has(t.symbol)) {
+      transactionsBySymbol.set(t.symbol, []);
+    }
+    transactionsBySymbol.get(t.symbol)!.push(t);
+  });
+  
+  let totalProfit = 0;
+  let totalLoss = 0;
+  
+  // 對每支股票的交易記錄進行配對分析
+  transactionsBySymbol.forEach((symbolTransactions, symbol) => {
+    // 按時間排序（最早的在前）
+    const sorted = [...symbolTransactions].sort((a, b) => 
+      new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
+    );
+    
+    // 使用 FIFO（先進先出）方法配對買入和賣出
+    const buyQueue: { shares: number; price: number; date: Date }[] = [];
+    
+    sorted.forEach(t => {
+      if (t.transactionType === 'buy') {
+        buyQueue.push({
+          shares: t.shares,
+          price: t.price,
+          date: new Date(t.transactionDate),
+        });
+      } else if (t.transactionType === 'sell') {
+        let remainingShares = t.shares;
+        const sellPrice = t.price;
+        const sellDate = new Date(t.transactionDate);
+        
+        while (remainingShares > 0 && buyQueue.length > 0) {
+          const buy = buyQueue[0];
+          const matchedShares = Math.min(remainingShares, buy.shares);
+          
+          // 計算持有天數
+          const holdingDays = Math.floor((sellDate.getTime() - buy.date.getTime()) / (1000 * 60 * 60 * 24));
+          holdingPeriods.push(holdingDays);
+          
+          // 計算損益（價格以分為單位）
+          const profitLoss = (sellPrice - buy.price) * matchedShares;
+          
+          if (profitLoss > 0) {
+            totalProfit += profitLoss;
+            profitableTrades.push({
+              symbol,
+              profit: profitLoss,
+              buyDate: buy.date,
+              sellDate,
+            });
+          } else if (profitLoss < 0) {
+            totalLoss += profitLoss;
+            losingTrades.push({
+              symbol,
+              loss: profitLoss,
+              buyDate: buy.date,
+              sellDate,
+            });
+          }
+          
+          // 更新剩餘股數
+          remainingShares -= matchedShares;
+          buy.shares -= matchedShares;
+          
+          if (buy.shares === 0) {
+            buyQueue.shift();
+          }
+        }
+      }
+    });
+  });
+  
+  // 計算平均持有天數
+  const avgHoldingDays = holdingPeriods.length > 0
+    ? Math.round(holdingPeriods.reduce((sum, days) => sum + days, 0) / holdingPeriods.length)
+    : 0;
+  
+  // 計算勝率
+  const totalCompletedTrades = profitableTrades.length + losingTrades.length;
+  const winRate = totalCompletedTrades > 0
+    ? (profitableTrades.length / totalCompletedTrades) * 100
+    : 0;
+  
+  // 找出最佳和最差交易
+  const bestTrade = profitableTrades.length > 0
+    ? profitableTrades.reduce((best, current) => current.profit > best.profit ? current : best)
+    : null;
+  
+  const worstTrade = losingTrades.length > 0
+    ? losingTrades.reduce((worst, current) => current.loss < worst.loss ? current : worst)
+    : null;
+  
+  return {
+    totalTransactions: transactions.length,
+    buyCount,
+    sellCount,
+    avgHoldingDays,
+    winRate,
+    totalProfit: totalProfit / 100, // 轉換為美元
+    totalLoss: totalLoss / 100, // 轉換為美元
+    netProfitLoss: (totalProfit + totalLoss) / 100, // 轉換為美元
+    bestTrade: bestTrade ? {
+      symbol: bestTrade.symbol,
+      profit: bestTrade.profit / 100,
+      buyDate: bestTrade.buyDate.toISOString(),
+      sellDate: bestTrade.sellDate.toISOString(),
+    } : null,
+    worstTrade: worstTrade ? {
+      symbol: worstTrade.symbol,
+      loss: worstTrade.loss / 100,
+      buyDate: worstTrade.buyDate.toISOString(),
+      sellDate: worstTrade.sellDate.toISOString(),
+    } : null,
+  };
+}
