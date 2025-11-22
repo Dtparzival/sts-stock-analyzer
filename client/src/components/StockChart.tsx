@@ -116,15 +116,15 @@ export default function StockChart({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <Card className="p-3 bg-card/95 backdrop-blur border-border">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{data.date}</p>
-            <p className="text-lg font-semibold">
+        <Card className="p-1.5 bg-card/95 backdrop-blur border-border shadow-sm min-w-[120px]">
+          <div className="space-y-0.5">
+            <p className="text-[10px] text-muted-foreground leading-tight">{data.date}</p>
+            <p className="text-sm font-semibold leading-tight">
               ${data.price.toFixed(2)}
             </p>
             {data.volume && (
-              <p className="text-xs text-muted-foreground">
-                成交量: {(data.volume / 1000000).toFixed(2)}M
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                量: {(data.volume / 1000000).toFixed(1)}M
               </p>
             )}
           </div>
