@@ -62,7 +62,7 @@ export default function TradingViewChart({
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
-  const [jumpToDate, setJumpToDate] = useState<Date | undefined>();
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
   const chartCardRef = useRef<HTMLDivElement>(null);
@@ -168,7 +168,7 @@ export default function TradingViewChart({
         borderColor: borderColor,
         scaleMargins: {
           top: 0.1,
-          bottom: 0.2, // 留出空間給成交量
+          bottom: 0.25, // 留出更多空間給成交量，避免重疊
         },
         // 禁用 Y 軸拖曳，防止 K 線圖和成交量交錯
         mode: 0, // 0 = Normal mode (no dragging)
@@ -226,7 +226,7 @@ export default function TradingViewChart({
     // 設置成交量的價格比例
     chart.priceScale("volume").applyOptions({
       scaleMargins: {
-        top: 0.85, // 成交量佔 15% 的空間，K 線圖佔 85%
+        top: 0.80, // 成交量佔 20% 的空間，K 線圖佔 80%
         bottom: 0,
       },
       visible: false, // 隱藏成交量的價格標籤，避免與 K 線圖重疊
@@ -406,38 +406,6 @@ export default function TradingViewChart({
     }
   };
 
-  // 跳至特定日期
-  const handleJumpToDate = (date: Date | undefined) => {
-    if (!date || !chartRef.current) return;
-    
-    try {
-      // 將日期轉換為 Unix 時間戳（秒）
-      const timestamp = Math.floor(date.getTime() / 1000);
-      
-      // 使用 TradingView API 的 scrollToPosition() 跳至指定時間
-      chartRef.current.timeScale().scrollToPosition(0, true);
-      
-      // 然後使用 setVisibleLogicalRange 設置可見範圍
-      const logicalRange = chartRef.current.timeScale().getVisibleLogicalRange();
-      if (logicalRange) {
-        const barsInfo = candlestickSeriesRef.current?.barsInLogicalRange(logicalRange);
-        if (barsInfo && barsInfo.barsBefore !== null) {
-          // 尋找最接近目標日期的數據點
-          const targetIndex = data.findIndex(d => {
-            return d.timestamp >= timestamp;
-          });
-          
-          if (targetIndex !== -1) {
-            // 計算需要滾動的位置
-            const scrollPosition = targetIndex - Math.floor((logicalRange.to - logicalRange.from) / 2);
-            chartRef.current.timeScale().scrollToPosition(scrollPosition, false);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('[TradingView] Failed to jump to date:', error);
-    }
-  };
 
   // 全螢幕模式處理
   useEffect(() => {
@@ -603,39 +571,7 @@ export default function TradingViewChart({
           >
             查詢
           </Button>
-          
-          {/* 快速跳轉日期 */}
-          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className={cn(
-                    "justify-start text-left font-normal",
-                    !jumpToDate && "text-muted-foreground"
-                  )}
-                  disabled={isLoading}
-                  title="跳至特定日期"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {jumpToDate ? format(jumpToDate, "yyyy/MM/dd", { locale: zhTW }) : "跳至日期"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={jumpToDate}
-                  onSelect={(date) => {
-                    setJumpToDate(date);
-                    handleJumpToDate(date);
-                  }}
-                  disabled={(date) => date > new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+
         </div>
       </div>
 
