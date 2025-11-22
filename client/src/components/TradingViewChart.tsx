@@ -4,14 +4,12 @@ import {
   IChartApi, 
   ISeriesApi, 
   CandlestickData, 
-  HistogramData, 
   Time,
   CandlestickSeries,
-  HistogramSeries
 } from "lightweight-charts";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Calendar as CalendarIcon, Maximize2, Minimize2, ChevronsRight } from "lucide-react";
+import { Calendar as CalendarIcon, Maximize2, Minimize2, ChevronsRight, RotateCcw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
@@ -53,17 +51,14 @@ export default function TradingViewChart({
   isLoading = false,
   currentRange = "1mo",
 }: TradingViewChartProps) {
-  // 兩個圖表容器
-  const priceChartContainerRef = useRef<HTMLDivElement>(null);
-  const volumeChartContainerRef = useRef<HTMLDivElement>(null);
+  // 單一圖表容器
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   
-  // 兩個圖表實例
-  const priceChartRef = useRef<IChartApi | null>(null);
-  const volumeChartRef = useRef<IChartApi | null>(null);
+  // 圖表實例
+  const chartRef = useRef<IChartApi | null>(null);
   
   // 系列引用
   const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   
   const [selectedRange, setSelectedRange] = useState<string>(currentRange);
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
@@ -74,7 +69,7 @@ export default function TradingViewChart({
   const [useNativeFullscreen, setUseNativeFullscreen] = useState(true);
   const chartCardRef = useRef<HTMLDivElement>(null);
   
-  // Tooltip 狀態（只在價格圖表上顯示）
+  // Tooltip 狀態
   const [tooltipData, setTooltipData] = useState<{
     time: string;
     open: number;
@@ -107,9 +102,9 @@ export default function TradingViewChart({
     }
   }, [currentRange]);
 
-  // 初始化雙圖表
+  // 初始化單一圖表
   useEffect(() => {
-    if (!priceChartContainerRef.current || !volumeChartContainerRef.current) return;
+    if (!chartContainerRef.current) return;
 
     // 獲取計算後的 CSS 顏色值
     const getComputedColor = (cssVar: string): string => {
@@ -147,8 +142,9 @@ export default function TradingViewChart({
     const textColor = getComputedColor('--muted-foreground');
     const borderColor = getComputedColor('--border');
 
-    // 共用的圖表配置
-    const commonOptions = {
+    // 創建圖表（100% 高度）
+    const chartHeight = isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500;
+    const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { color: "transparent" },
         textColor: textColor,
@@ -163,27 +159,22 @@ export default function TradingViewChart({
           style: 1, // Dotted
         },
       },
-      width: priceChartContainerRef.current.clientWidth,
+      width: chartContainerRef.current.clientWidth,
+      height: chartHeight,
       handleScroll: {
         mouseWheel: true,
         pressedMouseMove: true,
+        vertTouchDrag: true, // 啟用垂直觸控拖曳
       },
       handleScale: {
         mouseWheel: true,
-        pinch: true,
+        pinch: true, // 啟用雙指縮放
+        axisPressedMouseMove: true,
       },
-    } as const;
-
-    // 創建價格圖表（上方，佔 75% 高度）
-    const priceChartHeight = isFullscreen && !useNativeFullscreen ? (window.innerHeight - 150) * 0.75 : 375;
-    const priceChart = createChart(priceChartContainerRef.current, {
-      ...commonOptions,
-      height: priceChartHeight,
       timeScale: {
         borderColor: borderColor,
         timeVisible: true,
         secondsVisible: false,
-        visible: false, // 隱藏價格圖表的時間軸（由成交量圖表顯示）
       },
       rightPriceScale: {
         borderColor: borderColor,
@@ -197,10 +188,10 @@ export default function TradingViewChart({
       },
     });
 
-    priceChartRef.current = priceChart;
+    chartRef.current = chart;
 
     // 創建 K 線系列
-    const candlestickSeriesInstance = priceChart.addSeries(CandlestickSeries, {
+    const candlestickSeriesInstance = chart.addSeries(CandlestickSeries, {
       upColor: "#22c55e", // 綠色（上漲）
       downColor: "#ef4444", // 紅色（下跌）
       borderUpColor: "#22c55e",
@@ -211,522 +202,491 @@ export default function TradingViewChart({
 
     candlestickSeriesRef.current = candlestickSeriesInstance as any;
 
-    // 創建成交量圖表（下方，佔 25% 高度）
-    const volumeChartHeight = isFullscreen && !useNativeFullscreen ? (window.innerHeight - 150) * 0.25 : 125;
-    const volumeChart = createChart(volumeChartContainerRef.current, {
-      ...commonOptions,
-      height: volumeChartHeight,
-      timeScale: {
-        borderColor: borderColor,
-        timeVisible: true,
-        secondsVisible: false,
-        visible: true, // 顯示成交量圖表的時間軸
-      },
-      rightPriceScale: {
-        borderColor: borderColor,
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
-        },
-      },
-      crosshair: {
-        mode: 1,
-      },
+    // 添加當前價格水平線
+    if (data.length > 0) {
+      const lastPrice = data[data.length - 1].close;
+      const firstPrice = data[0].open;
+      const isUp = lastPrice >= firstPrice;
+
+      candlestickSeriesInstance.createPriceLine({
+        price: lastPrice,
+        color: isUp ? "#22c55e" : "#ef4444",
+        lineWidth: 1,
+        lineStyle: 2, // Dashed
+        axisLabelVisible: true,
+        title: "當前價格",
+      });
+    }
+
+    // 設置十字線事件（Tooltip）
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time || !param.point || !candlestickSeriesRef.current) {
+        setTooltipData(null);
+        return;
+      }
+
+      const candleData = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
+      
+      if (!candleData) {
+        setTooltipData(null);
+        return;
+      }
+
+      // 計算漲跌幅
+      const change = candleData.close - candleData.open;
+      const changePercent = (change / candleData.open) * 100;
+
+      // 格式化時間
+      const timeStr = typeof param.time === 'number' 
+        ? new Date(param.time * 1000).toLocaleString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : String(param.time);
+
+      // 從原始數據中查找對應的成交量
+      const dataPoint = data.find(d => {
+        if (typeof param.time === 'number') {
+          return d.timestamp === param.time;
+        } else {
+          return d.date === param.time;
+        }
+      });
+
+      setTooltipData({
+        time: timeStr,
+        open: candleData.open,
+        high: candleData.high,
+        low: candleData.low,
+        close: candleData.close,
+        volume: dataPoint?.volume || 0,
+        change,
+        changePercent,
+        x: param.point.x,
+        y: param.point.y,
+      });
     });
-
-    volumeChartRef.current = volumeChart;
-
-    // 創建成交量系列
-    const volumeSeriesInstance = volumeChart.addSeries(HistogramSeries, {
-      color: "#26a69a",
-      priceFormat: {
-        type: "volume",
-      },
-    });
-
-    volumeSeriesRef.current = volumeSeriesInstance as any;
-
-    // 同步兩個圖表的時間軸（縮放和拖曳）
-    const syncTimeScales = () => {
-      const priceTimeScale = priceChart.timeScale();
-      const volumeTimeScale = volumeChart.timeScale();
-
-      // 價格圖表 -> 成交量圖表
-      priceTimeScale.subscribeVisibleLogicalRangeChange((logicalRange) => {
-        if (logicalRange) {
-          volumeTimeScale.setVisibleLogicalRange(logicalRange);
-        }
-      });
-
-      // 成交量圖表 -> 價格圖表
-      volumeTimeScale.subscribeVisibleLogicalRangeChange((logicalRange) => {
-        if (logicalRange) {
-          priceTimeScale.setVisibleLogicalRange(logicalRange);
-        }
-      });
-    };
-
-    syncTimeScales();
-
-    // 同步兩個圖表的十字線（滑鼠移動）
-    const syncCrosshairs = () => {
-      // 價格圖表的十字線事件
-      priceChart.subscribeCrosshairMove((param) => {
-        if (!param.time || !param.point || !candlestickSeriesRef.current || !volumeSeriesRef.current) {
-          setTooltipData(null);
-          // 清除成交量圖表的十字線
-          volumeChart.clearCrosshairPosition();
-          return;
-        }
-
-        // 同步成交量圖表的十字線位置
-        volumeChart.setCrosshairPosition(param.point.y, param.time, volumeSeriesRef.current);
-
-        const candleData = param.seriesData.get(candlestickSeriesRef.current) as CandlestickData | undefined;
-        const volumeData = param.seriesData.get(volumeSeriesRef.current) as HistogramData | undefined;
-        
-        if (!candleData) {
-          setTooltipData(null);
-          return;
-        }
-
-        // 計算漲跌幅
-        const change = candleData.close - candleData.open;
-        const changePercent = (change / candleData.open) * 100;
-
-        // 格式化時間
-        const timeStr = typeof param.time === 'number' 
-          ? new Date(param.time * 1000).toLocaleString('zh-TW', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : String(param.time);
-
-        setTooltipData({
-          time: timeStr,
-          open: candleData.open,
-          high: candleData.high,
-          low: candleData.low,
-          close: candleData.close,
-          volume: volumeData?.value || 0,
-          change,
-          changePercent,
-          x: param.point.x,
-          y: param.point.y,
-        });
-      });
-
-      // 成交量圖表的十字線事件
-      volumeChart.subscribeCrosshairMove((param) => {
-        if (!param.time || !param.point) {
-          // 清除價格圖表的十字線
-          priceChart.clearCrosshairPosition();
-          setTooltipData(null);
-          return;
-        }
-
-        // 同步價格圖表的十字線位置
-        if (candlestickSeriesRef.current) {
-          priceChart.setCrosshairPosition(param.point.y, param.time, candlestickSeriesRef.current);
-        }
-      });
-    };
-
-    syncCrosshairs();
 
     // 響應式調整（帶 debounce 防抖機制）
     let resizeTimeout: NodeJS.Timeout | null = null;
 
     const handleResize = () => {
+      // 清除之前的延遲執行
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
       
+      // 設定 150ms 延遲，只有當用戶停止調整視窗大小後才執行
       resizeTimeout = setTimeout(() => {
-        if (priceChartContainerRef.current && priceChartRef.current && volumeChartRef.current) {
-          const width = priceChartContainerRef.current.clientWidth;
-          const totalHeight = isFullscreen && !useNativeFullscreen ? window.innerHeight - 150 : 500;
-          const priceHeight = totalHeight * 0.75;
-          const volumeHeight = totalHeight * 0.25;
-
-          priceChartRef.current.applyOptions({
-            width,
-            height: priceHeight,
-          });
-
-          volumeChartRef.current.applyOptions({
-            width,
-            height: volumeHeight,
+        if (chartContainerRef.current && chartRef.current) {
+          chartRef.current.applyOptions({
+            width: chartContainerRef.current.clientWidth,
           });
         }
       }, 150);
     };
 
-    const handleFullscreenChange = () => {
-      handleResize();
-    };
-
     window.addEventListener("resize", handleResize);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      // 清除延遲執行
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
-      priceChart.remove();
-      volumeChart.remove();
+      chart.remove();
     };
   }, [isFullscreen, useNativeFullscreen]);
 
   // 更新圖表數據
   useEffect(() => {
-    if (!candlestickSeriesRef.current || !volumeSeriesRef.current || !data || data.length === 0) {
-      return;
-    }
+    if (!candlestickSeriesRef.current || data.length === 0) return;
 
     // 轉換數據格式
-    const candlestickData: CandlestickData<Time>[] = [];
-    const volumeData: HistogramData<Time>[] = [];
-
-    data.forEach((item) => {
-      if (!item.open || !item.high || !item.low || !item.close) return;
-
-      const time = item.timestamp as Time;
-
-      // K 線數據
-      candlestickData.push({
-        time,
-        open: item.open,
-        high: item.high,
-        low: item.low,
-        close: item.close,
-      });
-
-      // 成交量數據
-      if (item.volume !== undefined) {
-        const isUp = item.close >= item.open;
-        volumeData.push({
-          time,
-          value: item.volume,
-          color: isUp ? "rgba(34, 197, 94, 0.5)" : "rgba(239, 68, 68, 0.5)", // 綠漲紅跌，半透明
-        });
-      }
-    });
+    const candlestickData: CandlestickData[] = data.map((d) => ({
+      time: (d.timestamp || new Date(d.date).getTime() / 1000) as Time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
 
     // 設置數據
     candlestickSeriesRef.current.setData(candlestickData);
-    volumeSeriesRef.current.setData(volumeData);
 
-    // 添加當前價格水平線
-    if (candlestickData.length > 0) {
-      const lastCandle = candlestickData[candlestickData.length - 1];
-      const currentPrice = lastCandle.close;
-      const isUp = lastCandle.close >= lastCandle.open;
-      
-      candlestickSeriesRef.current.createPriceLine({
-        price: currentPrice,
-        color: isUp ? "#22c55e" : "#ef4444", // 綠漲紅跌
-        lineWidth: 2,
-        lineStyle: 2, // Dashed
-        axisLabelVisible: true,
-        title: "",
-      });
-    }
-
-    // 自動調整視圖
-    if (priceChartRef.current && volumeChartRef.current) {
-      priceChartRef.current.timeScale().fitContent();
-      volumeChartRef.current.timeScale().fitContent();
+    // 自動縮放以適應所有數據
+    if (chartRef.current) {
+      chartRef.current.timeScale().fitContent();
     }
   }, [data]);
 
-  const handleRangeChange = (range: string, interval: string) => {
+  // 處理時間範圍變更
+  const handleRangeChange = (range: string) => {
     setSelectedRange(range);
     setIsCustomRange(false);
-    onRangeChange?.(range, interval);
+    const selectedTimeRange = timeRanges.find((r) => r.value === range);
+    if (selectedTimeRange && onRangeChange) {
+      onRangeChange(selectedTimeRange.value, selectedTimeRange.interval);
+    }
   };
 
-  const handleCustomRangeApply = () => {
+  // 處理自訂日期範圍查詢
+  const handleCustomRangeQuery = () => {
     if (!customStartDate || !customEndDate) return;
-    
+
     const startTimestamp = Math.floor(customStartDate.getTime() / 1000);
     const endTimestamp = Math.floor(customEndDate.getTime() / 1000);
-    const customRange = `${startTimestamp}-${endTimestamp}`;
-    
-    setIsCustomRange(true);
-    onRangeChange?.(customRange, "1d");
+
+    if (onRangeChange) {
+      const daysDiff = Math.floor((endTimestamp - startTimestamp) / 86400);
+      let interval = "1d";
+      if (daysDiff <= 1) interval = "15m";
+      else if (daysDiff <= 7) interval = "1d";
+      else if (daysDiff <= 90) interval = "1wk";
+      else interval = "1mo";
+
+      onRangeChange(`${startTimestamp}-${endTimestamp}`, interval);
+      setIsCustomRange(true);
+    }
   };
 
   // 跳至最新數據
   const handleJumpToLatest = () => {
-    if (!priceChartRef.current || !volumeChartRef.current) return;
-    
+    if (!chartRef.current) return;
     try {
-      priceChartRef.current.timeScale().scrollToRealTime();
-      volumeChartRef.current.timeScale().scrollToRealTime();
+      chartRef.current.timeScale().scrollToRealTime();
     } catch (error) {
       console.error('[TradingView] Failed to jump to latest:', error);
     }
   };
 
-  // 全螢幕模式處理
+  // 重置縮放
+  const handleResetZoom = () => {
+    if (!chartRef.current) return;
+    try {
+      chartRef.current.timeScale().fitContent();
+    } catch (error) {
+      console.error('[TradingView] Failed to reset zoom:', error);
+    }
+  };
+
+  // 切換全螢幕模式
+  const toggleFullscreen = async () => {
+    if (!chartCardRef.current) return;
+
+    try {
+      if (!isFullscreen) {
+        // 進入全螢幕
+        if (useNativeFullscreen && chartCardRef.current.requestFullscreen) {
+          await chartCardRef.current.requestFullscreen();
+          setIsFullscreen(true);
+        } else {
+          // 降級策略：使用 CSS fixed 定位
+          setIsFullscreen(true);
+        }
+      } else {
+        // 退出全螢幕
+        if (useNativeFullscreen && document.fullscreenElement) {
+          await document.exitFullscreen();
+          setIsFullscreen(false);
+        } else {
+          // 降級策略
+          setIsFullscreen(false);
+        }
+      }
+    } catch (error) {
+      console.error('[TradingView] Fullscreen error:', error);
+      // 如果原生 API 失敗，使用降級策略
+      setIsFullscreen(!isFullscreen);
+    }
+  };
+
+  // 監聽全螢幕變化事件
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      if (useNativeFullscreen) {
+        setIsFullscreen(!!document.fullscreenElement);
+      }
     };
 
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, [useNativeFullscreen]);
+
+  // 監聽 ESC 鍵退出全螢幕
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (document.fullscreenElement) {
-          document.exitFullscreen();
-        } else if (isFullscreen && !useNativeFullscreen) {
+      if (e.key === "Escape" && isFullscreen) {
+        if (!useNativeFullscreen) {
           setIsFullscreen(false);
         }
       }
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('keydown', handleKeyDown);
-
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isFullscreen, useNativeFullscreen]);
 
-  const toggleFullscreen = async () => {
-    if (!chartCardRef.current) return;
-
-    try {
-      if (useNativeFullscreen) {
-        if (!document.fullscreenElement) {
-          await chartCardRef.current.requestFullscreen();
-        } else {
-          await document.exitFullscreen();
-        }
-      } else {
-        setIsFullscreen(!isFullscreen);
-      }
-    } catch (err) {
-      console.error('全螢幕模式切換失敗:', err);
-      setUseNativeFullscreen(false);
-      setIsFullscreen(!isFullscreen);
+  // 格式化成交量
+  const formatVolume = (volume: number): string => {
+    if (volume >= 1_000_000_000) {
+      return `${(volume / 1_000_000_000).toFixed(2)}B`;
+    } else if (volume >= 1_000_000) {
+      return `${(volume / 1_000_000).toFixed(2)}M`;
+    } else if (volume >= 1_000) {
+      return `${(volume / 1_000).toFixed(2)}K`;
     }
+    return volume.toString();
   };
+
+  // 智能 Tooltip 定位（檢查邊界）
+  const getTooltipPosition = () => {
+    if (!tooltipData) return {};
+
+    const tooltipWidth = 130; // Tooltip 最小寬度
+    const tooltipHeight = 150; // Tooltip 預估高度
+    const padding = 10; // 邊界留白
+
+    let left = tooltipData.x + 15;
+    let top = tooltipData.y - 10;
+
+    // 檢查右邊界
+    if (left + tooltipWidth > window.innerWidth - padding) {
+      left = tooltipData.x - tooltipWidth - 15; // 顯示在左側
+    }
+
+    // 檢查下邊界
+    if (top + tooltipHeight > window.innerHeight - padding) {
+      top = window.innerHeight - tooltipHeight - padding;
+    }
+
+    // 檢查上邊界
+    if (top < padding) {
+      top = padding;
+    }
+
+    // 檢查左邊界
+    if (left < padding) {
+      left = padding;
+    }
+
+    return { left: `${left}px`, top: `${top}px` };
+  };
+
+  if (isLoading) {
+    return <ChartSkeleton />;
+  }
+
+  if (data.length === 0) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center justify-center h-[500px] text-muted-foreground">
+          無圖表數據
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card 
       ref={chartCardRef}
       className={cn(
-        "p-6 transition-all",
-        isFullscreen && "bg-background",
-        !useNativeFullscreen && isFullscreen && "fixed inset-0 z-[9999] w-screen h-screen rounded-none"
+        "p-4",
+        isFullscreen && !useNativeFullscreen && "fixed inset-0 z-[9999] rounded-none"
       )}
-      style={!useNativeFullscreen && isFullscreen ? {
-        margin: 0,
-        maxWidth: '100vw',
-        maxHeight: '100vh',
-      } : undefined}
     >
-      {/* 時間範圍選擇器 */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {/* 全螢幕按鈕 */}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={toggleFullscreen}
-          className="mr-2"
-        >
-          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </Button>
-        
-        {/* 跳至最新按鈕 */}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleJumpToLatest}
-          disabled={isLoading}
-          className="mr-2"
-          title="跳至最新數據"
-        >
-          <ChevronsRight className="h-4 w-4" />
-        </Button>
-        
-        {timeRanges.map((range) => (
+      {/* 控制欄 */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        {/* 左側：時間範圍選擇器 */}
+        <div className="flex flex-wrap items-center gap-2">
+          {timeRanges.map((range) => (
+            <Button
+              key={range.value}
+              variant={selectedRange === range.value && !isCustomRange ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleRangeChange(range.value)}
+              disabled={isLoading}
+            >
+              {range.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* 右側：自訂日期範圍、重置縮放、跳至最新、全螢幕 */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* 自訂日期範圍 */}
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !customStartDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customStartDate ? format(customStartDate, "yyyy/MM/dd", { locale: zhTW }) : "起始日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customStartDate}
+                  onSelect={setCustomStartDate}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  locale={zhTW}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <span className="text-muted-foreground">至</span>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !customEndDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customEndDate ? format(customEndDate, "yyyy/MM/dd", { locale: zhTW }) : "結束日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customEndDate}
+                  onSelect={setCustomEndDate}
+                  disabled={(date) => 
+                    date > new Date() || 
+                    (customStartDate ? date < customStartDate : false)
+                  }
+                  initialFocus
+                  locale={zhTW}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleCustomRangeQuery}
+              disabled={!customStartDate || !customEndDate || isLoading}
+            >
+              查詢
+            </Button>
+          </div>
+
+          {/* 重置縮放按鈕 */}
           <Button
-            key={range.value}
+            variant="outline"
             size="sm"
-            variant={selectedRange === range.value && !isCustomRange ? "default" : "outline"}
-            onClick={() => handleRangeChange(range.value, range.interval)}
+            onClick={handleResetZoom}
             disabled={isLoading}
+            title="重置縮放"
           >
-            {range.label}
-          </Button>
-        ))}
-        
-        {/* 自訂日期範圍 */}
-        <div className="flex items-center gap-2 ml-auto">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !customStartDate && "text-muted-foreground"
-                )}
-                disabled={isLoading}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {customStartDate ? format(customStartDate, "yyyy/MM/dd", { locale: zhTW }) : "起始日期"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={customStartDate}
-                onSelect={setCustomStartDate}
-                disabled={(date) => date > new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <span className="text-muted-foreground">至</span>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !customEndDate && "text-muted-foreground"
-                )}
-                disabled={isLoading}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {customEndDate ? format(customEndDate, "yyyy/MM/dd", { locale: zhTW }) : "結束日期"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={customEndDate}
-                onSelect={setCustomEndDate}
-                disabled={(date) => date > new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Button
-            size="sm"
-            onClick={handleCustomRangeApply}
-            disabled={!customStartDate || !customEndDate || isLoading}
-            variant={isCustomRange ? "default" : "outline"}
-          >
-            查詢
+            <RotateCcw className="h-4 w-4" />
           </Button>
 
+          {/* 跳至最新按鈕 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleJumpToLatest}
+            disabled={isLoading}
+            title="跳至最新數據"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+
+          {/* 全螢幕按鈕 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
 
       {/* 圖表容器 */}
-      {isLoading ? (
-        <ChartSkeleton />
-      ) : !data || data.length === 0 ? (
-        <Card className="p-6">
-          <div className="flex items-center justify-center h-[500px] text-muted-foreground">
-            <div className="text-center">
-              <p className="text-lg font-medium">暫無數據</p>
-              <p className="text-sm mt-2">請選擇其他時間範圍或稍後再試</p>
+      <div ref={chartContainerRef} className="relative" />
+
+      {/* Tooltip */}
+      {tooltipData && (
+        <div
+          ref={tooltipRef}
+          className="fixed z-50 min-w-[130px] rounded-md border bg-background/98 backdrop-blur-sm p-1.5 text-[10px] shadow-md pointer-events-none"
+          style={{
+            ...getTooltipPosition(),
+            borderColor: tooltipData.changePercent >= 0 ? "#22c55e" : "#ef4444",
+            borderWidth: "1px",
+          }}
+        >
+          {/* 時間 */}
+          <div className="text-[9px] text-muted-foreground mb-0.5 font-medium">
+            {tooltipData.time}
+          </div>
+
+          {/* OHLC 數據 */}
+          <div className="space-y-0 font-mono">
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground font-medium">O</span>
+              <span className="font-semibold">${tooltipData.open.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground font-medium">H</span>
+              <span className="font-semibold text-green-600">${tooltipData.high.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground font-medium">L</span>
+              <span className="font-semibold text-red-600">${tooltipData.low.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground font-medium">C</span>
+              <span className="font-semibold">${tooltipData.close.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground font-medium text-[9px]">量</span>
+              <span className="font-semibold text-[9px]">{formatVolume(tooltipData.volume)}</span>
             </div>
           </div>
-        </Card>
-      ) : (
-        <div className="relative space-y-2">
-          {/* 價格圖表（上方） */}
-          <div className="relative">
-            <div
-              ref={priceChartContainerRef}
-              className="w-full"
-            />
-            
-            {/* Tooltip（只在價格圖表上顯示） */}
-            {tooltipData && (() => {
-              // 格式化成交量（K/M/B）
-              const formatVolume = (vol: number): string => {
-                if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
-                if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
-                if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
-                return vol.toFixed(0);
-              };
 
-              return (
-                <div
-                  ref={tooltipRef}
-                  className={cn(
-                    "absolute pointer-events-none z-20 rounded shadow-md p-1.5 min-w-[130px] backdrop-blur-sm",
-                    "bg-background/95 border",
-                    tooltipData.change >= 0 ? "border-green-500/40" : "border-red-500/40"
-                  )}
-                  style={{
-                    left: `${Math.min(tooltipData.x + 15, window.innerWidth - 200)}px`,
-                    top: `${Math.max(tooltipData.y - 10, 10)}px`,
-                  }}
-                >
-                  <div className="text-[9px] font-medium text-muted-foreground mb-1 leading-tight">{tooltipData.time}</div>
-                  <div className="space-y-0.5 text-[10px]">
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">O:</span>
-                      <span className="font-mono font-semibold">{tooltipData.open.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">H:</span>
-                      <span className="font-mono font-semibold text-green-600">{tooltipData.high.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">L:</span>
-                      <span className="font-mono font-semibold text-red-600">{tooltipData.low.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">C:</span>
-                      <span className="font-mono font-semibold">{tooltipData.close.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">量:</span>
-                      <span className="font-mono font-semibold">{formatVolume(tooltipData.volume)}</span>
-                    </div>
-                    <div className="border-t border-border/50 pt-0.5 mt-0.5">
-                      <div className="flex justify-between gap-2">
-                        <span className="text-muted-foreground">漲跌:</span>
-                        <span 
-                          className={cn(
-                            "font-mono font-bold text-[10px]",
-                            tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
-                          )}
-                        >
-                          {tooltipData.change >= 0 ? '+' : ''}{tooltipData.change.toFixed(2)} ({tooltipData.changePercent >= 0 ? '+' : ''}{tooltipData.changePercent.toFixed(2)}%)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
+          {/* 漲跌幅 */}
+          <div 
+            className="pt-0.5 mt-0.5 border-t border-border/50"
+          >
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground font-medium text-[9px]">漲跌</span>
+              <span 
+                className={cn(
+                  "font-bold text-[10px]",
+                  tooltipData.changePercent >= 0 ? "text-green-600" : "text-red-600"
+                )}
+              >
+                {tooltipData.changePercent >= 0 ? "+" : ""}
+                {tooltipData.changePercent.toFixed(2)}%
+              </span>
+            </div>
           </div>
-
-          {/* 成交量圖表（下方） */}
-          <div
-            ref={volumeChartContainerRef}
-            className="w-full"
-          />
         </div>
       )}
     </Card>
