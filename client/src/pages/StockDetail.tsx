@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, History } from "lucide-react";
+import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, History, Share2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
@@ -29,6 +29,8 @@ import { Badge } from "@/components/ui/badge";
 import TradingViewChart from "@/components/TradingViewChart";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS } from "@shared/markets";
 import { isMarketOpen } from "@shared/tradingHours";
+import StockDetailSkeleton from "@/components/StockDetailSkeleton";
+import ShareButton from "@/components/ShareButton";
 
 export default function StockDetail() {
   const [, params] = useRoute("/stock/:symbol");
@@ -290,11 +292,7 @@ export default function StockDetail() {
   };
 
   if (loadingStock) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <StockDetailSkeleton />;
   }
 
   if (!(stockData as any)?.chart?.result?.[0]) {
@@ -376,25 +374,33 @@ export default function StockDetail() {
                   {companyName}
                 </p>
               </div>
-              <Button
-                variant={watchlistCheck?.isInWatchlist ? "default" : "outline"}
-                size="lg"
-                onClick={handleWatchlistToggle}
-                disabled={!user}
-                className={watchlistCheck?.isInWatchlist ? "bg-gradient-primary text-white border-0 shadow-md button-hover" : "button-hover"}
-              >
-                {watchlistCheck?.isInWatchlist ? (
-                  <>
-                    <StarOff className="h-5 w-5 mr-2" />
-                    取消收藏
-                  </>
-                ) : (
-                  <>
-                    <Star className="h-5 w-5 mr-2" />
-                    加入收藏
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-3">
+                <ShareButton
+                  symbol={displaySymbol}
+                  companyName={companyName}
+                  currentPrice={currentPrice}
+                  priceChange={priceChangePercent}
+                />
+                <Button
+                  variant={watchlistCheck?.isInWatchlist ? "default" : "outline"}
+                  size="lg"
+                  onClick={handleWatchlistToggle}
+                  disabled={!user}
+                  className={watchlistCheck?.isInWatchlist ? "bg-gradient-primary text-white border-0 shadow-md button-hover" : "button-hover"}
+                >
+                  {watchlistCheck?.isInWatchlist ? (
+                    <>
+                      <StarOff className="h-5 w-5 mr-2" />
+                      取消收藏
+                    </>
+                  ) : (
+                    <>
+                      <Star className="h-5 w-5 mr-2" />
+                      加入收藏
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
