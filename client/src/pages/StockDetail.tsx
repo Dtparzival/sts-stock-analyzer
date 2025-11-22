@@ -526,18 +526,18 @@ export default function StockDetail() {
         {/* 分析和預測標籤頁 - 優化設計 */}
         <motion.div variants={itemVariants}>
         <Tabs defaultValue="analysis" className="mt-8">
-          <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-muted/30 rounded-xl gap-2">
+          <TabsList className="grid w-full grid-cols-2 h-auto p-1.5 sm:p-2 bg-muted/30 rounded-xl gap-1.5 sm:gap-2">
             <TabsTrigger 
               value="analysis" 
-              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
+              className="text-sm sm:text-base font-semibold py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50 min-h-[44px] sm:min-h-[48px]"
             >
-              AI 投資分析
+              <span className="block sm:inline">AI 投資分析</span>
             </TabsTrigger>
             <TabsTrigger 
               value="prediction" 
-              className="text-base font-semibold py-3 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50"
+              className="text-sm sm:text-base font-semibold py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50 min-h-[44px] sm:min-h-[48px]"
             >
-              未來趨勢預測
+              <span className="block sm:inline">未來趨勢預測</span>
             </TabsTrigger>
           </TabsList>
 
@@ -552,16 +552,55 @@ export default function StockDetail() {
               <CardContent>
                 {!analysis ? (
                   <div className="text-center py-16">
-                    <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                          分析中...
-                        </>
-                      ) : (
-                        "開始分析"
-                      )}
-                    </Button>
+                    {isAnalyzing ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="space-y-6"
+                      >
+                        <div className="flex justify-center">
+                          <motion.div
+                            animate={{
+                              rotate: 360,
+                              scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+                              scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                            }}
+                            className="w-16 h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
+                          >
+                            <Loader2 className="h-8 w-8 text-white" />
+                          </motion.div>
+                        </div>
+                        <motion.div
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          className="text-lg font-semibold text-foreground"
+                        >
+                          AI 正在深度分析中...
+                        </motion.div>
+                        <div className="flex justify-center gap-2">
+                          {[0, 1, 2].map((i) => (
+                            <motion.div
+                              key={i}
+                              animate={{ y: [0, -10, 0] }}
+                              transition={{
+                                duration: 0.6,
+                                repeat: Infinity,
+                                delay: i * 0.2,
+                                ease: "easeInOut",
+                              }}
+                              className="w-2 h-2 rounded-full bg-gradient-primary"
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
+                        開始分析
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -674,16 +713,55 @@ export default function StockDetail() {
               <CardContent>
                 {!prediction ? (
                   <div className="text-center py-16">
-                    <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
-                      {isPredicting ? (
-                        <>
-                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                          預測中...
-                        </>
-                      ) : (
-                        "開始預測"
-                      )}
-                    </Button>
+                    {isPredicting ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="space-y-6"
+                      >
+                        <div className="flex justify-center">
+                          <motion.div
+                            animate={{
+                              rotate: 360,
+                              scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+                              scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                            }}
+                            className="w-16 h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
+                          >
+                            <TrendingUp className="h-8 w-8 text-white" />
+                          </motion.div>
+                        </div>
+                        <motion.div
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          className="text-lg font-semibold text-foreground"
+                        >
+                          AI 正在預測未來趨勢...
+                        </motion.div>
+                        <div className="flex justify-center gap-2">
+                          {[0, 1, 2].map((i) => (
+                            <motion.div
+                              key={i}
+                              animate={{ y: [0, -10, 0] }}
+                              transition={{
+                                duration: 0.6,
+                                repeat: Infinity,
+                                delay: i * 0.2,
+                                ease: "easeInOut",
+                              }}
+                              className="w-2 h-2 rounded-full bg-gradient-primary"
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
+                        開始預測
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
