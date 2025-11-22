@@ -167,29 +167,60 @@
     @apply w-full h-full min-h-[300px] relative;
   }
 
-  /* 漸層背景樣式 */
+  /* 漸層背景樣式 - 使用 CSS 變數 */
   .gradient-primary {
-    background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(147 51 234) 100%);
+    background: var(--gradient-primary);
   }
 
   .gradient-secondary {
-    background: linear-gradient(135deg, rgb(6 182 212) 0%, rgb(37 99 235) 100%);
+    background: var(--gradient-secondary);
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, rgb(99 102 241) 0%, rgb(147 51 234) 100%);
+    background: var(--gradient-accent);
   }
 
-  /* 卡片 hover 效果 */
+  /* 背景漸層樣式（用於 bg-gradient-* 類別） */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .bg-gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  /* 響應式漸層效果（小螢幕優化） */
+  @media (max-width: 640px) {
+    .gradient-primary,
+    .gradient-secondary,
+    .gradient-accent,
+    .bg-gradient-primary,
+    .bg-gradient-secondary,
+    .bg-gradient-accent {
+      /* 小螢幕上減少漸層複雜度以提升效能 */
+      background-attachment: scroll;
+      background-size: 100% 100%;
+    }
+  }
+
+  /* 卡片 hover 效果 - GPU 加速優化 */
   .card-hover {
     @apply transition-all duration-300 ease-in-out;
     @apply hover:shadow-lg hover:-translate-y-1;
+    will-change: transform, box-shadow;
+    transform: translateZ(0); /* 強制啟用 GPU 加速 */
   }
 
-  /* 按鈕 hover 效果 */
+  /* 按鈕 hover 效果 - GPU 加速優化 */
   .button-hover {
     @apply transition-all duration-200 ease-in-out;
     @apply hover:scale-105 active:scale-95;
+    will-change: transform;
+    transform: translateZ(0); /* 強制啟用 GPU 加速 */
   }
 
   /**
@@ -290,18 +321,62 @@
     @apply hidden sm:block;
   }
   
-  /* 觸控友好的按鈕尺寸 */
+  /* 觸控友好的按鈕尺寸（符合 WCAG 2.1 標準） */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* 響應式按鈕尺寸 */
+  .btn-responsive {
+    @apply h-10 px-4 text-sm sm:h-11 sm:px-5 sm:text-base;
+    @apply min-h-[44px]; /* 確保手機版觸控區域足夠 */
+  }
+  
+  .btn-responsive-lg {
+    @apply h-12 px-6 text-base sm:h-14 sm:px-8 sm:text-lg;
+    @apply min-h-[44px];
+  }
+  
+  .btn-responsive-sm {
+    @apply h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm;
+    @apply min-h-[44px];
   }
   
   /* 平滑滾動 */
   .smooth-scroll {
     @apply scroll-smooth;
   }
-  
+
   /* 優化的卡片間距 */
   .card-spacing {
     @apply space-y-3 sm:space-y-4 md:space-y-6;
+  }
+  
+  /* GPU 加速優化 */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  
+  .gpu-accelerated-opacity {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+  
+  /* 優化的游層動畫 */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+    transform: translateZ(0);
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px) translateZ(0);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
   }
 }
