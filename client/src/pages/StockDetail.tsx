@@ -348,19 +348,23 @@ export default function StockDetail() {
         variants={containerVariants}
       >
         {/* 返回按鈕 - 優化設計 */}
-        <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          返回首頁
-        </Button>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg bg-gradient-primary">
+            <ArrowLeft className="h-5 w-5 text-white" />
+          </div>
+          <Button variant="ghost" onClick={() => setLocation("/")} className="hover:bg-primary/10 font-semibold">
+            返回首頁
+          </Button>
+        </div>
 
         {/* 股票標題和收藏按鈕 - 優化設計 */}
         <motion.div variants={itemVariants}>
-        <Card className="mb-6">
+        <Card className="mb-6 border-2 shadow-lg">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-4 mb-3">
-                  <h1 className="text-4xl font-bold text-foreground">{displaySymbol}</h1>
+                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{displaySymbol}</h1>
                   {market === 'TW' && (
                     <Badge variant="outline" className="text-sm px-3 py-1">台股</Badge>
                   )}
@@ -398,13 +402,13 @@ export default function StockDetail() {
 
         {/* 價格資訊卡片 - 優化設計 */}
         <motion.div variants={itemVariants}>
-        <Card className="mb-6">
+        <Card className="mb-6 border-2 shadow-lg">
           <CardContent className="pt-8">
             {/* 主要價格資訊 - 突出顯示 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-border">
               <div className="text-center md:text-left">
                 <p className="text-sm font-medium text-muted-foreground mb-2">當前價格</p>
-                <p className="text-4xl font-bold text-foreground">{currencySymbol}{currentPrice?.toFixed(2)}</p>
+                <p className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{currencySymbol}{currentPrice?.toFixed(2)}</p>
               </div>
               <div className="text-center md:text-left">
                 <p className="text-sm font-medium text-muted-foreground mb-2">漲跌幅</p>
@@ -650,11 +654,11 @@ export default function StockDetail() {
           </TabsContent>
 
           <TabsContent value="prediction">
-            <Card>
+            <Card className="border-2 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-2xl">未來趨勢預測</CardTitle>
+                <CardTitle className="text-2xl">未來趋勢預測</CardTitle>
                 <CardDescription className="text-base">
-                  基於歷史數據和市場趨勢的未來走勢預測
+                  基於歷史數據和市場趋勢的未來走勢預測
                 </CardDescription>
               </CardHeader>
               <CardContent>
