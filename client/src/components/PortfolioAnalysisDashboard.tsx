@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,10 +23,10 @@ interface PortfolioAnalysisDashboardProps {
   riskMetrics: RiskMetrics;
 }
 
-// 優化的色彩配置，使用更專業的配色方案
+// 優化的色彩配置，使用更專業的配色方案（添加漸變效果）
 const COLORS = [
   '#2563eb', // 深藍
-  '#10b981', // 绿色
+  '#10b981', // 綠色
   '#f59e0b', // 橙色
   '#ef4444', // 紅色
   '#8b5cf6', // 紫色
@@ -35,6 +36,28 @@ const COLORS = [
   '#06b6d4', // 天藍
   '#84cc16', // 萊姆綠
 ];
+
+// 動畫配置
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5
+    }
+  }
+};
 
 export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: PortfolioAnalysisDashboardProps) {
   // 狀態管理
@@ -112,9 +135,14 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
   const recommendations = getRecommendations();
 
   return (
-    <>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* 持倉分布圓餅圖 */}
+      <motion.div variants={itemVariants}>
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
           <div className="flex items-center justify-between">
@@ -164,6 +192,9 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                     paddingAngle={2}
                     fill="#8884d8"
                     dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
                     onClick={(data) => {
                       const clickedStock = distribution.find(item => item.symbol === data.name);
                       if (clickedStock) {
@@ -237,9 +268,10 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
           )}
         </CardContent>
       </Card>
+      </motion.div>
 
       {/* 風險評估與建議 */}
-      <div className="flex flex-col gap-4 sm:gap-6">
+      <motion.div className="flex flex-col gap-4 sm:gap-6" variants={itemVariants}>
         {/* 風險指標 */}
         <Card className="flex-1 overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-orange-50 to-transparent dark:from-orange-950/20">
@@ -347,7 +379,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
             ))}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
 
     {/* 股票詳細信息彈窗 */}
@@ -413,6 +445,6 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
         )}
       </DialogContent>
     </Dialog>
-    </>
+    </motion.div>
   );
 }

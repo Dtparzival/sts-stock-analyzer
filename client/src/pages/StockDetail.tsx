@@ -8,6 +8,7 @@ import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -316,9 +317,36 @@ export default function StockDetail() {
 
   const chartData = formatChartData(stockData);
 
+  // 動畫配置
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <motion.div 
+        className="container mx-auto px-4 py-8"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
         {/* 返回按鈕 */}
         <Button variant="ghost" onClick={() => setLocation("/")} className="mb-6 hover:bg-primary/10">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -326,6 +354,7 @@ export default function StockDetail() {
         </Button>
 
         {/* 股票標題和收藏按鈕 - 優化設計 */}
+        <motion.div variants={itemVariants}>
         <Card className="mb-6 border-2 shadow-lg">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
@@ -365,8 +394,10 @@ export default function StockDetail() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* 價格資訊卡片 - 優化設計 */}
+        <motion.div variants={itemVariants}>
         <Card className="mb-6 border-2 shadow-lg">
           <CardContent className="pt-8">
             {/* 主要價格資訊 - 突出顯示 */}
@@ -472,8 +503,10 @@ export default function StockDetail() {
             )}
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* 股價走勢圖 */}
+        <motion.div variants={itemVariants}>
         <TradingViewChart
           symbol={symbol}
           data={chartData}
@@ -484,8 +517,10 @@ export default function StockDetail() {
             setChartInterval(interval);
           }}
         />
+        </motion.div>
 
         {/* 分析和預測標籤頁 - 優化設計 */}
+        <motion.div variants={itemVariants}>
         <Tabs defaultValue="analysis" className="mt-8">
           <TabsList className="grid w-full grid-cols-2 h-14 p-1 bg-muted/50">
             <TabsTrigger value="analysis" className="text-base font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-white">AI 投資分析</TabsTrigger>
@@ -646,7 +681,8 @@ export default function StockDetail() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

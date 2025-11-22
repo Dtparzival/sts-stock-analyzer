@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface PerformanceData {
   recordDate: Date;
@@ -59,6 +60,11 @@ export function PortfolioPerformanceChart({
   }));
 
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
     <Card>
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -112,7 +118,7 @@ export function PortfolioPerformanceChart({
             
             {/* 曲線圖 */}
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
+              <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="date" 
@@ -148,7 +154,9 @@ export function PortfolioPerformanceChart({
                   strokeWidth={2}
                   name="總價值"
                   dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
+                  activeDot={{ r: 6, strokeWidth: 2 }}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
                 />
                 <Line 
                   type="monotone" 
@@ -158,7 +166,9 @@ export function PortfolioPerformanceChart({
                   strokeDasharray="5 5"
                   name="總成本"
                   dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
+                  activeDot={{ r: 6, strokeWidth: 2 }}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -166,5 +176,6 @@ export function PortfolioPerformanceChart({
         )}
       </CardContent>
     </Card>
+    </motion.div>
   );
 }
