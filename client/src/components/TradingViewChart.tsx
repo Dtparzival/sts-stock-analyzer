@@ -10,6 +10,13 @@ import {
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Calendar as CalendarIcon, Maximize2, Minimize2, ChevronsRight, RotateCcw } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
@@ -503,9 +510,36 @@ export default function TradingViewChart({
       )}
     >
       {/* 控制欄 */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        {/* 左側：時間範圍選擇器 */}
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-3 mb-4">
+        {/* 手機版：時間範圍下拉選單 */}
+        <div className="md:hidden">
+          <Select
+            value={isCustomRange ? "custom" : selectedRange}
+            onValueChange={(value) => {
+              if (value === "custom") {
+                setIsCustomRange(true);
+              } else {
+                handleRangeChange(value);
+              }
+            }}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="選擇時間範圍" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeRanges.map((range) => (
+                <SelectItem key={range.value} value={range.value}>
+                  {range.label}
+                </SelectItem>
+              ))}
+              <SelectItem value="custom">自訂範圍</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* 桌面版：時間範圍按鈕組 */}
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           {timeRanges.map((range) => (
             <Button
               key={range.value}
@@ -519,8 +553,120 @@ export default function TradingViewChart({
           ))}
         </div>
 
-        {/* 右側：自訂日期範圍、重置縮放、跳至最新、全螢幕 */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* 自訂日期範圍和功能按鈕 */}
+        {/* 手機版：垂直排列 */}
+        <div className="md:hidden space-y-2">
+          {/* 日期選擇器 */}
+          <div className="grid grid-cols-2 gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !customStartDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customStartDate ? format(customStartDate, "MM/dd", { locale: zhTW }) : "起始日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customStartDate}
+                  onSelect={setCustomStartDate}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  locale={zhTW}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !customEndDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customEndDate ? format(customEndDate, "MM/dd", { locale: zhTW }) : "結束日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customEndDate}
+                  onSelect={setCustomEndDate}
+                  disabled={(date) => 
+                    date > new Date() || 
+                    (customStartDate ? date < customStartDate : false)
+                  }
+                  initialFocus
+                  locale={zhTW}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* 查詢按鈕 */}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleCustomRangeQuery}
+            disabled={!customStartDate || !customEndDate || isLoading}
+            className="w-full"
+          >
+            查詢自訂範圍
+          </Button>
+
+          {/* 功能按鈕組 */}
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetZoom}
+              disabled={isLoading}
+              title="重置縮放"
+              className="w-full"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleJumpToLatest}
+              disabled={isLoading}
+              title="跳至最新"
+              className="w-full"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFullscreen}
+              title="全螢幕"
+              className="w-full"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* 桌面版：水平排列 */}
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           {/* 自訂日期範圍 */}
           <div className="flex items-center gap-2">
             <Popover>
@@ -590,7 +736,7 @@ export default function TradingViewChart({
             </Button>
           </div>
 
-          {/* 重置縮放按鈕 */}
+          {/* 功能按鈕組 */}
           <Button
             variant="outline"
             size="sm"
@@ -601,7 +747,6 @@ export default function TradingViewChart({
             <RotateCcw className="h-4 w-4" />
           </Button>
 
-          {/* 跳至最新按鈕 */}
           <Button
             variant="outline"
             size="sm"
@@ -612,7 +757,6 @@ export default function TradingViewChart({
             <ChevronsRight className="h-4 w-4" />
           </Button>
 
-          {/* 全螢幕按鈕 */}
           <Button
             variant="outline"
             size="sm"

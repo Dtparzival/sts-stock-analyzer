@@ -11,6 +11,13 @@ import {
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
@@ -137,24 +144,126 @@ export default function StockChart({
   return (
     <div className="space-y-4">
       {/* 時間範圍選擇器 */}
-      <div className="flex flex-wrap gap-2 items-center">
-        {timeRanges.map((range) => (
-          <Button
-            key={range.value}
-            variant={selectedRange === range.value && !isCustomRange ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleRangeChange(range.value, range.interval)}
+      <div className="space-y-3">
+        {/* 手機版：下拉選單 */}
+        <div className="md:hidden">
+          <Select
+            value={isCustomRange ? "custom" : selectedRange}
+            onValueChange={(value) => {
+              if (value === "custom") {
+                setIsCustomRange(true);
+                setSelectedRange("custom");
+              } else {
+                const range = timeRanges.find((r) => r.value === value);
+                if (range) {
+                  handleRangeChange(range.value, range.interval);
+                }
+              }
+            }}
             disabled={isLoading}
           >
-            {range.label}
-          </Button>
-        ))}
-        
-        {/* 分隔線 */}
-        <div className="h-8 w-px bg-border mx-2" />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="選擇時間範圍" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeRanges.map((range) => (
+                <SelectItem key={range.value} value={range.value}>
+                  {range.label}
+                </SelectItem>
+              ))}
+              <SelectItem value="custom">自訂範圍</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* 桌面版：按鈕組 */}
+        <div className="hidden md:flex flex-wrap gap-2 items-center">
+          {timeRanges.map((range) => (
+            <Button
+              key={range.value}
+              variant={selectedRange === range.value && !isCustomRange ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleRangeChange(range.value, range.interval)}
+              disabled={isLoading}
+            >
+              {range.label}
+            </Button>
+          ))}
+          
+          {/* 分隔線 */}
+          <div className="h-8 w-px bg-border mx-2" />
+        </div>
         
         {/* 自訂日期範圍 */}
-        <div className="flex items-center gap-2">
+        {/* 手機版：垂直排列 */}
+        <div className="md:hidden space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !customStartDate && "text-muted-foreground"
+                  )}
+                  disabled={isLoading}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customStartDate ? format(customStartDate, "MM/dd", { locale: zhTW }) : "起始日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customStartDate}
+                  onSelect={setCustomStartDate}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !customEndDate && "text-muted-foreground"
+                  )}
+                  disabled={isLoading}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customEndDate ? format(customEndDate, "MM/dd", { locale: zhTW }) : "結束日期"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customEndDate}
+                  onSelect={setCustomEndDate}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <Button
+            size="sm"
+            onClick={handleCustomRangeApply}
+            disabled={!customStartDate || !customEndDate || isLoading}
+            variant={isCustomRange ? "default" : "outline"}
+            className="w-full"
+          >
+            查詢自訂範圍
+          </Button>
+        </div>
+
+        {/* 桌面版：水平排列 */}
+        <div className="hidden md:flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
