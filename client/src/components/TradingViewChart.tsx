@@ -168,18 +168,9 @@ export default function TradingViewChart({
         borderColor: borderColor,
         scaleMargins: {
           top: 0.1,
-          bottom: 0.1,
+          bottom: 0.25, // 留出更多空間給成交量，避免重疊
         },
         // 禁用 Y 軸拖曳，防止 K 線圖和成交量交錯
-        mode: 0, // 0 = Normal mode (no dragging)
-      },
-      leftPriceScale: {
-        visible: true,
-        borderColor: borderColor,
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
-        },
         mode: 0, // 0 = Normal mode (no dragging)
       },
       crosshair: {
@@ -221,16 +212,27 @@ export default function TradingViewChart({
 
     candlestickSeriesRef.current = candlestickSeriesInstance as any;
 
-    // 創建成交量系列（使用左側 Y 軸）
+    // 創建成交量系列
     const volumeSeriesInstance = chart.addSeries(HistogramSeries, {
       color: "#26a69a",
       priceFormat: {
         type: "volume",
       },
-      priceScaleId: "left", // 使用左側 Y 軸顯示成交量
+      priceScaleId: "volume",
     });
 
     volumeSeriesRef.current = volumeSeriesInstance as any;
+
+    // 設置成交量的價格比例
+    chart.priceScale("volume").applyOptions({
+      scaleMargins: {
+        top: 0.80, // 成交量佔 20% 的空間，K 線圖佔 80%
+        bottom: 0,
+      },
+      visible: false, // 隱藏成交量的價格標籤，避免與 K 線圖重疊
+      // 禁用 Y 軸拖曳，防止成交量和 K 線圖交錯
+      mode: 0, // 0 = Normal mode (no dragging)
+    });
 
     // 響應式調整（帶 debounce 防抖機制）
     let resizeTimeout: NodeJS.Timeout | null = null;
@@ -606,7 +608,7 @@ export default function TradingViewChart({
               <div
                 ref={tooltipRef}
                 className={cn(
-                  "absolute pointer-events-none z-20 rounded shadow-md p-1.5 min-w-[130px] backdrop-blur-sm",
+                  "absolute pointer-events-none z-20 rounded-md shadow-lg p-2 min-w-[160px] backdrop-blur-sm",
                   "bg-background/98 border",
                   tooltipData.change >= 0 ? "border-green-500/50" : "border-red-500/50"
                 )}
@@ -615,34 +617,34 @@ export default function TradingViewChart({
                   top: `${Math.max(tooltipData.y - 10, 10)}px`,
                 }}
               >
-                <div className="text-[9px] font-medium text-muted-foreground mb-0.5">{tooltipData.time}</div>
-                <div className="space-y-0 text-[10px]">
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">O</span>
-                    <span className="font-mono">{tooltipData.open.toFixed(2)}</span>
+                <div className="text-[10px] font-medium text-muted-foreground mb-1.5">{tooltipData.time}</div>
+                <div className="space-y-0.5 text-xs">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">O:</span>
+                    <span className="font-mono font-semibold">{tooltipData.open.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">H</span>
-                    <span className="font-mono text-green-600">{tooltipData.high.toFixed(2)}</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">H:</span>
+                    <span className="font-mono font-semibold text-green-600">{tooltipData.high.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">L</span>
-                    <span className="font-mono text-red-600">{tooltipData.low.toFixed(2)}</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">L:</span>
+                    <span className="font-mono font-semibold text-red-600">{tooltipData.low.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">C</span>
-                    <span className="font-mono">{tooltipData.close.toFixed(2)}</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">C:</span>
+                    <span className="font-mono font-semibold">{tooltipData.close.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">Vol</span>
-                    <span className="font-mono text-[9px]">{formatVolume(tooltipData.volume)}</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">成交量:</span>
+                    <span className="font-mono font-semibold">{formatVolume(tooltipData.volume)}</span>
                   </div>
-                  <div className="border-t border-border pt-0.5 mt-0.5">
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">漲跌</span>
+                  <div className="border-t border-border pt-1 mt-1">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">漲跌幅:</span>
                       <span 
                         className={cn(
-                          "font-mono font-semibold text-[10px]",
+                          "font-mono font-bold text-xs",
                           tooltipData.change >= 0 ? "text-green-600" : "text-red-600"
                         )}
                       >
