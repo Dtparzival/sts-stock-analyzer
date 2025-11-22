@@ -31,6 +31,109 @@ import { getMarketFromSymbol, cleanTWSymbol, getTWStockName, HOT_STOCKS, MARKETS
 import { isMarketOpen } from "@shared/tradingHours";
 import StockDetailSkeleton from "@/components/StockDetailSkeleton";
 import ShareButton from "@/components/ShareButton";
+import { ChevronDown, ChevronUp, Clock } from "lucide-react";
+
+// AI 分析歷史記錄卡片組件
+interface AnalysisHistoryCardProps {
+  record: {
+    id: number;
+    createdAt: Date;
+    recommendation: string | null;
+    priceAtAnalysis: number | null;
+    content: string;
+  };
+  index: number;
+}
+
+function AnalysisHistoryCard({ record, index }: AnalysisHistoryCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const summary = record.content.substring(0, 80);
+  const hasMore = record.content.length > 80;
+
+  // 根據建議類型返回不同的樣式
+  const getRecommendationStyle = (recommendation: string | null) => {
+    if (!recommendation) return { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', gradient: 'from-gray-400 to-gray-500' };
+    if (recommendation === '買入') return { bg: 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30', text: 'text-green-700 dark:text-green-400', gradient: 'from-green-500 to-emerald-500' };
+    if (recommendation === '賣出') return { bg: 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30', text: 'text-red-700 dark:text-red-400', gradient: 'from-red-500 to-rose-500' };
+    return { bg: 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30', text: 'text-yellow-700 dark:text-yellow-400', gradient: 'from-yellow-500 to-amber-500' };
+  };
+
+  const style = getRecommendationStyle(record.recommendation);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      className={`rounded-xl border-2 overflow-hidden transition-all duration-300 hover:border-purple-300 hover:shadow-lg ${style.bg}`}
+    >
+      <div className="p-5">
+        {/* 標頭區域 */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${style.gradient} flex items-center justify-center`}>
+              <Clock className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-muted-foreground">
+                {new Date(record.createdAt).toLocaleString('zh-TW', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+              {record.priceAtAnalysis && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  當時股價: <span className="font-semibold">${(record.priceAtAnalysis / 100).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* 投資建議標籤 */}
+          {record.recommendation && (
+            <div className={`px-4 py-2 rounded-lg bg-gradient-to-r ${style.gradient} shadow-md`}>
+              <span className="text-white font-bold text-base">
+                {record.recommendation}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 分析摘要 */}
+        <div className="space-y-3">
+          <div className="text-sm text-foreground/80 leading-relaxed">
+            {isExpanded ? record.content : summary}
+            {!isExpanded && hasMore && '...'}
+          </div>
+          
+          {hasMore && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 -ml-2"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  收合
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  展開完整分析
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function StockDetail() {
   const [, params] = useRoute("/stock/:symbol");
@@ -622,59 +725,47 @@ export default function StockDetail() {
                               歷史記錄
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>AI 分析歷史記錄</DialogTitle>
-                              <DialogDescription>
-                                {symbol} 的歷史 AI 分析記錄，可以比較不同時間點的分析結果
-                              </DialogDescription>
+                          <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+                            <DialogHeader className="border-b pb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                                  <History className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <DialogTitle className="text-2xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                                    AI 分析歷史記錄
+                                  </DialogTitle>
+                                  <DialogDescription className="text-base mt-1">
+                                    {symbol} 的歷史 AI 分析記錄 · 共 {analysisHistory?.length || 0} 筆
+                                  </DialogDescription>
+                                </div>
+                              </div>
                             </DialogHeader>
                             
-                            {!analysisHistory || analysisHistory.length === 0 ? (
-                              <div className="text-center py-8 text-muted-foreground">
-                                尚無歷史分析記錄
-                              </div>
-                            ) : (
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-[180px]">分析時間</TableHead>
-                                    <TableHead className="w-[100px]">建議</TableHead>
-                                    <TableHead className="w-[120px]">當時股價</TableHead>
-                                    <TableHead>分析摘要</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {analysisHistory.map((record) => (
-                                    <TableRow key={record.id}>
-                                      <TableCell className="text-sm">
-                                        {new Date(record.createdAt).toLocaleString('zh-TW')}
-                                      </TableCell>
-                                      <TableCell>
-                                        {record.recommendation ? (
-                                          <Badge 
-                                            variant={record.recommendation === '買入' ? 'default' : record.recommendation === '賣出' ? 'destructive' : 'secondary'}
-                                          >
-                                            {record.recommendation}
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline">-</Badge>
-                                        )}
-                                      </TableCell>
-                                      <TableCell className="text-sm">
-                                        {record.priceAtAnalysis ? `$${(record.priceAtAnalysis / 100).toFixed(2)}` : '-'}
-                                      </TableCell>
-                                      <TableCell className="text-sm text-muted-foreground">
-                                        {record.content.substring(0, 150)}...
-                                      </TableCell>
-                                    </TableRow>
+                            <div className="flex-1 overflow-y-auto py-4 px-1">
+                              {!analysisHistory || analysisHistory.length === 0 ? (
+                                <div className="text-center py-16 text-muted-foreground">
+                                  <History className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                                  <p className="text-lg">尚無歷史分析記錄</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-4">
+                                  {analysisHistory.map((record, index) => (
+                                    <AnalysisHistoryCard 
+                                      key={record.id} 
+                                      record={record} 
+                                      index={index}
+                                    />
                                   ))}
-                                </TableBody>
-                              </Table>
-                            )}
+                                </div>
+                              )}
+                            </div>
                             
-                            <div className="flex justify-end mt-4">
-                              <Button onClick={() => setShowHistoryDialog(false)}>
+                            <div className="border-t pt-4 flex justify-end">
+                              <Button 
+                                onClick={() => setShowHistoryDialog(false)}
+                                className="button-hover"
+                              >
                                 關閉
                               </Button>
                             </div>
