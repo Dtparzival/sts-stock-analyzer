@@ -68,10 +68,20 @@ export default function Home() {
     }
   };
   
+  // 根據當前市場過濾推薦股票
+  const filteredRecommendations = useMemo(() => {
+    if (!recentHistory) return [];
+    
+    return recentHistory.filter(item => {
+      const market = getMarketFromSymbol(item.symbol);
+      return market === selectedMarket;
+    });
+  }, [recentHistory, selectedMarket]);
+  
   // 獲取推薦股票的即時股價資訊（使用 useMemo 穩定引用）
   const recommendedSymbols = useMemo(
-    () => recentHistory?.slice(0, 6).map(item => item.symbol) || [],
-    [recentHistory]
+    () => filteredRecommendations.slice(0, 6).map(item => item.symbol) || [],
+    [filteredRecommendations]
   );
   
   // 獲取第一個股票的數據
@@ -503,7 +513,7 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
-              ) : recentHistory && recentHistory.length > 0 ? (
+              ) : filteredRecommendations && filteredRecommendations.length > 0 ? (
               <div className="mt-12 max-w-6xl mx-auto px-4">
                 {/* 區塊標題 */}
                 <div className="text-center mb-8 relative">
@@ -529,7 +539,7 @@ export default function Home() {
                 
                 {/* 推薦卡片網格 */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-                  {recentHistory.slice(0, 6).map((item) => {
+                  {filteredRecommendations.slice(0, 6).map((item) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
                     let displayName = item.shortName || item.companyName;
@@ -589,7 +599,7 @@ export default function Home() {
                           {/* 即時股價資訊 */}
                           {(() => {
                             const stockData = stockPriceMap.get(item.symbol);
-                            const isLoading = stockDataQueries[recentHistory.indexOf(item)]?.isLoading;
+                            const isLoading = stockDataQueries[filteredRecommendations.indexOf(item)]?.isLoading;
                             
                             if (isLoading) {
                               return (
