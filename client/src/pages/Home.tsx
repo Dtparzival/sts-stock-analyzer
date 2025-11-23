@@ -759,7 +759,7 @@ export default function Home() {
             <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/watchlist")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 p-4 rounded-2xl bg-yellow-500/10 w-fit">
-                  <Star className="h-10 w-10 text-yellow-600" />
+                  <Star className="h-10 w-10 text-yellow-600 fill-yellow-600" />
                 </div>
                 <CardTitle className="text-xl mb-2">我的收藏</CardTitle>
                 <CardDescription className="text-base">
