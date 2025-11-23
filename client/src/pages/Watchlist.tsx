@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Star, X, Sparkles, TrendingUp, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { ArrowLeft, Loader2, Star, X, Sparkles, TrendingUp, ChevronDown, ChevronUp, ExternalLink, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type MarketFilter = 'all' | 'US' | 'TW';
 
-// 股價顯示組件
+// 股價顯示組件 - 優化為與「為您推薦」區塊一致的樣式
 function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date }) {
   const { data: stockData, isLoading, error } = trpc.stock.getStockData.useQuery(
     { symbol, range: '1d', interval: '1d' },
@@ -33,51 +33,44 @@ function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>載入中...</span>
       </div>
     );
   }
 
-  if (error || !stockData || !stockData.price) {
+  // 從 stockData 中提取價格資訊
+  const meta = stockData?.chart?.result?.[0]?.meta;
+  const currentPrice = meta?.regularMarketPrice;
+  const previousClose = meta?.previousClose || meta?.chartPreviousClose;
+  
+  // 檢查數據是否完整
+  if (error || !stockData || !currentPrice || !previousClose) {
     return (
-      <div className="space-y-2 py-2">
-        <div className="text-sm text-muted-foreground">
-          添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          點擊查看詳細股價信息
-        </div>
+      <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
+        <span className="truncate">添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}</span>
       </div>
     );
   }
 
-  const change = stockData.price - (stockData.previousClose || stockData.price);
-  const changePercent = stockData.previousClose ? (change / stockData.previousClose) * 100 : 0;
+  const change = currentPrice - previousClose;
+  const changePercent = (change / previousClose) * 100;
+  const isPositive = change >= 0;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-bold">
-          ${stockData.price.toFixed(2)}
-        </span>
-        <span className={`text-sm font-medium ${
-          changePercent >= 0 
-            ? 'text-green-600' 
-            : 'text-red-600'
-        }`}>
-          {changePercent >= 0 ? '+' : ''}
-          {changePercent.toFixed(2)}%
-        </span>
+    <div className="flex flex-col items-center gap-1 w-full">
+      {/* 當前股價 */}
+      <div className="text-sm sm:text-base font-bold text-foreground">
+        ${currentPrice.toFixed(2)}
       </div>
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className={changePercent >= 0 ? 'text-green-600' : 'text-red-600'}>
-          {changePercent >= 0 ? '+' : ''}
-          ${change.toFixed(2)}
-        </span>
-        <span>
-          添加於 {new Date(addedAt).toLocaleDateString("zh-TW")}
-        </span>
+      {/* 漲跌幅 */}
+      <div className={`text-xs sm:text-sm font-semibold ${
+        isPositive 
+          ? 'text-green-600 dark:text-green-400' 
+          : 'text-red-600 dark:text-red-400'
+      }`}>
+        {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
       </div>
     </div>
   );
@@ -303,63 +296,82 @@ export default function Watchlist() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredWatchlist.map((item) => (
-              <Card
-                key={item.id}
-                className="cursor-pointer card-hover border-2 hover:border-primary/50 hover:shadow-xl transition-all relative group"
-                onClick={() => setLocation(`/stock/${item.symbol}`)}
-              >
-                <CardContent className="py-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-bold">
-                          {getMarketFromSymbol(item.symbol) === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol}
-                        </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {getMarketFromSymbol(item.symbol) === 'TW' ? '台股' : '美股'}
-                        </Badge>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
+            {filteredWatchlist.map((item) => {
+              const market = getMarketFromSymbol(item.symbol);
+              const displaySymbol = market === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol;
+              
+              // 處理顯示名稱
+              let displayName = item.companyName;
+              if (market === 'TW') {
+                const twName = getTWStockName(item.symbol);
+                if (twName) {
+                  displayName = twName;
+                } else if (item.companyName && !item.companyName.includes('.TW') && !item.companyName.includes('.TWO')) {
+                  displayName = item.companyName;
+                } else {
+                  displayName = item.symbol;
+                }
+              }
+              
+              return (
+                <Card
+                  key={item.id}
+                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
+                  onClick={() => setLocation(`/stock/${item.symbol}`)}
+                >
+                  {/* 市場標籤 */}
+                  <div className="absolute top-2 right-2 z-10">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      market === 'US' 
+                        ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' 
+                        : 'bg-green-500/20 text-green-700 dark:text-green-300'
+                    }`}>
+                      <Globe className="h-3 w-3" />
+                      {market === 'US' ? '美股' : '台股'}
+                    </span>
+                  </div>
+                  
+                  {/* 漸層背景裝飾 */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  <CardContent className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[160px]">
+                    {/* 股票圖標與收藏按鈕 */}
+                    <div className="mb-2 sm:mb-3 flex items-center gap-2">
+                      <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       </div>
-                      <p className="text-sm text-muted-foreground truncate max-w-[180px]">
-                        {(() => {
-                          const market = getMarketFromSymbol(item.symbol);
-                          if (market === 'TW') {
-                            // 台股：先嘗試從 TW_STOCK_NAMES 獲取中文名稱
-                            const twName = getTWStockName(item.symbol);
-                            if (twName) {
-                              return twName;
-                            }
-                            // 如果 companyName 是新格式（例如：2330 台積電），直接使用
-                            if (item.companyName && !item.companyName.includes('.TW') && !item.companyName.includes('.TWO')) {
-                              return item.companyName;
-                            }
-                            // 如果都沒有，返回 symbol
-                            return item.symbol;
-                          }
-                          // 美股：直接使用 companyName
-                          return item.companyName || item.symbol;
-                        })()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Star className="h-5 w-5 text-primary fill-primary" />
                       <Button
-                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors button-hover"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm"
                         onClick={(e) => handleRemove(e, item.symbol)}
                         title="移除收藏"
                       >
-                        <X className="h-4 w-4" />
+                        <Star className="h-4 w-4 text-primary fill-primary" />
                       </Button>
                     </div>
-                  </div>
-                  {/* 股價和漲跌幅 */}
-                  <StockPriceDisplay symbol={item.symbol} addedAt={item.addedAt} />
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    {/* 股票代碼 */}
+                    <div className="text-center mb-1 sm:mb-2">
+                      <h4 className="font-bold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors">
+                        {displaySymbol}
+                      </h4>
+                    </div>
+                    
+                    {/* 股票名稱 */}
+                    {displayName && (
+                      <p className="text-xs sm:text-sm text-muted-foreground text-center line-clamp-2 mb-1 sm:mb-2 min-h-[2rem] px-1">
+                        {displayName}
+                      </p>
+                    )}
+                    
+                    {/* 即時股價資訊 */}
+                    <StockPriceDisplay symbol={item.symbol} addedAt={item.addedAt} />
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
         
