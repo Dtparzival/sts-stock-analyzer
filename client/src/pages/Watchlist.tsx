@@ -269,7 +269,7 @@ export default function Watchlist() {
             <CardContent className="py-20 text-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-full bg-yellow-500/10">
-                  <Star className="h-12 w-12 text-yellow-600" />
+                  <Star className="h-12 w-12 text-yellow-600 fill-yellow-600" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold mb-2">尚未收藏任何股票</p>
@@ -286,7 +286,7 @@ export default function Watchlist() {
             <CardContent className="py-20 text-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-full bg-yellow-500/10">
-                  <Star className="h-12 w-12 text-yellow-600" />
+                  <Star className="h-12 w-12 text-yellow-600 fill-yellow-600" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold mb-2">沒有符合篩選條件的股票</p>
