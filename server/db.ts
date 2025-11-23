@@ -23,7 +23,10 @@ import {
   InsertPortfolioHistory,
   portfolioTransactions,
   PortfolioTransaction,
-  InsertPortfolioTransaction
+  InsertPortfolioTransaction,
+  quickQuestionUsage,
+  QuickQuestionUsage,
+  InsertQuickQuestionUsage
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -604,4 +607,50 @@ export async function getTransactionStats(userId: number) {
       sellDate: worstTrade.sellDate.toISOString(),
     } : null,
   };
+}
+
+/**
+ * 記錄快速問題使用次數
+ */
+export async function trackQuickQuestionUsage(questionText: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    // 嘗試插入新記錄，如果已存在則更新使用次數和最後使用時間
+    await db.insert(quickQuestionUsage).values({
+      questionText,
+      usageCount: 1,
+      lastUsedAt: new Date(),
+    }).onDuplicateKeyUpdate({
+      set: {
+        usageCount: sql`${quickQuestionUsage.usageCount} + 1`,
+        lastUsedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("[Database] Failed to track quick question usage:", error);
+    throw error;
+  }
+}
+
+/**
+ * 獲取最熱門的快速問題
+ */
+export async function getPopularQuickQuestions(limit: number = 6): Promise<QuickQuestionUsage[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const results = await db
+      .select()
+      .from(quickQuestionUsage)
+      .orderBy(desc(quickQuestionUsage.usageCount), desc(quickQuestionUsage.lastUsedAt))
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get popular quick questions:", error);
+    return [];
+  }
 }

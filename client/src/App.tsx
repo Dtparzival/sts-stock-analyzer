@@ -12,6 +12,7 @@ import SearchHistory from "./pages/SearchHistory";
 import AIAdvisor from "./pages/AIAdvisor";
 import AnalysisAccuracy from "./pages/AnalysisAccuracy";
 import TransactionHistory from "./pages/TransactionHistory";
+import CompareStocks from "./pages/CompareStocks";
 import { ApiMonitor } from "./components/ApiMonitor";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/history"} component={SearchHistory} />
       <Route path={"/ai-advisor"} component={AIAdvisor} />
       <Route path={"/analysis-accuracy"} component={AnalysisAccuracy} />
+      <Route path={"/compare"} component={CompareStocks} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

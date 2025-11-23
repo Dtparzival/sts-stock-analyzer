@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AIChatBox, Message } from "@/components/AIChatBox";
@@ -35,6 +35,11 @@ export default function FloatingAIChat() {
   });
 
   const handleSend = (content: string) => {
+    // 如果內容是快速問題模板之一，記錄使用次數
+    if (quickTemplates.includes(content)) {
+      trackQuestionMutation.mutate({ questionText: content });
+    }
+
     const newMessages: Message[] = [...messages, { role: "user", content }];
     setMessages(newMessages);
     
@@ -65,12 +70,13 @@ export default function FloatingAIChat() {
   };
 
   const suggestedPrompts = [
+    "比較 TSLA 和 AAPL 的投資價值",
     "AAPL 目前適合買入嗎？",
     "如何分析一支股票的財務健康度？",
-    "什麼是技術分析中的 RSI 指標？",
   ];
 
-  const quickTemplates = [
+  // 預設快速問題（當資料庫沒有記錄時使用）
+  const defaultQuickTemplates = [
     "分析我的投資組合",
     "推薦低風險股票",
     "市場趨勢分析",
@@ -78,6 +84,20 @@ export default function FloatingAIChat() {
     "成長股 vs 價值股",
     "股息投資策略",
   ];
+
+  // 從後端獲取熱門快速問題
+  const { data: popularQuestions } = trpc.aiChat.getPopularQuestions.useQuery(
+    { limit: 6 },
+    { refetchOnWindowFocus: false }
+  );
+
+  // 使用熱門問題或預設問題
+  const quickTemplates = popularQuestions && popularQuestions.length > 0
+    ? popularQuestions.map(q => q.questionText)
+    : defaultQuickTemplates;
+
+  // 記錄快速問題使用次數的 mutation
+  const trackQuestionMutation = trpc.aiChat.trackQuestionUsage.useMutation();
 
   if (!isOpen) {
     return (

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, ArrowRight, BarChart3, Brain, Shield } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, ArrowRight, BarChart3, Brain, Shield, GitCompare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
@@ -391,7 +391,19 @@ export default function Home() {
             <p className="text-lg text-muted-foreground">深入了解投資表現，做出更精準的決策</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/compare")}>
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 p-4 rounded-2xl bg-purple-500/10 w-fit">
+                  <GitCompare className="h-10 w-10 text-purple-600" />
+                </div>
+                <CardTitle className="text-xl mb-2">多股票對比分析</CardTitle>
+                <CardDescription className="text-base">
+                  同時比較多支股票的價格走勢和投資價值，做出更明智的選擇
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            
             <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/analysis-accuracy")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 p-4 rounded-2xl bg-green-500/10 w-fit">

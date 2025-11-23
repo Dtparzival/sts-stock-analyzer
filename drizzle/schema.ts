@@ -200,3 +200,21 @@ export const analysisHistory = mysqlTable("analysisHistory", {
 
 export type AnalysisHistory = typeof analysisHistory.$inferSelect;
 export type InsertAnalysisHistory = typeof analysisHistory.$inferInsert;
+
+/**
+ * 快速問題使用頻率追蹤
+ * 記錄用戶點擊快速問題按鈕的次數，用於動態調整顯示內容
+ */
+export const quickQuestionUsage = mysqlTable("quickQuestionUsage", {
+  id: int("id").autoincrement().primaryKey(),
+  questionText: varchar("questionText", { length: 255 }).notNull().unique(), // 問題文字
+  usageCount: int("usageCount").notNull().default(0), // 使用次數
+  lastUsedAt: timestamp("lastUsedAt").defaultNow().notNull(), // 最後使用時間
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  usageCountIdx: index("usageCount_idx").on(table.usageCount),
+  lastUsedAtIdx: index("lastUsedAt_idx").on(table.lastUsedAt),
+}));
+
+export type QuickQuestionUsage = typeof quickQuestionUsage.$inferSelect;
+export type InsertQuickQuestionUsage = typeof quickQuestionUsage.$inferInsert;

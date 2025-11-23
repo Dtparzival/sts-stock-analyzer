@@ -1383,6 +1383,228 @@ ${portfolioData.map(h => `
         return stats;
       }),
   }),
+
+  // 多股票對比分析
+  compare: router({
+    // 獲取多支股票的基本資訊
+    getMultipleStocks: publicProcedure
+      .input(z.object({
+        symbols: z.array(z.string()).min(2).max(5), // 最多比較 5 支股票
+        range: z.string().optional().default('1mo'),
+      }))
+      .query(async ({ input, ctx }) => {
+        const { symbols, range } = input;
+        
+        // 並行獲取所有股票的數據
+        const stockDataPromises = symbols.map(async (symbol) => {
+          try {
+            const { getMarketFromSymbol, getFullTWSymbol } = await import('../shared/markets');
+            const market = getMarketFromSymbol(symbol);
+            const region = market === 'TW' ? 'TW' : 'US';
+            
+            if (region === 'TW') {
+              const fullSymbol = getFullTWSymbol(symbol);
+              return await getTWSEStockData(fullSymbol, range, ctx);
+            } else {
+              // 簡化版的美股數據獲取（不記錄搜尋歷史）
+              const cacheParams = { symbol, region, range };
+              const cacheResult = await dbCache.getCacheWithMetadata('twelvedata_stock_data', cacheParams);
+              
+              if (cacheResult) {
+                return {
+                  ...cacheResult.data,
+                  _metadata: {
+                    lastUpdated: cacheResult.createdAt,
+                    isFromCache: true,
+                    expiresAt: cacheResult.expiresAt,
+                  }
+                };
+              }
+              
+              // 如果沒有緩存，調用 getStockData
+              const { getTwelveDataQuote, getTwelveDataTimeSeries } = await import('./twelvedata');
+              const quote = await getTwelveDataQuote(symbol);
+              if (!quote) throw new Error(`無法獲取 ${symbol} 的報價`);
+              
+              let outputsize = 30;
+              if (range === '1d') outputsize = 1;
+              else if (range === '5d') outputsize = 5;
+              else if (range === '1mo') outputsize = 30;
+              else if (range === '3mo') outputsize = 90;
+              else if (range === '1y') outputsize = 365;
+              
+              const timeSeries = await getTwelveDataTimeSeries(symbol, '1day', outputsize);
+              if (!timeSeries) throw new Error(`無法獲取 ${symbol} 的歷史數據`);
+              
+              const data = {
+                chart: {
+                  result: [{
+                    meta: {
+                      symbol: quote.symbol,
+                      longName: quote.name,
+                      regularMarketPrice: parseFloat(quote.close),
+                      previousClose: parseFloat(quote.previous_close),
+                      currency: 'USD',
+                    },
+                    timestamp: [...timeSeries.values].reverse().map(v => Math.floor(new Date(v.datetime).getTime() / 1000)),
+                    indicators: {
+                      quote: [{
+                        open: [...timeSeries.values].reverse().map(v => parseFloat(v.open)),
+                        high: [...timeSeries.values].reverse().map(v => parseFloat(v.high)),
+                        low: [...timeSeries.values].reverse().map(v => parseFloat(v.low)),
+                        close: [...timeSeries.values].reverse().map(v => parseFloat(v.close)),
+                        volume: [...timeSeries.values].reverse().map(v => parseInt(v.volume)),
+                      }]
+                    }
+                  }]
+                }
+              };
+              
+              await dbCache.setCache('twelvedata_stock_data', cacheParams, data, 30 * 60 * 1000);
+              
+              return {
+                ...data,
+                _metadata: {
+                  lastUpdated: new Date(),
+                  isFromCache: false,
+                  expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+                }
+              };
+            }
+          } catch (error: any) {
+            console.error(`[Compare] Error fetching ${symbol}:`, error);
+            return null;
+          }
+        });
+        
+        const results = await Promise.all(stockDataPromises);
+        
+        // 過濾掉失敗的請求
+        const successfulResults = results.filter(r => r !== null);
+        
+        if (successfulResults.length < 2) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '至少需要成功獲取 2 支股票的數據才能進行比較',
+          });
+        }
+        
+        return successfulResults;
+      }),
+
+    // AI 對比分析
+    analyzeComparison: publicProcedure
+      .input(z.object({
+        symbols: z.array(z.string()).min(2).max(5),
+      }))
+      .mutation(async ({ input }) => {
+        const { symbols } = input;
+        
+        // 獲取所有股票的數據
+        const stockDataPromises = symbols.map(async (symbol) => {
+          try {
+            const { getMarketFromSymbol } = await import('../shared/markets');
+            const market = getMarketFromSymbol(symbol);
+            const region = market === 'TW' ? 'TW' : 'US';
+            
+            const cacheParams = { symbol, region, range: '1mo' };
+            const cacheResult = await dbCache.getCacheWithMetadata(
+              region === 'TW' ? 'twse_stock_data' : 'twelvedata_stock_data',
+              cacheParams
+            );
+            
+            if (cacheResult) {
+              return { symbol, data: cacheResult.data };
+            }
+            
+            return null;
+          } catch (error) {
+            return null;
+          }
+        });
+        
+        const results = await Promise.all(stockDataPromises);
+        const validData = results.filter(r => r !== null);
+        
+        if (validData.length < 2) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '無法獲取足夠的股票數據進行對比分析',
+          });
+        }
+        
+        // 準備 AI 分析的資料
+        const stockSummaries = validData.map((item: any) => {
+          const result = item.data.chart.result[0];
+          const meta = result.meta;
+          const quotes = result.indicators.quote[0];
+          const latestPrice = meta.regularMarketPrice;
+          const previousClose = meta.previousClose;
+          const change = latestPrice - previousClose;
+          const changePercent = (change / previousClose) * 100;
+          
+          return {
+            symbol: item.symbol,
+            name: meta.longName || item.symbol,
+            price: latestPrice,
+            change: change,
+            changePercent: changePercent,
+            currency: meta.currency || 'USD',
+          };
+        });
+        
+        // 生成 AI 對比分析
+        const prompt = `你是一位專業的股票分析師。請比較以下股票的表現和投資價值：
+
+${stockSummaries.map((s: any) => `**${s.symbol} (${s.name})**
+- 當前價格：${s.currency} ${s.price.toFixed(2)}
+- 漲跌幅：${s.changePercent > 0 ? '+' : ''}${s.changePercent.toFixed(2)}%`).join('\n\n')}
+
+請從以下維度進行對比分析：
+1. **價格走勢比較**：分析各股票的近期表現
+2. **投資價值評估**：比較各股票的投資潛力
+3. **風險評估**：分析各股票的風險等級
+4. **投資建議**：給出具體的投資建議
+
+請使用 Markdown 格式回答，包含標題、列表和表格。`;
+        
+        const response = await invokeLLM({
+          messages: [
+            { role: 'system', content: '你是一位專業的股票分析師，擅長多股票對比分析。' },
+            { role: 'user', content: prompt },
+          ],
+        });
+        
+        const analysis = response.choices[0].message.content;
+        
+        return {
+          analysis,
+          stockSummaries,
+        };
+      }),
+  }),
+
+  aiChat: router({
+    // 記錄快速問題使用次數
+    trackQuestionUsage: publicProcedure
+      .input(z.object({
+        questionText: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.trackQuickQuestionUsage(input.questionText);
+        return { success: true };
+      }),
+
+    // 獲取熱門快速問題
+    getPopularQuestions: publicProcedure
+      .input(z.object({
+        limit: z.number().optional().default(6),
+      }))
+      .query(async ({ input }) => {
+        const questions = await db.getPopularQuickQuestions(input.limit);
+        return questions;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
