@@ -510,16 +510,18 @@ export default function StockDetail() {
                   size="lg"
                   onClick={handleWatchlistToggle}
                   disabled={!user}
-                  className={watchlistCheck?.isInWatchlist ? "bg-gradient-primary text-white border-0 shadow-md button-hover" : "button-hover"}
+                  className={watchlistCheck?.isInWatchlist 
+                    ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 shadow-md hover:from-yellow-600 hover:to-amber-600 transition-all duration-300" 
+                    : "border-2 border-yellow-500/50 hover:border-yellow-500 hover:bg-yellow-500/10 transition-all duration-300"}
                 >
                   {watchlistCheck?.isInWatchlist ? (
                     <>
-                      <StarOff className="h-5 w-5 mr-2" />
-                      取消收藏
+                      <Star className="h-5 w-5 mr-2 fill-white" />
+                      已收藏
                     </>
                   ) : (
                     <>
-                      <Star className="h-5 w-5 mr-2" />
+                      <Star className="h-5 w-5 mr-2 text-yellow-600" />
                       加入收藏
                     </>
                   )}

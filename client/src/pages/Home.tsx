@@ -649,9 +649,9 @@ export default function Home() {
                             {addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending ? (
                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                             ) : watchlistMap.has(item.symbol) ? (
-                              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                              <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
                             ) : (
-                              <Heart className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                              <Star className="h-4 w-4 text-muted-foreground hover:text-yellow-500" />
                             )}
                           </Button>
                           
