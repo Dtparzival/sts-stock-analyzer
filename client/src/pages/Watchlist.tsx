@@ -2,28 +2,26 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Star, Sparkles, TrendingUp, Globe, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, Loader2, Star, X, Sparkles, TrendingUp, ChevronDown, ChevronUp, ExternalLink, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
 import { Badge } from "@/components/ui/badge";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { motion, AnimatePresence } from "framer-motion";
 
 type MarketFilter = 'all' | 'US' | 'TW';
-type SortOption = 'addedAt' | 'price' | 'changePercent';
 
 // 股價顯示組件 - 優化為與「為您推薦」區塊一致的樣式
-function StockPriceDisplay({ 
-  symbol, 
-  addedAt, 
-  onPriceLoaded 
-}: { 
-  symbol: string; 
-  addedAt: Date;
-  onPriceLoaded?: (symbol: string, price: number, changePercent: number) => void;
-}) {
+function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date }) {
   const { data: stockData, isLoading, error } = trpc.stock.getStockData.useQuery(
     { symbol, range: '1d', interval: '1d' },
     { 
@@ -33,21 +31,6 @@ function StockPriceDisplay({
     }
   );
 
-  // 從 stockData 中提取價格資訊
-  const meta = stockData?.chart?.result?.[0]?.meta;
-  const currentPrice = meta?.regularMarketPrice;
-  const previousClose = meta?.previousClose || meta?.chartPreviousClose;
-  const change = currentPrice && previousClose ? currentPrice - previousClose : 0;
-  const changePercent = currentPrice && previousClose ? (change / previousClose) * 100 : 0;
-  const isPositive = change >= 0;
-
-  // 回傳股價數據供排序使用 - 必須在所有 hooks 之後，但在任何 return 之前
-  useEffect(() => {
-    if (onPriceLoaded && currentPrice && changePercent !== undefined) {
-      onPriceLoaded(symbol, currentPrice, changePercent);
-    }
-  }, [symbol, currentPrice, changePercent, onPriceLoaded]);
-
   if (isLoading) {
     return (
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -56,6 +39,11 @@ function StockPriceDisplay({
       </div>
     );
   }
+
+  // 從 stockData 中提取價格資訊
+  const meta = stockData?.chart?.result?.[0]?.meta;
+  const currentPrice = meta?.regularMarketPrice;
+  const previousClose = meta?.previousClose || meta?.chartPreviousClose;
   
   // 檢查數據是否完整
   if (error || !stockData || !currentPrice || !previousClose) {
@@ -65,6 +53,10 @@ function StockPriceDisplay({
       </div>
     );
   }
+
+  const change = currentPrice - previousClose;
+  const changePercent = (change / previousClose) * 100;
+  const isPositive = change >= 0;
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
@@ -88,11 +80,27 @@ export default function Watchlist() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('addedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const STORAGE_KEY = 'batch_analysis_results';
+  const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
+  const [batchResults, setBatchResults] = useState<Array<{
+    symbol: string;
+    companyName: string | null;
+    recommendation: string | null;
+    summary: string;
+    error: string | null;
+  }>>([]);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
-
+  const toggleExpand = (symbol: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(symbol)) {
+        newSet.delete(symbol);
+      } else {
+        newSet.add(symbol);
+      }
+      return newSet;
+    });
+  };
 
   const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
     enabled: !!user,
@@ -102,11 +110,9 @@ export default function Watchlist() {
   
   const batchAnalyze = trpc.watchlist.batchAnalyze.useMutation({
     onSuccess: (data) => {
-      // 儲存結果到 sessionStorage
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data.results));
+      setBatchResults(data.results);
+      setShowBatchAnalysis(true);
       toast.success(`成功分析 ${data.results.length} 支股票`);
-      // 導航到全屏結果頁面
-      setLocation('/batch-analysis');
     },
     onError: (error) => {
       toast.error(error.message || "批量分析失敗，請稍後再試");
@@ -144,57 +150,12 @@ export default function Watchlist() {
     removeFromWatchlist.mutate({ symbol });
   };
 
-  // 儲存股價數據供排序使用
-  const [stockPrices, setStockPrices] = useState<Record<string, { price: number; changePercent: number }>>({});
-
-  // 篩選和排序收藏列表
+  // 篩選收藏列表
   const filteredWatchlist = useMemo(() => {
     if (!watchlist) return [];
-    
-    // 先篩選市場
-    let filtered = marketFilter === 'all' 
-      ? watchlist 
-      : watchlist.filter(item => getMarketFromSymbol(item.symbol) === marketFilter);
-    
-    // 再排序
-    const sorted = [...filtered].sort((a, b) => {
-      let compareValue = 0;
-      
-      if (sortBy === 'addedAt') {
-        compareValue = new Date(a.addedAt).getTime() - new Date(b.addedAt).getTime();
-      } else if (sortBy === 'price') {
-        const priceA = stockPrices[a.symbol]?.price ?? 0;
-        const priceB = stockPrices[b.symbol]?.price ?? 0;
-        compareValue = priceA - priceB;
-      } else if (sortBy === 'changePercent') {
-        const changeA = stockPrices[a.symbol]?.changePercent ?? 0;
-        const changeB = stockPrices[b.symbol]?.changePercent ?? 0;
-        compareValue = changeA - changeB;
-      }
-      
-      return sortOrder === 'asc' ? compareValue : -compareValue;
-    });
-    
-    return sorted;
-  }, [watchlist, marketFilter, sortBy, sortOrder, stockPrices]);
-
-  // 切換排序選項
-  const toggleSort = (option: SortOption) => {
-    if (sortBy === option) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(option);
-      setSortOrder('desc');
-    }
-  };
-
-  // 處理股價載入完成
-  const handlePriceLoaded = useCallback((symbol: string, price: number, changePercent: number) => {
-    setStockPrices(prev => ({
-      ...prev,
-      [symbol]: { price, changePercent }
-    }));
-  }, []);
+    if (marketFilter === 'all') return watchlist;
+    return watchlist.filter(item => getMarketFromSymbol(item.symbol) === marketFilter);
+  }, [watchlist, marketFilter]);
 
   if (loading) {
     return (
@@ -246,48 +207,6 @@ export default function Watchlist() {
           </div>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* 排序按鈕 */}
-            {watchlist && watchlist.length > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  variant={sortBy === 'addedAt' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleSort('addedAt')}
-                  className={sortBy === 'addedAt' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
-                >
-                  <ArrowUpDown className="h-4 w-4 mr-1" />
-                  添加時間
-                  {sortBy === 'addedAt' && (
-                    <span className="ml-1 text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </Button>
-                <Button
-                  variant={sortBy === 'price' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleSort('price')}
-                  className={sortBy === 'price' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
-                >
-                  <ArrowUpDown className="h-4 w-4 mr-1" />
-                  價格
-                  {sortBy === 'price' && (
-                    <span className="ml-1 text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </Button>
-                <Button
-                  variant={sortBy === 'changePercent' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleSort('changePercent')}
-                  className={sortBy === 'changePercent' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
-                >
-                  <ArrowUpDown className="h-4 w-4 mr-1" />
-                  漲跌幅
-                  {sortBy === 'changePercent' && (
-                    <span className="ml-1 text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </Button>
-              </div>
-            )}
-            
             {/* 批量分析按鈕 */}
             {watchlist && watchlist.length > 0 && (
               <Button
@@ -448,18 +367,198 @@ export default function Watchlist() {
                     )}
                     
                     {/* 即時股價資訊 */}
-                    <StockPriceDisplay 
-                      symbol={item.symbol} 
-                      addedAt={item.addedAt} 
-                      onPriceLoaded={handlePriceLoaded}
-                    />
+                    <StockPriceDisplay symbol={item.symbol} addedAt={item.addedAt} />
                   </CardContent>
                 </Card>
               );
             })}
           </div>
         )}
-
+        
+        {/* 批量分析結果對話框 - 卡片式設計 */}
+        <Dialog open={showBatchAnalysis} onOpenChange={setShowBatchAnalysis}>
+          <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader className="pb-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-primary">
+                    <Sparkles className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      批量 AI 分析結果
+                    </DialogTitle>
+                    <DialogDescription className="text-base mt-1">
+                      已完成 {batchResults.length} 支股票的 AI 投資分析
+                    </DialogDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowBatchAnalysis(false)}
+                  className="hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <AnimatePresence>
+                {batchResults.map((result, index) => {
+                  const displaySymbol = getMarketFromSymbol(result.symbol) === 'TW' ? cleanTWSymbol(result.symbol) : result.symbol;
+                  const isExpanded = expandedCards.has(result.symbol);
+                  const summaryPreview = result.summary.length > 80 ? result.summary.slice(0, 80) + '...' : result.summary;
+                  
+                  // 投資建議樣式
+                  const getRecommendationStyle = (rec: string | null) => {
+                    if (!rec) return { bg: 'bg-muted', text: 'text-muted-foreground', gradient: 'from-gray-400 to-gray-500' };
+                    if (rec === '買入') return { bg: 'bg-green-50', text: 'text-green-700', gradient: 'from-green-400 to-emerald-500' };
+                    if (rec === '賣出') return { bg: 'bg-red-50', text: 'text-red-700', gradient: 'from-red-400 to-rose-500' };
+                    return { bg: 'bg-yellow-50', text: 'text-yellow-700', gradient: 'from-yellow-400 to-amber-500' };
+                  };
+                  
+                  const recStyle = getRecommendationStyle(result.recommendation);
+                  
+                  return (
+                    <motion.div
+                      key={result.symbol}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                    >
+                      <Card className="border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="flex flex-col md:flex-row">
+                            {/* 左側：股票資訊和投資建議 */}
+                            <div className={`flex-shrink-0 p-6 ${recStyle.bg} border-b md:border-b-0 md:border-r border-border`}>
+                              <div className="flex flex-col items-center md:items-start gap-4 md:w-48">
+                                {/* 股票圖標 */}
+                                <div className={`p-3 rounded-xl bg-gradient-to-br ${recStyle.gradient} shadow-md`}>
+                                  <TrendingUp className="h-8 w-8 text-white" />
+                                </div>
+                                
+                                {/* 股票代號和名稱 */}
+                                <div className="text-center md:text-left w-full">
+                                  <div className="text-2xl font-bold text-foreground mb-1">
+                                    {displaySymbol}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground line-clamp-2">
+                                    {result.companyName || '-'}
+                                  </div>
+                                </div>
+                                
+                                {/* 投資建議標籤 */}
+                                <div className="w-full">
+                                  {result.error ? (
+                                    <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white text-center font-semibold shadow-md">
+                                      分析失敗
+                                    </div>
+                                  ) : result.recommendation ? (
+                                    <div className={`px-4 py-2 rounded-lg bg-gradient-to-r ${recStyle.gradient} text-white text-center text-lg font-bold shadow-md`}>
+                                      {result.recommendation}
+                                    </div>
+                                  ) : (
+                                    <div className="px-4 py-2 rounded-lg bg-muted text-muted-foreground text-center font-semibold">
+                                      無建議
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* 右側：分析摘要和操作按鈕 */}
+                            <div className="flex-1 p-6">
+                              <div className="space-y-4">
+                                {/* 分析摘要 */}
+                                <div>
+                                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">分析摘要</h4>
+                                  {result.error ? (
+                                    <p className="text-destructive text-sm">{result.error}</p>
+                                  ) : (
+                                    <div className="text-sm text-foreground leading-relaxed">
+                                      <AnimatePresence mode="wait">
+                                        {isExpanded ? (
+                                          <motion.div
+                                            key="expanded"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                          >
+                                            {result.summary}
+                                          </motion.div>
+                                        ) : (
+                                          <motion.div
+                                            key="collapsed"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                          >
+                                            {summaryPreview}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* 操作按鈕 */}
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                  {!result.error && result.summary.length > 80 && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleExpand(result.symbol)}
+                                      className="hover:bg-primary/5 hover:border-primary/50 button-hover"
+                                    >
+                                      {isExpanded ? (
+                                        <>
+                                          <ChevronUp className="h-4 w-4 mr-1" />
+                                          收合
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ChevronDown className="h-4 w-4 mr-1" />
+                                          展開詳情
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => setLocation(`/stock/${result.symbol}`)}
+                                    className="bg-gradient-primary text-white border-0 shadow-md button-hover"
+                                  >
+                                    <ExternalLink className="h-4 w-4 mr-1" />
+                                    查看詳情
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t">
+              <Button 
+                onClick={() => setShowBatchAnalysis(false)}
+                className="bg-gradient-primary text-white border-0 shadow-md button-hover"
+              >
+                關閉
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
