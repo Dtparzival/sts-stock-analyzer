@@ -200,3 +200,26 @@ export const analysisHistory = mysqlTable("analysisHistory", {
 
 export type AnalysisHistory = typeof analysisHistory.$inferSelect;
 export type InsertAnalysisHistory = typeof analysisHistory.$inferInsert;
+
+/**
+ * AI 投資顧問快速問題使用統計
+ * 追蹤用戶點擊快速問題按鈕的頻率，用於智能動態調整按鈕內容
+ */
+export const questionStats = mysqlTable("questionStats", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  question: varchar("question", { length: 500 }).notNull(), // 快速問題內容
+  clickCount: int("clickCount").default(1).notNull(), // 點擊次數
+  lastClickedAt: timestamp("lastClickedAt").defaultNow().notNull(), // 最後點擊時間
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  lastClickedAtIdx: index("lastClickedAt_idx").on(table.lastClickedAt),
+}));
+
+// Note: We don't create a composite index on (userId, question) because it would be too large.
+// Instead, we'll query by userId first and filter by question in application code.
+
+export type QuestionStats = typeof questionStats.$inferSelect;
+export type InsertQuestionStats = typeof questionStats.$inferInsert;

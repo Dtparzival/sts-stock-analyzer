@@ -13,6 +13,17 @@ export interface StockDataResult {
   data: any;
   fromCache?: boolean;
   error?: string;
+  // 簡化的股票資訊（用於多股票對比）
+  companyName?: string;
+  price?: number;
+  change?: number;
+  changePercent?: number;
+  fiftyTwoWeekHigh?: number;
+  fiftyTwoWeekLow?: number;
+  marketCap?: string;
+  peRatio?: number;
+  dividendYield?: number;
+  avgVolume?: string;
 }
 
 /**
@@ -162,4 +173,47 @@ export function buildStockContext(stockDataResults: StockDataResult[]): string {
   }
   
   return '';
+}
+
+/**
+ * 提取股票資訊用於對比分析
+ */
+export function extractStockInfo(result: StockDataResult): StockDataResult {
+  if (!result.data || result.error) {
+    return result;
+  }
+  
+  const quote = result.data.chart?.result?.[0]?.meta;
+  const currentPrice = quote?.regularMarketPrice;
+  const previousClose = quote?.previousClose;
+  const change = currentPrice && previousClose ? currentPrice - previousClose : null;
+  const changePercent = change && previousClose ? (change / previousClose) * 100 : null;
+  
+  return {
+    ...result,
+    companyName: quote?.longName || quote?.shortName || result.symbol,
+    price: currentPrice,
+    change: change || undefined,
+    changePercent: changePercent || undefined,
+    fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
+    fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
+    marketCap: quote?.marketCap ? formatMarketCap(quote.marketCap) : undefined,
+    peRatio: quote?.trailingPE,
+    dividendYield: quote?.dividendYield ? quote.dividendYield * 100 : undefined,
+    avgVolume: quote?.averageDailyVolume10Day ? formatVolume(quote.averageDailyVolume10Day) : undefined,
+  };
+}
+
+function formatMarketCap(value: number): string {
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+  return `$${value.toFixed(2)}`;
+}
+
+function formatVolume(value: number): string {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+  return value.toString();
 }

@@ -23,7 +23,10 @@ import {
   InsertPortfolioHistory,
   portfolioTransactions,
   PortfolioTransaction,
-  InsertPortfolioTransaction
+  InsertPortfolioTransaction,
+  questionStats,
+  QuestionStats,
+  InsertQuestionStats
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -604,4 +607,104 @@ export async function getTransactionStats(userId: number) {
       sellDate: worstTrade.sellDate.toISOString(),
     } : null,
   };
+}
+
+// ==================== Question Stats Functions ====================
+
+/**
+ * 記錄或更新快速問題點擊次數
+ */
+export async function recordQuestionClick(userId: number, question: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot record question click: database not available");
+    return;
+  }
+
+  try {
+    // 先查詢是否已存在該問題的記錄
+    const existing = await db
+      .select()
+      .from(questionStats)
+      .where(and(
+        eq(questionStats.userId, userId),
+        eq(questionStats.question, question)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 更新點擊次數和最後點擊時間
+      await db
+        .update(questionStats)
+        .set({
+          clickCount: existing[0].clickCount + 1,
+          lastClickedAt: new Date(),
+        })
+        .where(eq(questionStats.id, existing[0].id));
+    } else {
+      // 創建新記錄
+      await db.insert(questionStats).values({
+        userId,
+        question,
+        clickCount: 1,
+        lastClickedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to record question click:", error);
+    throw error;
+  }
+}
+
+/**
+ * 獲取用戶最常使用的快速問題（用於動態調整按鈕）
+ */
+export async function getTopQuestions(userId: number, limit: number = 6): Promise<QuestionStats[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get top questions: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select()
+      .from(questionStats)
+      .where(eq(questionStats.userId, userId))
+      .orderBy(desc(questionStats.clickCount), desc(questionStats.lastClickedAt))
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get top questions:", error);
+    return [];
+  }
+}
+
+/**
+ * 獲取所有用戶的熱門問題（全局統計）
+ */
+export async function getGlobalTopQuestions(limit: number = 10): Promise<Array<{ question: string; totalClicks: number }>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get global top questions: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select({
+        question: questionStats.question,
+        totalClicks: sql<number>`SUM(${questionStats.clickCount})`.as('totalClicks'),
+      })
+      .from(questionStats)
+      .groupBy(questionStats.question)
+      .orderBy(desc(sql`SUM(${questionStats.clickCount})`))
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get global top questions:", error);
+    return [];
+  }
 }

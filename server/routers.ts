@@ -633,8 +633,22 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
           role: z.enum(["user", "assistant"]),
           content: z.string(),
         })),
+        quickQuestion: z.string().optional(), // 快速問題按鈕點擊時傳遞
       }))
       .mutation(async ({ input, ctx }) => {
+        const { quickQuestion } = input;
+        
+        // 記錄快速問題點擊次數（僅當用戶已登入且有快速問題時）
+        if (ctx.user && quickQuestion) {
+          const userId = ctx.user.id;
+          (async () => {
+            try {
+              await db.recordQuestionClick(userId, quickQuestion);
+            } catch (error) {
+              console.error("[Question Stats] Failed to record:", error);
+            }
+          })();
+        }
         const { messages } = input;
         
         // 從最後一條用戶消息中檢測股票代碼
@@ -672,6 +686,113 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         return { 
           message,
           detectedSymbols: detectedSymbols.length > 0 ? detectedSymbols : undefined,
+        };
+      }),
+
+    // 獲取用戶最常使用的快速問題（用於動態調整按鈕）
+    getTopQuestions: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional().default(6),
+      }))
+      .query(async ({ input, ctx }) => {
+        const questions = await db.getTopQuestions(ctx.user.id, input.limit);
+        return questions.map(q => ({
+          question: q.question,
+          clickCount: q.clickCount,
+          lastClickedAt: q.lastClickedAt,
+        }));
+      }),
+
+    // 獲取全局熱門問題（供未登入用戶使用）
+    getGlobalTopQuestions: publicProcedure
+      .input(z.object({
+        limit: z.number().optional().default(10),
+      }))
+      .query(async ({ input }) => {
+        return db.getGlobalTopQuestions(input.limit);
+      }),
+
+    // 多股票對比分析
+    compareStocks: publicProcedure
+      .input(z.object({
+        symbols: z.array(z.string()).min(2).max(5), // 最少 2 支，最多 5 支
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { symbols } = input;
+        
+        // 獲取所有股票的即時數據
+        const { fetchStockData, extractStockInfo } = await import('./chatWithStockData');
+        const stockDataPromises = symbols.map(symbol => fetchStockData(symbol, ctx));
+        const stockDataResults = await Promise.all(stockDataPromises);
+        
+        // 提取股票資訊
+        const enrichedResults = stockDataResults.map(extractStockInfo);
+        
+        // 準備對比分析的 prompt
+        const stocksInfo = enrichedResults.map(data => {
+          if (!data || data.error) return null;
+          return `
+**${data.symbol}** (${data.companyName || '未知公司'})
+- 當前價格: $${data.price?.toFixed(2) || 'N/A'}
+- 漲跌幅: ${data.change?.toFixed(2) || 'N/A'} (${data.changePercent?.toFixed(2) || 'N/A'}%)
+- 52 週最高: $${data.fiftyTwoWeekHigh?.toFixed(2) || 'N/A'}
+- 52 週最低: $${data.fiftyTwoWeekLow?.toFixed(2) || 'N/A'}
+- 市值: ${data.marketCap || 'N/A'}
+- P/E 比率: ${data.peRatio?.toFixed(2) || 'N/A'}
+- 股息率: ${data.dividendYield?.toFixed(2) || 'N/A'}%
+- 平均成交量: ${data.avgVolume || 'N/A'}
+          `.trim();
+        }).filter(Boolean).join('\n\n---\n\n');
+        
+        if (!stocksInfo) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '無法獲取股票數據',
+          });
+        }
+        
+        const currentDate = new Date().toLocaleDateString('zh-TW', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          weekday: 'long'
+        });
+        
+        const prompt = `你是一位專業的投資分析師，請對以下 ${symbols.length} 支股票進行全面對比分析：
+
+${stocksInfo}
+
+請從以下維度進行對比分析：
+
+1. **估值分析**：比較 P/E 比率、市值、股息率等指標，評估哪支股票更具投資價值。
+
+2. **成長性分析**：比較各股票的成長潛力、市場位置和競爭優勢。
+
+3. **風險評估**：分析每支股票的波動性、行業風險和財務穩定性。
+
+4. **技術面分析**：比較當前價格與 52 週高低點的位置，評估技術面走勢。
+
+5. **投資建議**：綜合以上分析，給出明確的投資建議（例如：哪支股票適合短期交易、哪支適合長期持有）。
+
+請以表格形式呈現關鍵指標對比，並提供詳細的分析說明。使用繁體中文回答。
+
+當前日期：${currentDate}`;
+        
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "你是一位專業的投資分析師，擅長多股票對比分析。" },
+            { role: "user", content: prompt },
+          ],
+        });
+        
+        const comparison = typeof response.choices[0].message.content === 'string'
+          ? response.choices[0].message.content
+          : "無法生成對比分析";
+        
+        return {
+          comparison,
+          symbols,
+          stockData: enrichedResults.filter(d => d && !d.error),
         };
       }),
   }),

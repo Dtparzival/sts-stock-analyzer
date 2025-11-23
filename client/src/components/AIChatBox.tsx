@@ -66,6 +66,12 @@ export type AIChatBoxProps = {
   quickTemplates?: string[];
 
   /**
+   * Callback when a quick template is clicked
+   * If provided, will be called instead of auto-filling input
+   */
+  onQuickTemplateClick?: (template: string) => void;
+
+  /**
    * Callback to clear all messages (optional)
    */
   onClearMessages?: () => void;
@@ -132,6 +138,7 @@ export function AIChatBox({
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
   quickTemplates,
+  onQuickTemplateClick,
   onClearMessages,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
@@ -334,8 +341,12 @@ export function AIChatBox({
                 key={index}
                 type="button"
                 onClick={() => {
-                  setInput(template);
-                  textareaRef.current?.focus();
+                  if (onQuickTemplateClick) {
+                    onQuickTemplateClick(template);
+                  } else {
+                    setInput(template);
+                    textareaRef.current?.focus();
+                  }
                 }}
                 disabled={isLoading}
                 className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"

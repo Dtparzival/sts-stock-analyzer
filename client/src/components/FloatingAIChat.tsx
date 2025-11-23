@@ -5,8 +5,10 @@ import { AIChatBox, Message } from "@/components/AIChatBox";
 import { Sparkles, X, Minimize2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function FloatingAIChat() {
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -19,6 +21,19 @@ export default function FloatingAIChat() {
       content: "您好！我是您的 AI 投資顧問。有什麼可以幫助您的嗎？"
     }
   ]);
+  const [lastClickedQuestion, setLastClickedQuestion] = useState<string | null>(null);
+
+  // 獲取用戶最常使用的快速問題（已登入用戶）
+  const { data: userTopQuestions } = trpc.stock.getTopQuestions.useQuery(
+    { limit: 6 },
+    { enabled: isAuthenticated }
+  );
+
+  // 獲取全局熱門問題（未登入用戶）
+  const { data: globalTopQuestions } = trpc.stock.getGlobalTopQuestions.useQuery(
+    { limit: 6 },
+    { enabled: !isAuthenticated }
+  );
 
   const chatMutation = trpc.stock.chatWithAI.useMutation({
     onSuccess: (response) => {
@@ -34,21 +49,46 @@ export default function FloatingAIChat() {
     }
   });
 
-  const handleSend = (content: string) => {
+  const compareStocksMutation = trpc.stock.compareStocks.useMutation({
+    onSuccess: (response) => {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: response.comparison
+      }]);
+    },
+    onError: (error: any) => {
+      toast.error(`股票對比失敗: ${error.message}`);
+      setMessages(prev => prev.slice(0, -1));
+    }
+  });
+
+  const handleSend = (content: string, quickQuestion?: string) => {
     const newMessages: Message[] = [...messages, { role: "user", content }];
     setMessages(newMessages);
     
-    // 只發送用戶和助手的對話歷史（不包括 system message）
-    const conversationHistory = newMessages
-      .filter(m => m.role !== "system")
-      .map(m => ({
-        role: m.role as "user" | "assistant",
-        content: m.content
-      }));
+    // 檢測是否為多股票對比查詢（例如：「比較 TSLA 和 AAPL」）
+    const compareMatch = content.match(/比較|vs|versus|compare/i);
+    const stockSymbols = content.match(/\b[A-Z]{1,5}\b/g) || [];
     
-    chatMutation.mutate({
-      messages: conversationHistory,
-    });
+    if (compareMatch && stockSymbols.length >= 2) {
+      // 多股票對比分析
+      compareStocksMutation.mutate({
+        symbols: stockSymbols.slice(0, 5), // 最多 5 支
+      });
+    } else {
+      // 一般 AI 聊天
+      const conversationHistory = newMessages
+        .filter(m => m.role !== "system")
+        .map(m => ({
+          role: m.role as "user" | "assistant",
+          content: m.content
+        }));
+      
+      chatMutation.mutate({
+        messages: conversationHistory,
+        quickQuestion, // 傳遞快速問題以追蹤使用頻率
+      });
+    }
   };
 
   const handleClearMessages = () => {
@@ -70,14 +110,27 @@ export default function FloatingAIChat() {
     "什麼是技術分析中的 RSI 指標？",
   ];
 
-  const quickTemplates = [
+  // 預設快速問題模板（當無個人化數據時使用）
+  const defaultQuickTemplates = [
     "分析我的投資組合",
     "推薦低風險股票",
-    "市場趨勢分析",
+    "市場趋勢分析",
     "如何分散投資風險？",
-    "成長股 vs 價值股",
+    "比較 TSLA 和 AAPL",
     "股息投資策略",
   ];
+
+  // 智能動態調整快速問題（優先顯示用戶最常使用的）
+  const quickTemplates = isAuthenticated && userTopQuestions && userTopQuestions.length > 0
+    ? userTopQuestions.map(q => q.question)
+    : !isAuthenticated && globalTopQuestions && globalTopQuestions.length > 0
+    ? globalTopQuestions.map(q => q.question)
+    : defaultQuickTemplates;
+
+  const handleQuickQuestion = (question: string) => {
+    setLastClickedQuestion(question);
+    handleSend(question, question); // 傳遞快速問題以追蹤使用頻率
+  };
 
   if (!isOpen) {
     return (
@@ -142,11 +195,12 @@ export default function FloatingAIChat() {
         <AIChatBox
           messages={messages}
           onSendMessage={handleSend}
-          isLoading={chatMutation.isPending}
+          isLoading={chatMutation.isPending || compareStocksMutation.isPending}
           placeholder="輸入您的問題..."
           height="100%"
           suggestedPrompts={suggestedPrompts}
           quickTemplates={quickTemplates}
+          onQuickTemplateClick={handleQuickQuestion}
           onClearMessages={handleClearMessages}
         />
       </div>
