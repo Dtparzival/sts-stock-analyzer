@@ -65,7 +65,8 @@ function StockPriceDisplay({
     if (onPriceLoaded && currentPrice && changePercent !== undefined) {
       onPriceLoaded(symbol, currentPrice, changePercent);
     }
-  }, [symbol, currentPrice, changePercent, onPriceLoaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, currentPrice, changePercent]);
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
