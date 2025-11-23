@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
 import { useDebounce } from "@shared/hooks/useDebounce";
 import RecommendationEmptyState from "@/components/RecommendationEmptyState";
+import RecommendationSkeleton from "@/components/RecommendationSkeleton";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -490,32 +491,12 @@ export default function Home() {
             </form>
             
             {/* 為您推薦區塊 - 全新優化設計 */}
+            {/* 推薦區塊 - 僅登入用戶顯示 */}
             {user && (
               isLoadingHistory ? (
-                // 載入骨架屏
-                <div className="mt-12 max-w-6xl mx-auto px-4">
-                  <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
-                      <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" />
-                      <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">為您推薦</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">正在載入推薦內容...</p>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <Card key={i} className="overflow-hidden">
-                        <CardContent className="p-4 flex flex-col items-center justify-center min-h-[120px]">
-                          <div className="mb-3 h-9 w-9 rounded-full bg-muted animate-pulse"></div>
-                          <div className="h-5 w-16 bg-muted rounded animate-pulse mb-2"></div>
-                          <div className="h-4 w-20 bg-muted rounded animate-pulse mb-2"></div>
-                          <div className="h-3 w-12 bg-muted rounded animate-pulse"></div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+                <RecommendationSkeleton />
               ) : filteredRecommendations && filteredRecommendations.length > 0 ? (
-              <div className="mt-12 max-w-6xl mx-auto px-4">
+                <div className="mt-12 max-w-6xl mx-auto px-4">
                 {/* 區塊標題 */}
                 <div className="text-center mb-8 relative">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
@@ -694,7 +675,7 @@ export default function Home() {
                     );
                   })}
                 </div>
-              </div>
+                </div>
               ) : (
                 // 空狀態顯示 - 使用新的空狀態組件
                 <RecommendationEmptyState

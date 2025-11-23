@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import type { MarketType } from "@shared/markets";
+import { motion } from "framer-motion";
 
 interface RecommendationEmptyStateProps {
   market: MarketType;
@@ -17,7 +18,12 @@ export default function RecommendationEmptyState({ market, onSearchClick }: Reco
   const marketName = market === 'US' ? '美股' : '台股';
   
   return (
-    <div className="mt-6 sm:mt-8 max-w-2xl mx-auto px-4">
+    <motion.div 
+      className="mt-6 sm:mt-8 max-w-2xl mx-auto px-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <Card className="border-dashed border-2 border-border/60 hover:border-primary/40 transition-all duration-300">
         <CardContent className="flex flex-col items-center justify-center py-8 sm:py-10 px-4 sm:px-6">
           {/* 標題 */}
@@ -42,6 +48,6 @@ export default function RecommendationEmptyState({ market, onSearchClick }: Reco
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }
