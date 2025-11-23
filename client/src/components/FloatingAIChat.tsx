@@ -70,6 +70,15 @@ export default function FloatingAIChat() {
     "什麼是技術分析中的 RSI 指標？",
   ];
 
+  const quickTemplates = [
+    "分析我的投資組合",
+    "推薦低風險股票",
+    "市場趨勢分析",
+    "如何分散投資風險？",
+    "成長股 vs 價值股",
+    "股息投資策略",
+  ];
+
   if (!isOpen) {
     return (
       <Button
@@ -137,6 +146,7 @@ export default function FloatingAIChat() {
           placeholder="輸入您的問題..."
           height="100%"
           suggestedPrompts={suggestedPrompts}
+          quickTemplates={quickTemplates}
           onClearMessages={handleClearMessages}
         />
       </div>

@@ -325,8 +325,8 @@ export function AIChatBox({
         )}
       </div>
 
-      {/* Quick Templates (shown when there are messages) */}
-      {quickTemplates && quickTemplates.length > 0 && displayMessages.length > 0 && (
+      {/* Quick Templates (always shown when available) */}
+      {quickTemplates && quickTemplates.length > 0 && (
         <div className="border-t bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {quickTemplates.map((template, index) => (
