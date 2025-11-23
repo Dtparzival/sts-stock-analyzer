@@ -13,6 +13,21 @@ import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
 import { useDebounce } from "@shared/hooks/useDebounce";
 
+// 格式化相對時間
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - new Date(date).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return '剛剛';
+  if (diffMins < 60) return `${diffMins} 分鐘前`;
+  if (diffHours < 24) return `${diffHours} 小時前`;
+  if (diffDays < 7) return `${diffDays} 天前`;
+  return new Date(date).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+}
+
 export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
@@ -25,7 +40,7 @@ export default function Home() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   // 獲取用戶最近查看的股票（用於推薦）
-  const { data: recentHistory } = trpc.history.list.useQuery(
+  const { data: recentHistory, isLoading: isLoadingHistory } = trpc.history.list.useQuery(
     { limit: 8 },
     { enabled: !!user }
   );
@@ -296,15 +311,44 @@ export default function Home() {
               </div>
             </form>
             
-            {/* 為您推薦區塊 - 優化設計 */}
-            {user && recentHistory && recentHistory.length > 0 && (
-              <div className="mt-8 max-w-3xl mx-auto">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="text-base font-semibold text-foreground">為您推薦</span>
-                  <span className="text-sm text-muted-foreground">（最近查看）</span>
+            {/* 為您推薦區塊 - 全新優化設計 */}
+            {user && (
+              isLoadingHistory ? (
+                // 載入骨架屏
+                <div className="mt-12 max-w-6xl mx-auto px-4">
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
+                      <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" />
+                      <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">為您推薦</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">正在載入推薦內容...</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <Card key={i} className="overflow-hidden">
+                        <CardContent className="p-4 flex flex-col items-center justify-center min-h-[120px]">
+                          <div className="mb-3 h-9 w-9 rounded-full bg-muted animate-pulse"></div>
+                          <div className="h-5 w-16 bg-muted rounded animate-pulse mb-2"></div>
+                          <div className="h-4 w-20 bg-muted rounded animate-pulse mb-2"></div>
+                          <div className="h-3 w-12 bg-muted rounded animate-pulse"></div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap justify-center gap-3">
+              ) : recentHistory && recentHistory.length > 0 ? (
+              <div className="mt-12 max-w-6xl mx-auto px-4">
+                {/* 區塊標題 */}
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
+                    <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" />
+                    <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">為您推薦</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">根據您的瀏覽記錄精選推薦</p>
+                </div>
+                
+                {/* 推薦卡片網格 */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                   {recentHistory.slice(0, 8).map((item) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
@@ -322,22 +366,112 @@ export default function Home() {
                     }
                     
                     return (
-                      <Button
+                      <Card
                         key={item.id}
-                        variant="outline"
-                        size="sm"
-                        className="hover:bg-primary/10 hover:border-primary/50 hover:shadow-md transition-all flex flex-col items-center py-3 h-auto min-w-[100px] card-hover"
+                        className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
                         onClick={() => setLocation(`/stock/${item.symbol}`)}
                       >
-                        <span className="font-bold text-base text-foreground">{displaySymbol}</span>
-                        {displayName && (
-                          <span className="text-xs text-muted-foreground mt-1 line-clamp-1">{displayName}</span>
-                        )}
-                      </Button>
+                        {/* 市場標籤 */}
+                        <div className="absolute top-2 right-2 z-10">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            market === 'US' 
+                              ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' 
+                              : 'bg-green-500/20 text-green-700 dark:text-green-300'
+                          }`}>
+                            <Globe className="h-3 w-3" />
+                            {market === 'US' ? '美股' : '台股'}
+                          </span>
+                        </div>
+                        
+                        {/* 漸層背景裝飾 */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        
+                        <CardContent className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[120px]">
+                          {/* 股票圖標 */}
+                          <div className="mb-2 sm:mb-3 p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                          </div>
+                          
+                          {/* 股票代碼 */}
+                          <div className="text-center mb-1 sm:mb-2">
+                            <h4 className="font-bold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors">
+                              {displaySymbol}
+                            </h4>
+                          </div>
+                          
+                          {/* 股票名稱 */}
+                          {displayName && (
+                            <p className="text-xs sm:text-sm text-muted-foreground text-center line-clamp-2 mb-1 sm:mb-2 min-h-[2rem] px-1">
+                              {displayName}
+                            </p>
+                          )}
+                          
+                          {/* 最後查看時間 */}
+                          <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
+                            <History className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
+                          </div>
+                          
+                          {/* Hover/Touch 時顯示的快速操作 - 桃面版隱藏 */}
+                          <div className="hidden md:flex absolute inset-0 flex-col items-center justify-center gap-2 bg-primary/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="bg-white hover:bg-white/90 text-primary font-semibold shadow-lg min-h-[44px] px-4"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLocation(`/stock/${item.symbol}`);
+                              }}
+                            >
+                              <Target className="h-4 w-4 mr-1" />
+                              查看詳情
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="bg-white/90 hover:bg-white text-primary font-semibold shadow-lg min-h-[44px] px-4"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // TODO: 實作加入收藏功能
+                                toast.info('收藏功能即將推出');
+                              }}
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              加入收藏
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
               </div>
+              ) : (
+                // 空狀態顯示
+                <div className="mt-12 max-w-3xl mx-auto px-4">
+                  <Card className="border-dashed border-2">
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <div className="mb-4 p-4 rounded-full bg-muted">
+                        <Sparkles className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">尚無推薦內容</h3>
+                      <p className="text-sm text-muted-foreground text-center mb-4">
+                        開始搜尋股票，我們將根據您的瀏覽記錄為您推薦相關股票
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                          input?.focus();
+                        }}
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        開始搜尋
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )
             )}
           </div>
         </div>
