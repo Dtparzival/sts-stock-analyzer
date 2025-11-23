@@ -348,7 +348,7 @@ export default function Watchlist() {
                         onClick={(e) => handleRemove(e, item.symbol)}
                         title="移除收藏"
                       >
-                        <Star className="h-4 w-4 text-yellow-600 fill-yellow-600" />
+                        <Star className="h-4 w-4 fill-yellow-600 text-yellow-600" />
                       </Button>
                     </div>
                     
