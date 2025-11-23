@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Loader2, Star, X, Sparkles, TrendingUp, ChevronDown, ChevronUp, ExternalLink, Globe } from "lucide-react";
+import { ArrowLeft, Loader2, Heart, X, Sparkles, TrendingUp, ChevronDown, ChevronUp, ExternalLink, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { getMarketFromSymbol, cleanTWSymbol, getTWStockName } from "@shared/markets";
@@ -197,12 +197,12 @@ export default function Watchlist() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-secondary">
-              <Star className="h-8 w-8 text-white" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
+              <Heart className="h-8 w-8 text-white fill-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">我的收藏</h1>
-              <p className="text-muted-foreground mt-1">追蹤您關注的股票</p>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent">我的收藏</h1>
+              <p className="text-muted-foreground mt-1">追蹤您最關注的投資標的</p>
             </div>
           </div>
           
@@ -268,12 +268,12 @@ export default function Watchlist() {
           <Card className="border-2 shadow-lg">
             <CardContent className="py-20 text-center">
               <div className="flex flex-col items-center gap-4">
-                <div className="p-4 rounded-full bg-muted">
-                  <Star className="h-12 w-12 text-muted-foreground" />
+                <div className="p-4 rounded-full bg-gradient-to-br from-pink-500/10 to-rose-600/10">
+                  <Heart className="h-12 w-12 text-pink-500" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold mb-2">尚未收藏任何股票</p>
-                  <p className="text-muted-foreground">開始搜尋並收藏您關注的股票</p>
+                  <p className="text-muted-foreground">開始搜尋並收藏您關注的投資標的</p>
                 </div>
                 <Button onClick={() => setLocation("/")} className="mt-4 bg-gradient-primary text-white border-0 shadow-md button-hover">
                   前往首頁搜尋
@@ -285,12 +285,12 @@ export default function Watchlist() {
           <Card className="border-2 shadow-lg">
             <CardContent className="py-20 text-center">
               <div className="flex flex-col items-center gap-4">
-                <div className="p-4 rounded-full bg-muted">
-                  <Star className="h-12 w-12 text-muted-foreground" />
+                <div className="p-4 rounded-full bg-gradient-to-br from-pink-500/10 to-rose-600/10">
+                  <Heart className="h-12 w-12 text-pink-500" />
                 </div>
                 <div>
-                  <p className="text-xl font-semibold mb-2">沒有符合篩選條件的股票</p>
-                  <p className="text-muted-foreground">請嘗試切換其他市場篩選器</p>
+                  <p className="text-xl font-semibold mb-2">此市場尚無收藏股票</p>
+                  <p className="text-muted-foreground">切換市場或前往首頁搜尋其他投資標的</p>
                 </div>
               </div>
             </CardContent>
@@ -348,7 +348,7 @@ export default function Watchlist() {
                         onClick={(e) => handleRemove(e, item.symbol)}
                         title="移除收藏"
                       >
-                        <Star className="h-4 w-4 text-primary fill-primary" />
+                        <Heart className="h-4 w-4 text-pink-500 fill-pink-500" />
                       </Button>
                     </div>
                     
