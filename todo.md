@@ -169,3 +169,7 @@
 ## Bug 修正
 
 - [x] 修正『我的收藏』頁面的 React error #310 錯誤（useEffect 無限迴圈）
+
+## 新增 Bug 修正
+
+- [ ] 修正首頁的 React error #310 錯誤（useEffect 導航問題）

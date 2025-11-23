@@ -33,6 +33,21 @@ function StockPriceDisplay({
     }
   );
 
+  // 從 stockData 中提取價格資訊
+  const meta = stockData?.chart?.result?.[0]?.meta;
+  const currentPrice = meta?.regularMarketPrice;
+  const previousClose = meta?.previousClose || meta?.chartPreviousClose;
+  const change = currentPrice && previousClose ? currentPrice - previousClose : 0;
+  const changePercent = currentPrice && previousClose ? (change / previousClose) * 100 : 0;
+  const isPositive = change >= 0;
+
+  // 回傳股價數據供排序使用 - 必須在所有 hooks 之後，但在任何 return 之前
+  useEffect(() => {
+    if (onPriceLoaded && currentPrice && changePercent !== undefined) {
+      onPriceLoaded(symbol, currentPrice, changePercent);
+    }
+  }, [symbol, currentPrice, changePercent, onPriceLoaded]);
+
   if (isLoading) {
     return (
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -41,11 +56,6 @@ function StockPriceDisplay({
       </div>
     );
   }
-
-  // 從 stockData 中提取價格資訊
-  const meta = stockData?.chart?.result?.[0]?.meta;
-  const currentPrice = meta?.regularMarketPrice;
-  const previousClose = meta?.previousClose || meta?.chartPreviousClose;
   
   // 檢查數據是否完整
   if (error || !stockData || !currentPrice || !previousClose) {
@@ -55,18 +65,6 @@ function StockPriceDisplay({
       </div>
     );
   }
-
-  const change = currentPrice - previousClose;
-  const changePercent = (change / previousClose) * 100;
-  const isPositive = change >= 0;
-
-  // 回傳股價數據供排序使用
-  useEffect(() => {
-    if (onPriceLoaded && currentPrice && changePercent !== undefined) {
-      onPriceLoaded(symbol, currentPrice, changePercent);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, currentPrice, changePercent]);
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
