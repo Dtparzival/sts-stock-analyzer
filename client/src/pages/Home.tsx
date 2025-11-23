@@ -12,6 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import FloatingAIChat from "@/components/FloatingAIChat";
 import { useDebounce } from "@shared/hooks/useDebounce";
+import RecommendationEmptyState from "@/components/RecommendationEmptyState";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -695,30 +696,14 @@ export default function Home() {
                 </div>
               </div>
               ) : (
-                // 空狀態顯示
-                <div className="mt-12 max-w-3xl mx-auto px-4">
-                  <Card className="border-dashed border-2">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <div className="mb-4 p-4 rounded-full bg-muted">
-                        <Sparkles className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2">尚無推薦內容</h3>
-                      <p className="text-sm text-muted-foreground text-center mb-4">
-                        開始搜尋股票，我們將根據您的瀏覽記錄為您推薦相關股票
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-                          input?.focus();
-                        }}
-                      >
-                        <Search className="h-4 w-4 mr-2" />
-                        開始搜尋
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
+                // 空狀態顯示 - 使用新的空狀態組件
+                <RecommendationEmptyState
+                  market={selectedMarket}
+                  onSearchClick={() => {
+                    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                    input?.focus();
+                  }}
+                />
               )
             )}
           </div>
