@@ -71,13 +71,6 @@
       "when": 1763800626460,
       "tag": "0009_mute_tattoo",
       "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "5",
-      "when": 1763874692531,
-      "tag": "0010_ancient_lady_mastermind",
-      "breakpoints": true
     }
   ]
 }
