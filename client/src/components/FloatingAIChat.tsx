@@ -51,6 +51,19 @@ export default function FloatingAIChat() {
     });
   };
 
+  const handleClearMessages = () => {
+    setMessages([
+      {
+        role: "system",
+        content: "你是一位專業的美股投資顧問，擁有豐富的市場分析經驗。你可以回答關於美股投資、技術分析、基本面分析、風險管理等各方面的問題。請用繁體中文回答，並提供專業且易懂的建議。"
+      },
+      {
+        role: "assistant",
+        content: "您好！我是您的 AI 投資顧問。有什麼可以幫助您的嗎？"
+      }
+    ]);
+  };
+
   const suggestedPrompts = [
     "AAPL 目前適合買入嗎？",
     "如何分析一支股票的財務健康度？",
@@ -61,7 +74,7 @@ export default function FloatingAIChat() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700"
         size="icon"
       >
         <Sparkles className="h-6 w-6" />
@@ -72,30 +85,34 @@ export default function FloatingAIChat() {
   if (isMinimized) {
     return (
       <Card 
-        className="fixed bottom-6 right-6 p-4 shadow-lg cursor-pointer hover:shadow-xl transition-all z-50"
+        className="fixed bottom-6 right-6 p-4 shadow-lg cursor-pointer hover:shadow-xl transition-all z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600"
         onClick={() => setIsMinimized(false)}
       >
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <span className="font-medium">AI 投資顧問</span>
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-medium text-white">AI 投資顧問</span>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-[420px] h-[650px] shadow-2xl flex flex-col z-50 bg-card">
-      {/* 標題欄 */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">AI 投資顧問</h3>
+    <Card className="fixed bottom-6 right-6 w-[420px] h-[650px] shadow-2xl flex flex-col z-50 bg-card overflow-hidden">
+      {/* 標題欄 - 使用漸層背景 */}
+      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <h3 className="font-semibold text-white text-lg">AI 投資顧問</h3>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
             onClick={() => setIsMinimized(true)}
           >
             <Minimize2 className="h-4 w-4" />
@@ -103,7 +120,7 @@ export default function FloatingAIChat() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
             onClick={() => setIsOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -120,6 +137,7 @@ export default function FloatingAIChat() {
           placeholder="輸入您的問題..."
           height="100%"
           suggestedPrompts={suggestedPrompts}
+          onClearMessages={handleClearMessages}
         />
       </div>
     </Card>
