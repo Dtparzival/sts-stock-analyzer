@@ -499,6 +499,11 @@
 
 ### 3. 優化搜尋功能支援中文名稱
 
+## 新增需求：修改 Footer 數據來源文字
+
+- [x] 將首頁 Footer 的數據來源從「Yahoo Finance」改為「Twelve Data」
+- [x] 測試頁面顯示確認修改正確
+
 - [x] 研究台灣證券交易所 OpenAPI 文檔
 - [x] 找到完整的股票代碼對照表 API（/opendata/t187ap03_L）
 - [x] 創建 TWSE API 整合模組（server/twseStockList.ts）
@@ -3102,4 +3107,4 @@ TwelveData Basic 8 方案限制：
 - [x] 測試響應式設計在不同裝置上的表現
 - [x] 測試動畫效果的流暢性
 - [x] 驗證全站風格一致性
-- [ ] 儲存檢查點
+- [x] 儲存檢查點

@@ -642,7 +642,7 @@ export default function Home() {
                 {APP_TITLE}
               </span>
             </div>
-            <p className="text-muted-foreground mb-2">© 2025 {APP_TITLE}. 數據來源：Yahoo Finance</p>
+            <p className="text-muted-foreground mb-2">© 2025 {APP_TITLE}. 數據來源：Twelve Data</p>
             <p className="text-sm text-muted-foreground">
               本平台僅供參考，不構成投資建議。投資有風險，請謹慎決策。
             </p>
