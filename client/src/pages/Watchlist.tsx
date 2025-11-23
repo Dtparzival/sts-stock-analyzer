@@ -197,8 +197,8 @@ export default function Watchlist() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500">
-              <Star className="h-8 w-8 text-white fill-white" />
+            <div className="p-3 rounded-xl bg-yellow-500/10">
+              <Star className="h-8 w-8 text-yellow-600 fill-yellow-600" />
             </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">我的收藏</h1>
