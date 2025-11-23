@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, ArrowRight, BarChart3, Brain, Shield } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, ArrowRight, BarChart3, Brain, Shield, Heart, Loader2, RefreshCw } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
 import sp500Stocks from "@shared/sp500-stocks.json";
@@ -39,13 +39,180 @@ export default function Home() {
   // 使用防抖機制，延遲 300ms 更新建議
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
-  // 獲取用戶最近查看的股票（用於推薦）
-  const { data: recentHistory, isLoading: isLoadingHistory } = trpc.history.list.useQuery(
+  // 獲取智能推薦（整合行為數據進行排序）
+  const { data: recentHistory, isLoading: isLoadingHistory, refetch: refetchRecommendations } = trpc.history.getRecommendations.useQuery(
     { limit: 6 },
+    { 
+      enabled: !!user,
+      refetchInterval: 30000, // 每 30 秒自動刷新
+    }
+  );
+  
+  // 手動刷新狀態
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  
+  // 手動刷新函數
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    try {
+      // 同時刷新推薦列表和收藏狀態
+      await Promise.all([
+        refetchRecommendations(),
+        utils.watchlist.list.invalidate(),
+      ]);
+      toast.success('已刷新推薦內容');
+    } catch (error) {
+      toast.error('刷新失敗');
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  };
+  
+  // 獲取推薦股票的即時股價資訊（使用 useMemo 穩定引用）
+  const recommendedSymbols = useMemo(
+    () => recentHistory?.slice(0, 6).map(item => item.symbol) || [],
+    [recentHistory]
+  );
+  
+  // 獲取第一個股票的數據
+  const stock0 = trpc.stock.getStockData.useQuery(
+    { symbol: recommendedSymbols[0] || '' },
+    { enabled: !!user && !!recommendedSymbols[0], staleTime: 30000, retry: 1 }
+  );
+  const stock1 = trpc.stock.getStockData.useQuery(
+    { symbol: recommendedSymbols[1] || '' },
+    { enabled: !!user && !!recommendedSymbols[1], staleTime: 30000, retry: 1 }
+  );
+  const stock2 = trpc.stock.getStockData.useQuery(
+    { symbol: recommendedSymbols[2] || '' },
+    { enabled: !!user && !!recommendedSymbols[2], staleTime: 30000, retry: 1 }
+  );
+  const stock3 = trpc.stock.getStockData.useQuery(
+    { symbol: recommendedSymbols[3] || '' },
+    { enabled: !!user && !!recommendedSymbols[3], staleTime: 30000, retry: 1 }
+  );
+  const stock4 = trpc.stock.getStockData.useQuery(
+    { symbol: recommendedSymbols[4] || '' },
+    { enabled: !!user && !!recommendedSymbols[4], staleTime: 30000, retry: 1 }
+  );
+  const stock5 = trpc.stock.getStockData.useQuery(
+    { symbol: recommendedSymbols[5] || '' },
+    { enabled: !!user && !!recommendedSymbols[5], staleTime: 30000, retry: 1 }
+  );
+  
+  const stockDataQueries = [stock0, stock1, stock2, stock3, stock4, stock5];
+  
+  // 創建股價數據映射表
+  const stockPriceMap = new Map(
+    stockDataQueries
+      .filter(query => query.data)
+      .map((query, index) => [
+        recommendedSymbols[index],
+        query.data
+      ])
+  );
+  
+  // 獲取收藏狀態
+  const { data: watchlistData } = trpc.watchlist.list.useQuery(
+    undefined,
     { enabled: !!user }
   );
   
+  // 創建收藏狀態映射表
+  const watchlistMap = new Map(
+    watchlistData?.map(item => [item.symbol, true]) || []
+  );
+  
   const utils = trpc.useUtils();
+  
+  // 添加收藏 mutation
+  const addToWatchlistMutation = trpc.watchlist.add.useMutation({
+    onMutate: async ({ symbol, companyName }) => {
+      // 樂觀更新：立即更新 UI
+      await utils.watchlist.list.cancel();
+      const previousData = utils.watchlist.list.getData();
+      
+      // 添加到收藏列表
+      utils.watchlist.list.setData(undefined, (old) => [
+        ...(old || []),
+        {
+          id: Date.now(),
+          userId: user!.id,
+          symbol,
+          companyName: companyName || null,
+          addedAt: new Date(),
+        },
+      ]);
+      
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      // 回滾樂觀更新
+      if (context?.previousData) {
+        utils.watchlist.list.setData(undefined, context.previousData);
+      }
+      toast.error('加入收藏失敗');
+    },
+    onSuccess: () => {
+      toast.success('已加入收藏');
+      // 行為觸發更新：收藏後刷新推薦列表
+      refetchRecommendations();
+    },
+    onSettled: () => {
+      // 重新獲取數據以確保一致性
+      utils.watchlist.list.invalidate();
+    },
+  });
+  
+  // 移除收藏 mutation
+  const removeFromWatchlistMutation = trpc.watchlist.remove.useMutation({
+    onMutate: async ({ symbol }) => {
+      // 樂觀更新：立即更新 UI
+      await utils.watchlist.list.cancel();
+      const previousData = utils.watchlist.list.getData();
+      
+      // 從收藏列表移除
+      utils.watchlist.list.setData(undefined, (old) =>
+        (old || []).filter(item => item.symbol !== symbol)
+      );
+      
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      // 回滾樂觀更新
+      if (context?.previousData) {
+        utils.watchlist.list.setData(undefined, context.previousData);
+      }
+      toast.error('取消收藏失敗');
+    },
+    onSuccess: () => {
+      toast.success('已取消收藏');
+      // 行為觸發更新：取消收藏後刷新推薦列表
+      refetchRecommendations();
+    },
+    onSettled: () => {
+      // 重新獲取數據以確保一致性
+      utils.watchlist.list.invalidate();
+    },
+  });
+  
+  // 切換收藏狀態
+  const toggleWatchlist = (e: React.MouseEvent, symbol: string, companyName: string | null) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error('請先登入');
+      return;
+    }
+    
+    const isInWatchlist = watchlistMap.has(symbol);
+    
+    if (isInWatchlist) {
+      removeFromWatchlistMutation.mutate({ symbol });
+    } else {
+      addToWatchlistMutation.mutate({ symbol, companyName: companyName || '' });
+    }
+  };
   
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -339,12 +506,25 @@ export default function Home() {
               ) : recentHistory && recentHistory.length > 0 ? (
               <div className="mt-12 max-w-6xl mx-auto px-4">
                 {/* 區塊標題 */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-8 relative">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
                     <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" />
                     <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">為您推薦</span>
                   </div>
                   <p className="text-sm text-muted-foreground">根據您的瀏覽記錄精選推薦</p>
+                  
+                  {/* 手動刷新按鈕 */}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleManualRefresh}
+                    disabled={isManualRefreshing}
+                    className="absolute top-0 right-0 h-10 w-10 rounded-full hover:bg-primary/10"
+                  >
+                    <RefreshCw className={`h-5 w-5 text-primary ${
+                      isManualRefreshing ? 'animate-spin' : ''
+                    }`} />
+                  </Button>
                 </div>
                 
                 {/* 推薦卡片網格 */}
@@ -406,13 +586,84 @@ export default function Home() {
                             </p>
                           )}
                           
-                          {/* 最後查看時間 */}
-                          <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
-                            <History className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
-                          </div>
+                          {/* 即時股價資訊 */}
+                          {(() => {
+                            const stockData = stockPriceMap.get(item.symbol);
+                            const isLoading = stockDataQueries[recentHistory.indexOf(item)]?.isLoading;
+                            
+                            if (isLoading) {
+                              return (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>載入中...</span>
+                                </div>
+                              );
+                            }
+                            
+                            if (!stockData) {
+                              return (
+                                <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
+                                  <History className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
+                                </div>
+                              );
+                            }
+                            
+                            // 從 stockData 中提取價格資訊
+                            const meta = stockData?.chart?.result?.[0]?.meta;
+                            const currentPrice = meta?.regularMarketPrice;
+                            const previousClose = meta?.previousClose || meta?.chartPreviousClose;
+                            
+                            // 檢查數據是否完整
+                            if (!currentPrice || !previousClose) {
+                              return (
+                                <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
+                                  <History className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
+                                </div>
+                              );
+                            }
+                            
+                            const change = currentPrice - previousClose;
+                            const changePercent = (change / previousClose) * 100;
+                            const isPositive = change >= 0;
+                            
+                            return (
+                              <div className="flex flex-col items-center gap-1 w-full">
+                                {/* 當前股價 */}
+                                <div className="text-sm sm:text-base font-bold text-foreground">
+                                  ${currentPrice.toFixed(2)}
+                                </div>
+                                {/* 漲跌幅 */}
+                                <div className={`text-xs sm:text-sm font-semibold ${
+                                  isPositive 
+                                    ? 'text-green-600 dark:text-green-400' 
+                                    : 'text-red-600 dark:text-red-400'
+                                }`}>
+                                  {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
+                                </div>
+                              </div>
+                            );
+                          })()}
                           
-                          {/* Hover/Touch 時顯示的快速操作 - 桃面版隱藏 */}
+                          {/* 收藏按鈕 - 所有裝置都顯示 */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 left-2 z-10 h-8 w-8 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm"
+                            onClick={(e) => toggleWatchlist(e, item.symbol, displayName || item.companyName || '')}
+                            disabled={addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending}
+                          >
+                            {addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : watchlistMap.has(item.symbol) ? (
+                              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                            ) : (
+                              <Heart className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                            )}
+                          </Button>
+                          
+                          {/* Hover 時顯示的快速操作 - 僅桌面版 */}
                           <div className="hidden md:flex absolute inset-0 flex-col items-center justify-center gap-2 bg-primary/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <Button
                               size="sm"
@@ -425,19 +676,6 @@ export default function Home() {
                             >
                               <Target className="h-4 w-4 mr-1" />
                               查看詳情
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="bg-white/90 hover:bg-white text-primary font-semibold shadow-lg min-h-[44px] px-4"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // TODO: 實作加入收藏功能
-                                toast.info('收藏功能即將推出');
-                              }}
-                            >
-                              <Star className="h-4 w-4 mr-1" />
-                              加入收藏
                             </Button>
                           </div>
                         </CardContent>

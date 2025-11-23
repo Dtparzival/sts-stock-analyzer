@@ -43,7 +43,7 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
       throw new Error('無法獲取股票數據');
     }
     
-    // 記錄搜尋歷史
+    // 記錄搜尋歷史和行為數據
     if (ctx.user) {
       (async () => {
         try {
@@ -53,12 +53,16 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
           const companyName = stockInfo ? `${stockNo} ${stockInfo.name}` : stockNo;
           const shortName = stockInfo?.shortName || stockInfo?.name || null;
           
+          // 記錄搜尋歷史
           await db.addSearchHistory({
             userId: ctx.user.id,
             symbol,
             companyName,
             shortName,
           });
+          
+          // 記錄查看行為
+          await db.trackUserView(ctx.user.id, symbol);
         } catch (error) {
           console.error("[Search History] Failed to add:", error);
         }
@@ -157,7 +161,7 @@ export const appRouter = router({
           range = undefined as any; // 使用 period1/period2 時不需要 range
         }
         
-        // 記錄搜尋歷史（如果用戶已登入）
+        // 記錄搜尋歷史和行為數據（如果用戶已登入）
         if (ctx.user) {
           // 異步處理搜尋歷史，不阻塞主請求
           (async () => {
@@ -187,12 +191,16 @@ export const appRouter = router({
               }
               
               if (ctx.user) {
+                // 記錄搜尋歷史
                 await db.addSearchHistory({
                   userId: ctx.user.id,
                   symbol,
                   companyName: companyName as string,
                   shortName: companyName as string, // 美股使用 companyName 作為 shortName
                 });
+                
+                // 記錄查看行為
+                await db.trackUserView(ctx.user.id, symbol);
               }
             } catch (error) {
               console.error("[Search History] Failed to add:", error);
@@ -995,6 +1003,67 @@ ${stocksInfo}
       }))
       .query(async ({ input, ctx }) => {
         return db.getTopStocks(ctx.user.id, input.limit);
+      }),
+    
+    // 獲取智能推薦（整合行為數據進行排序）
+    getRecommendations: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional().default(6),
+      }))
+      .query(async ({ input, ctx }) => {
+        // 獲取搜尋歷史
+        const searchHistory = await db.getUserSearchHistory(ctx.user.id, 20);
+        
+        // 獲取收藏列表
+        const watchlist = await db.getUserWatchlist(ctx.user.id);
+        
+        // 獲取用戶行為數據
+        const behaviorData = await db.getAllUserBehavior(ctx.user.id);
+        
+        // 創建行為數據映射表
+        const behaviorMap = new Map(
+          behaviorData.map(b => [b.symbol, b])
+        );
+        
+        // 創建收藏映射表
+        const watchlistMap = new Set(
+          watchlist.map(w => w.symbol)
+        );
+        
+        // 計算每個股票的推薦評分
+        const scoredStocks = searchHistory.map(item => {
+          const behavior = behaviorMap.get(item.symbol);
+          const isInWatchlist = watchlistMap.has(item.symbol);
+          
+          // 加權評分機制：
+          // - 收藏權重：5 分
+          // - 查看頻率權重：viewCount × 0.5 分
+          // - 搜尋頻率權重：searchCount × 0.3 分
+          // - 停留時間權重：totalViewTime / 60 × 0.2 分（分鐘）
+          let score = 0;
+          
+          if (isInWatchlist) {
+            score += 5;
+          }
+          
+          if (behavior) {
+            score += behavior.viewCount * 0.5;
+            score += behavior.searchCount * 0.3;
+            score += (behavior.totalViewTime / 60) * 0.2;
+          }
+          
+          return {
+            ...item,
+            score,
+          };
+        });
+        
+        // 按評分排序，返回前 N 個
+        const recommendations = scoredStocks
+          .sort((a, b) => b.score - a.score)
+          .slice(0, input.limit);
+        
+        return recommendations;
       }),
   }),
 

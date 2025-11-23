@@ -223,3 +223,27 @@ export const questionStats = mysqlTable("questionStats", {
 
 export type QuestionStats = typeof questionStats.$inferSelect;
 export type InsertQuestionStats = typeof questionStats.$inferInsert;
+
+/**
+ * 用戶行為數據追蹤表
+ * 記錄用戶對股票的查看、搜尋和停留時間，用於智能推薦演算法
+ */
+export const userBehavior = mysqlTable("userBehavior", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  viewCount: int("viewCount").default(0).notNull(), // 查看次數
+  searchCount: int("searchCount").default(0).notNull(), // 搜尋次數
+  totalViewTime: int("totalViewTime").default(0).notNull(), // 總停留時間（秒）
+  lastViewedAt: timestamp("lastViewedAt").defaultNow().notNull(), // 最後查看時間
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  userSymbolIdx: index("user_symbol_idx").on(table.userId, table.symbol),
+  lastViewedAtIdx: index("lastViewedAt_idx").on(table.lastViewedAt),
+}));
+
+export type UserBehavior = typeof userBehavior.$inferSelect;
+export type InsertUserBehavior = typeof userBehavior.$inferInsert;

@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "8560604f-95fd-4d16-895c-f78acb886495",
-  "prevId": "254a7a90-d26e-495f-ab54-b74bcb5e6e13",
+  "id": "84ff14fb-6a51-440b-bcce-a6e6aec46247",
+  "prevId": "1a9caacf-acfd-4ff6-92f7-c84f00a7e62b",
   "tables": {
     "analysisCache": {
       "name": "analysisCache",
@@ -515,7 +515,7 @@
         },
         "question": {
           "name": "question",
-          "type": "text",
+          "type": "varchar(500)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -566,14 +566,6 @@
           "name": "lastClickedAt_idx",
           "columns": [
             "lastClickedAt"
-          ],
-          "isUnique": false
-        },
-        "user_question_idx": {
-          "name": "user_question_idx",
-          "columns": [
-            "userId",
-            "question"
           ],
           "isUnique": false
         }
@@ -835,6 +827,123 @@
           ]
         }
       },
+      "checkConstraint": {}
+    },
+    "userBehavior": {
+      "name": "userBehavior",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "viewCount": {
+          "name": "viewCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "searchCount": {
+          "name": "searchCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "totalViewTime": {
+          "name": "totalViewTime",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "lastViewedAt": {
+          "name": "lastViewedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "userId_idx": {
+          "name": "userId_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "symbol_idx": {
+          "name": "symbol_idx",
+          "columns": [
+            "symbol"
+          ],
+          "isUnique": false
+        },
+        "user_symbol_idx": {
+          "name": "user_symbol_idx",
+          "columns": [
+            "userId",
+            "symbol"
+          ],
+          "isUnique": false
+        },
+        "lastViewedAt_idx": {
+          "name": "lastViewedAt_idx",
+          "columns": [
+            "lastViewedAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "userBehavior_id": {
+          "name": "userBehavior_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "checkConstraint": {}
     },
     "users": {

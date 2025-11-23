@@ -26,7 +26,10 @@ import {
   InsertPortfolioTransaction,
   questionStats,
   QuestionStats,
-  InsertQuestionStats
+  InsertQuestionStats,
+  userBehavior,
+  UserBehavior,
+  InsertUserBehavior
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -705,6 +708,206 @@ export async function getGlobalTopQuestions(limit: number = 10): Promise<Array<{
     return results;
   } catch (error) {
     console.error("[Database] Failed to get global top questions:", error);
+    return [];
+  }
+}
+
+// ==================== 用戶行為追蹤 ====================
+
+/**
+ * 記錄或更新用戶查看股票的行為
+ */
+export async function trackUserView(userId: number, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot track view: database not available");
+    return;
+  }
+
+  try {
+    // 檢查是否已存在記錄
+    const existing = await db
+      .select()
+      .from(userBehavior)
+      .where(and(
+        eq(userBehavior.userId, userId),
+        eq(userBehavior.symbol, symbol)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 更新現有記錄
+      await db
+        .update(userBehavior)
+        .set({
+          viewCount: sql`${userBehavior.viewCount} + 1`,
+          lastViewedAt: new Date(),
+        })
+        .where(and(
+          eq(userBehavior.userId, userId),
+          eq(userBehavior.symbol, symbol)
+        ));
+    } else {
+      // 創建新記錄
+      await db.insert(userBehavior).values({
+        userId,
+        symbol,
+        viewCount: 1,
+        searchCount: 0,
+        totalViewTime: 0,
+        lastViewedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to track view:", error);
+  }
+}
+
+/**
+ * 記錄或更新用戶搜尋股票的行為
+ */
+export async function trackUserSearch(userId: number, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot track search: database not available");
+    return;
+  }
+
+  try {
+    // 檢查是否已存在記錄
+    const existing = await db
+      .select()
+      .from(userBehavior)
+      .where(and(
+        eq(userBehavior.userId, userId),
+        eq(userBehavior.symbol, symbol)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 更新現有記錄
+      await db
+        .update(userBehavior)
+        .set({
+          searchCount: sql`${userBehavior.searchCount} + 1`,
+          lastViewedAt: new Date(),
+        })
+        .where(and(
+          eq(userBehavior.userId, userId),
+          eq(userBehavior.symbol, symbol)
+        ));
+    } else {
+      // 創建新記錄
+      await db.insert(userBehavior).values({
+        userId,
+        symbol,
+        viewCount: 0,
+        searchCount: 1,
+        totalViewTime: 0,
+        lastViewedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to track search:", error);
+  }
+}
+
+/**
+ * 記錄用戶在股票詳情頁的停留時間
+ */
+export async function trackUserViewTime(userId: number, symbol: string, viewTimeSeconds: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot track view time: database not available");
+    return;
+  }
+
+  try {
+    // 檢查是否已存在記錄
+    const existing = await db
+      .select()
+      .from(userBehavior)
+      .where(and(
+        eq(userBehavior.userId, userId),
+        eq(userBehavior.symbol, symbol)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 更新現有記錄
+      await db
+        .update(userBehavior)
+        .set({
+          totalViewTime: sql`${userBehavior.totalViewTime} + ${viewTimeSeconds}`,
+          lastViewedAt: new Date(),
+        })
+        .where(and(
+          eq(userBehavior.userId, userId),
+          eq(userBehavior.symbol, symbol)
+        ));
+    } else {
+      // 創建新記錄
+      await db.insert(userBehavior).values({
+        userId,
+        symbol,
+        viewCount: 0,
+        searchCount: 0,
+        totalViewTime: viewTimeSeconds,
+        lastViewedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to track view time:", error);
+  }
+}
+
+/**
+ * 獲取用戶的行為數據
+ */
+export async function getUserBehavior(userId: number, symbol: string): Promise<UserBehavior | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user behavior: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(userBehavior)
+      .where(and(
+        eq(userBehavior.userId, userId),
+        eq(userBehavior.symbol, symbol)
+      ))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get user behavior:", error);
+    return undefined;
+  }
+}
+
+/**
+ * 獲取用戶所有行為數據
+ */
+export async function getAllUserBehavior(userId: number): Promise<UserBehavior[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get all user behavior: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select()
+      .from(userBehavior)
+      .where(eq(userBehavior.userId, userId))
+      .orderBy(desc(userBehavior.lastViewedAt));
+
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get all user behavior:", error);
     return [];
   }
 }
