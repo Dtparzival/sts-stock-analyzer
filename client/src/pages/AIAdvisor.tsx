@@ -60,6 +60,15 @@ export default function AIAdvisor() {
     "如何判斷股票是否被高估或低估？",
   ];
 
+  const quickTemplates = [
+    "分析我的投資組合",
+    "推薦低風險股票",
+    "市場趨勢分析",
+    "如何分散投資風險？",
+    "成長股 vs 價值股",
+    "股息投資策略",
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* 頂部導航 */}
@@ -103,6 +112,7 @@ export default function AIAdvisor() {
                 height="600px"
                 emptyStateMessage="開始與 AI 投資顧問對話"
                 suggestedPrompts={suggestedPrompts}
+                quickTemplates={quickTemplates}
               />
             </CardContent>
           </Card>

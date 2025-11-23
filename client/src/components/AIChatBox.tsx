@@ -60,6 +60,12 @@ export type AIChatBoxProps = {
   suggestedPrompts?: string[];
 
   /**
+   * Quick question templates to display above input area
+   * Click to auto-fill the input field
+   */
+  quickTemplates?: string[];
+
+  /**
    * Callback to clear all messages (optional)
    */
   onClearMessages?: () => void;
@@ -125,6 +131,7 @@ export function AIChatBox({
   height = "600px",
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
+  quickTemplates,
   onClearMessages,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
@@ -317,6 +324,28 @@ export function AIChatBox({
           </ScrollArea>
         )}
       </div>
+
+      {/* Quick Templates (shown when there are messages) */}
+      {quickTemplates && quickTemplates.length > 0 && displayMessages.length > 0 && (
+        <div className="border-t bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 px-4 py-3">
+          <div className="flex flex-wrap gap-2">
+            {quickTemplates.map((template, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => {
+                  setInput(template);
+                  textareaRef.current?.focus();
+                }}
+                disabled={isLoading}
+                className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {template}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <form

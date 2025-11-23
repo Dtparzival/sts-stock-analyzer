@@ -634,31 +634,12 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
           content: z.string(),
         })),
       }))
-      .mutation(async ({ input, ctx }) => {
+      .mutation(async ({ input }) => {
         const { messages } = input;
-        
-        // 從最後一條用戶消息中檢測股票代碼
-        const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-        let stockContext = '';
-        let detectedSymbols: string[] = [];
-        
-        if (lastUserMessage) {
-          const { detectStockSymbols, fetchStockData, buildStockContext } = await import('./chatWithStockData');
-          
-          detectedSymbols = detectStockSymbols(lastUserMessage.content);
-          
-          // 獲取股票即時數據
-          if (detectedSymbols.length > 0) {
-            const stockDataPromises = detectedSymbols.map(symbol => fetchStockData(symbol, ctx));
-            const stockDataResults = await Promise.all(stockDataPromises);
-            
-            stockContext = buildStockContext(stockDataResults);
-          }
-        }
         
         const systemMessage = {
           role: "system" as const,
-          content: `你是一位專業的美股投資顧問，擁有豐富的市場分析經驗。你可以回答關於美股投資、技術分析、基本面分析、風險管理等各方面的問題。請用繁體中文回答，並提供專業且易懂的建議。${stockContext}`
+          content: "你是一位專業的美股投資顧問，擁有豐富的市場分析經驗。你可以回答關於美股投資、技術分析、基本面分析、風險管理等各方面的問題。請用繁體中文回答，並提供專業且易懂的建議。"
         };
         
         const response = await invokeLLM({
@@ -669,10 +650,7 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
           ? response.choices[0].message.content
           : "無法生成回懆";
         
-        return { 
-          message,
-          detectedSymbols: detectedSymbols.length > 0 ? detectedSymbols : undefined,
-        };
+        return { message };
       }),
   }),
 
