@@ -323,7 +323,7 @@ export default function Home() {
                     </div>
                     <p className="text-sm text-muted-foreground">正在載入推薦內容...</p>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     {[...Array(6)].map((_, i) => (
                       <Card key={i} className="overflow-hidden">
                         <CardContent className="p-4 flex flex-col items-center justify-center min-h-[120px]">
@@ -348,7 +348,7 @@ export default function Home() {
                 </div>
                 
                 {/* 推薦卡片網格 */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                   {recentHistory.slice(0, 6).map((item) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
