@@ -122,9 +122,20 @@
 }
 
 @layer components {
-  /* 股票卡片樣式 */
-  .stock-card {
-    @apply bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors;
+  /* 統一卡片樣式 */
+  .stock-card,
+  .card-unified {
+    @apply bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300;
+    @apply hover:border-primary/50;
+  }
+  
+  /* 卡片尺寸變體 */
+  .card-sm {
+    @apply p-4 rounded-lg;
+  }
+  
+  .card-lg {
+    @apply p-8 rounded-2xl;
   }
 
   /* 價格變動顏色 */
@@ -212,6 +223,55 @@
     @apply hover:shadow-lg hover:-translate-y-1;
     will-change: transform, box-shadow;
     transform: translateZ(0); /* 強制啟用 GPU 加速 */
+  }
+  
+  /* 統一按鈕樣式基礎 */
+  .btn-unified {
+    @apply rounded-lg px-6 py-3 font-medium transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  /* 主要按鈕樣式 */
+  .btn-primary {
+    @apply rounded-lg px-6 py-3 font-medium transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--gradient-primary);
+    @apply text-white;
+    @apply hover:scale-105 active:scale-95;
+  }
+  
+  /* 金色 CTA 按鈕 */
+  .btn-gold {
+    @apply rounded-lg px-6 py-3 font-medium transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--gradient-gold);
+    @apply text-white;
+    @apply hover:scale-105 active:scale-95;
+  }
+  
+  .btn-gold:hover {
+    background: var(--gradient-gold-hover);
+  }
+  
+  /* 次要按鈕樣式 */
+  .btn-secondary {
+    @apply rounded-lg px-6 py-3 font-medium transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-secondary text-secondary-foreground;
+    @apply hover:bg-secondary/80;
+  }
+  
+  /* 輪廓按鈕樣式 */
+  .btn-outline {
+    @apply rounded-lg px-6 py-3 font-medium transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply border-2 border-primary text-primary bg-transparent;
+    @apply hover:bg-primary hover:text-white;
   }
   
   /* 金色陰影效果（用於重要卡片） */
