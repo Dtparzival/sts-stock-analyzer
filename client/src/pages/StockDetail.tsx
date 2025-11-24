@@ -464,41 +464,41 @@ export default function StockDetail() {
   return (
     <div className="min-h-screen bg-background">
       <motion.div 
-        className="container mx-auto px-4 py-8"
+        className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
         {/* 返回按鈕 - 優化設計 */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-gradient-primary">
-            <ArrowLeft className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-primary flex-shrink-0">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </div>
-          <Button variant="ghost" onClick={() => setLocation("/")} className="hover:bg-primary/10 font-semibold">
+          <Button variant="ghost" onClick={() => setLocation("/")} className="hover:bg-primary/10 font-semibold text-sm sm:text-base min-h-[44px]">
             返回首頁
           </Button>
         </div>
 
         {/* 股票標題和收藏按鈕 - 優化設計 */}
         <motion.div variants={itemVariants}>
-        <Card className="mb-6 border-2 shadow-lg">
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-3">
-                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{displaySymbol}</h1>
+        <Card className="mb-4 sm:mb-6 border-2 shadow-lg">
+          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-4">
+              <div className="flex-1 min-w-0 w-full">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2 sm:mb-3">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{displaySymbol}</h1>
                   {market === 'TW' && (
-                    <Badge variant="outline" className="text-sm px-3 py-1">台股</Badge>
+                    <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1 flex-shrink-0">台股</Badge>
                   )}
                   {market === 'US' && (
-                    <Badge variant="outline" className="text-sm px-3 py-1">美股</Badge>
+                    <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1 flex-shrink-0">美股</Badge>
                   )}
                 </div>
-                <p className="text-xl text-muted-foreground font-medium">
+                <p className="text-base sm:text-lg lg:text-xl text-muted-foreground font-medium break-words">
                   {companyName}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <ShareButton
                   symbol={displaySymbol}
                   companyName={companyName}
@@ -510,19 +510,19 @@ export default function StockDetail() {
                   size="lg"
                   onClick={handleWatchlistToggle}
                   disabled={!user}
-                  className={watchlistCheck?.isInWatchlist 
+                  className={`min-h-[44px] w-full sm:w-auto ${watchlistCheck?.isInWatchlist 
                     ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 shadow-md hover:from-yellow-600 hover:to-amber-600 transition-all duration-300" 
-                    : "border-2 border-yellow-500/50 hover:border-yellow-500 hover:bg-yellow-500/10 transition-all duration-300"}
+                    : "border-2 border-yellow-500/50 hover:border-yellow-500 hover:bg-yellow-500/10 transition-all duration-300"}`}
                 >
                   {watchlistCheck?.isInWatchlist ? (
                     <>
                       <Star className="h-5 w-5 mr-2 fill-white" />
-                      已收藏
+                      <span className="text-sm sm:text-base">已收藏</span>
                     </>
                   ) : (
                     <>
                       <Star className="h-5 w-5 mr-2 text-yellow-600" />
-                      加入收藏
+                      <span className="text-sm sm:text-base">加入收藏</span>
                     </>
                   )}
                 </Button>
@@ -534,31 +534,31 @@ export default function StockDetail() {
 
         {/* 價格資訊卡片 - 優化設計 */}
         <motion.div variants={itemVariants}>
-        <Card className="mb-6 border-2 shadow-lg">
-          <CardContent className="pt-8">
+        <Card className="mb-4 sm:mb-6 border-2 shadow-lg">
+          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
             {/* 主要價格資訊 - 突出顯示 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-border">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-border">
               <div className="text-center md:text-left">
-                <p className="text-sm font-medium text-muted-foreground mb-2">當前價格</p>
-                <p className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{currencySymbol}{currentPrice?.toFixed(2)}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">當前價格</p>
+                <p className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{currencySymbol}{currentPrice?.toFixed(2)}</p>
               </div>
               <div className="text-center md:text-left">
-                <p className="text-sm font-medium text-muted-foreground mb-2">漲跌幅</p>
-                <div className="flex items-center justify-center md:justify-start gap-3">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">漲跌幅</p>
+                <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3">
                   {priceChange >= 0 ? (
-                    <div className="p-2 rounded-lg bg-green-500/10">
-                      <TrendingUp className="h-6 w-6 text-green-600" />
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10 flex-shrink-0">
+                      <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                     </div>
                   ) : (
-                    <div className="p-2 rounded-lg bg-red-500/10">
-                      <TrendingDown className="h-6 w-6 text-red-600" />
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-red-500/10 flex-shrink-0">
+                      <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
                     </div>
                   )}
-                  <div>
-                    <p className={`text-3xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className="min-w-0">
+                    <p className={`text-2xl sm:text-3xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'} break-words`}>
                       {priceChange >= 0 ? '+' : ''}{currencySymbol}{priceChange.toFixed(2)}
                     </p>
-                    <p className={`text-xl font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-lg sm:text-xl font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ({priceChangePercent.toFixed(2)}%)
                     </p>
                   </div>
@@ -567,30 +567,30 @@ export default function StockDetail() {
             </div>
             
             {/* 其他價格資訊 */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">開盤價</p>
-                <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">開盤價</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">昨收價</p>
-                <p className="text-2xl font-semibold">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">昨收價</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">最高價</p>
-                <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">最高價</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">最低價</p>
-                <p className="text-2xl font-semibold">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">最低價</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">成交量</p>
-                <p className="text-2xl font-semibold">{meta?.regularMarketVolume?.toLocaleString() || 'N/A'}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">成交量</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{meta?.regularMarketVolume?.toLocaleString() || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">市值</p>
-                <p className="text-2xl font-semibold">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">市值</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">
                   {meta?.marketCap ? `$${(meta.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
                 </p>
               </div>
@@ -598,8 +598,8 @@ export default function StockDetail() {
             
             {/* 數據更新時間戳 - 優化設計 */}
             {(stockData as any)?._metadata && (
-              <div className="mt-6 pt-6 border-t border-border">
-                <div className="flex flex-wrap items-center gap-4 text-sm">
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-border">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-foreground">數據更新時間:</span>
                     <span className="text-muted-foreground">
@@ -657,17 +657,17 @@ export default function StockDetail() {
 
         {/* 分析和預測標籤頁 - 優化設計 */}
         <motion.div variants={itemVariants}>
-        <Tabs defaultValue="analysis" className="mt-8">
-          <TabsList className="grid w-full grid-cols-2 h-auto p-1.5 sm:p-2 bg-muted/30 rounded-xl gap-1.5 sm:gap-2">
+        <Tabs defaultValue="analysis" className="mt-4 sm:mt-6 lg:mt-8">
+          <TabsList className="grid w-full grid-cols-2 h-auto p-1 sm:p-1.5 lg:p-2 bg-muted/30 rounded-xl gap-1 sm:gap-1.5 lg:gap-2">
             <TabsTrigger 
               value="analysis" 
-              className="text-sm sm:text-base font-semibold py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50 min-h-[44px] sm:min-h-[48px]"
+              className="text-xs sm:text-sm lg:text-base font-semibold py-2 sm:py-2.5 lg:py-3 px-1.5 sm:px-2 lg:px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50 min-h-[44px] sm:min-h-[48px]"
             >
               <span className="block sm:inline">AI 投資分析</span>
             </TabsTrigger>
             <TabsTrigger 
               value="prediction" 
-              className="text-sm sm:text-base font-semibold py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50 min-h-[44px] sm:min-h-[48px]"
+              className="text-xs sm:text-sm lg:text-base font-semibold py-2 sm:py-2.5 lg:py-3 px-1.5 sm:px-2 lg:px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02] data-[state=inactive]:hover:bg-muted/50 min-h-[44px] sm:min-h-[48px]"
             >
               <span className="block sm:inline">未來趨勢預測</span>
             </TabsTrigger>
@@ -675,20 +675,20 @@ export default function StockDetail() {
 
           <TabsContent value="analysis">
             <Card className="border-2 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl">AI 投資分析</CardTitle>
-                <CardDescription className="text-base">
+              <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-xl sm:text-2xl">AI 投資分析</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   基於公司基本面、技術面和市場情緒的綜合分析
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
                 {!analysis ? (
-                  <div className="text-center py-16">
+                  <div className="text-center py-8 sm:py-12 lg:py-16">
                     {isAnalyzing ? (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-6"
+                        className="space-y-4 sm:space-y-6"
                       >
                         <div className="flex justify-center">
                           <motion.div
@@ -700,15 +700,15 @@ export default function StockDetail() {
                               rotate: { duration: 2, repeat: Infinity, ease: "linear" },
                               scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
                             }}
-                            className="w-16 h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
                           >
-                            <Loader2 className="h-8 w-8 text-white" />
+                            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                           </motion.div>
                         </div>
                         <motion.div
                           animate={{ opacity: [0.5, 1, 0.5] }}
                           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="text-lg font-semibold text-foreground"
+                          className="text-base sm:text-lg font-semibold text-foreground"
                         >
                           AI 正在深度分析中...
                         </motion.div>
@@ -729,36 +729,36 @@ export default function StockDetail() {
                         </div>
                       </motion.div>
                     ) : (
-                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
+                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
                         開始分析
                       </Button>
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-sm text-muted-foreground">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         分析時間：{analysisCachedAt ? new Date(analysisCachedAt).toLocaleString('zh-TW') : '剛剛'}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="button-hover font-semibold">
+                            <Button variant="outline" size="sm" className="button-hover font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial">
                               <History className="h-4 w-4 mr-2" />
                               歷史記錄
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
-                            <DialogHeader className="border-b pb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                                  <History className="h-6 w-6 text-white" />
+                            <DialogHeader className="border-b pb-3 sm:pb-4">
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                                  <History className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                                 </div>
-                                <div>
-                                  <DialogTitle className="text-2xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                                <div className="min-w-0">
+                                  <DialogTitle className="text-lg sm:text-2xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                                     AI 分析歷史記錄
                                   </DialogTitle>
-                                  <DialogDescription className="text-base mt-1">
+                                  <DialogDescription className="text-xs sm:text-base mt-1">
                                     {symbol} 的歷史 AI 分析記錄 · 共 {analysisHistory?.length || 0} 筆
                                   </DialogDescription>
                                 </div>
@@ -885,11 +885,11 @@ export default function StockDetail() {
                               )}
                             </div>
                             
-                            <div className="border-t pt-4 flex justify-between items-center">
+                            <div className="border-t pt-3 sm:pt-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
                               <Button
                                 onClick={() => setShowCompareDialog(true)}
                                 disabled={selectedRecords.length !== 2}
-                                className="button-hover bg-gradient-primary text-white"
+                                className="button-hover bg-gradient-primary text-white min-h-[44px] text-sm sm:text-base"
                               >
                                 <GitCompare className="h-4 w-4 mr-2" />
                                 對比分析 ({selectedRecords.length}/2)
@@ -900,7 +900,7 @@ export default function StockDetail() {
                                   setSelectedRecords([]);
                                 }}
                                 variant="outline"
-                                className="button-hover"
+                                className="button-hover min-h-[44px] text-sm sm:text-base"
                               >
                                 關閉
                               </Button>
@@ -921,12 +921,13 @@ export default function StockDetail() {
                           size="sm"
                           onClick={() => handleGetAnalysis(true)} 
                           disabled={isAnalyzing}
-                          className="button-hover font-semibold"
+                          className="button-hover font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial"
                         >
                           {isAnalyzing ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              重新分析中...
+                              <span className="hidden sm:inline">重新分析中...</span>
+                              <span className="sm:hidden">分析中...</span>
                             </>
                           ) : (
                             '重新分析'
@@ -934,7 +935,7 @@ export default function StockDetail() {
                         </Button>
                       </div>
                     </div>
-                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                    <div className="prose prose-sm sm:prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{analysis}</Streamdown>
                     </div>
                   </div>
@@ -945,20 +946,20 @@ export default function StockDetail() {
 
           <TabsContent value="prediction">
             <Card className="border-2 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl">未來趋勢預測</CardTitle>
-                <CardDescription className="text-base">
+              <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-xl sm:text-2xl">未來趨勢預測</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   基於歷史數據和市場趋勢的未來走勢預測
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
                 {!prediction ? (
-                  <div className="text-center py-16">
+                  <div className="text-center py-8 sm:py-12 lg:py-16">
                     {isPredicting ? (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-6"
+                        className="space-y-4 sm:space-y-6"
                       >
                         <div className="flex justify-center">
                           <motion.div
@@ -970,15 +971,15 @@ export default function StockDetail() {
                               rotate: { duration: 2, repeat: Infinity, ease: "linear" },
                               scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
                             }}
-                            className="w-16 h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
                           >
-                            <TrendingUp className="h-8 w-8 text-white" />
+                            <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                           </motion.div>
                         </div>
                         <motion.div
                           animate={{ opacity: [0.5, 1, 0.5] }}
                           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="text-lg font-semibold text-foreground"
+                          className="text-base sm:text-lg font-semibold text-foreground"
                         >
                           AI 正在預測未來趨勢...
                         </motion.div>
@@ -999,14 +1000,14 @@ export default function StockDetail() {
                         </div>
                       </motion.div>
                     ) : (
-                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-14 px-10 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover">
+                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
                         開始預測
                       </Button>
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="prose prose-sm sm:prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{prediction}</Streamdown>
                     </div>
                   </div>
