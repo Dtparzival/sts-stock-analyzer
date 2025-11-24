@@ -394,14 +394,14 @@ export default function Home() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
-              <h2 className="heading-primary mb-6 px-4 animate-slide-up">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight px-4 animate-slide-up">
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
                   智慧投資，
                 </span>
                 <br />
                 <span className="text-foreground">做出明智投資決策</span>
               </h2>
-              <p className="body-large text-muted-foreground max-w-2xl mx-auto px-4 animate-fade-in animate-delay-100">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4 animate-fade-in animate-delay-100">
                 透過 AI 深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，
                 <br className="hidden md:block" />
                 為您的投資組合提供專業建議
@@ -623,11 +623,11 @@ export default function Home() {
                             return (
                               <div className="flex flex-col items-center gap-1 w-full">
                                 {/* 當前股價 */}
-                                <div className="number-display-medium text-foreground">
+                                <div className="number-display text-sm sm:text-base font-bold text-foreground">
                                   ${currentPrice.toFixed(2)}
                                 </div>
                                 {/* 漲跌幅 */}
-                                <div className={`number-display-small font-semibold ${
+                                <div className={`number-display text-xs sm:text-sm font-semibold ${
                                   isPositive 
                                     ? 'text-green-600' 
                                     : 'text-red-600'
@@ -660,7 +660,7 @@ export default function Home() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              className="bg-gradient-gold hover:bg-gradient-gold-hover text-white font-semibold shadow-gold-lg min-h-[44px] px-4 border-0"
+                              className="bg-white hover:bg-white/90 text-primary font-semibold shadow-lg min-h-[44px] px-4"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setLocation(`/stock/${item.symbol}`);
@@ -693,8 +693,8 @@ export default function Home() {
         {/* 核心功能特色 - 全新設計 */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h3 className="heading-section mb-4 px-4 animate-fade-in">強大的分析功能</h3>
-            <p className="body-regular text-muted-foreground px-4 animate-fade-in animate-delay-100">一站式投資分析平台,助您輕鬆管理投資組合</p>
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 px-4">強大的分析功能</h3>
+            <p className="text-base sm:text-lg text-muted-foreground px-4">一站式投資分析平台，助您輕鬆管理投資組合</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -739,8 +739,8 @@ export default function Home() {
         {/* 進階功能 - 優化設計 */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h3 className="heading-section mb-4 px-4 animate-fade-in">進階分析工具</h3>
-            <p className="body-regular text-muted-foreground px-4 animate-fade-in animate-delay-100">深入了解投資表現,做出更精準的決策</p>
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 px-4">進階分析工具</h3>
+            <p className="text-base sm:text-lg text-muted-foreground px-4">深入了解投資表現，做出更精準的決策</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -786,8 +786,8 @@ export default function Home() {
         <div className="mb-20">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="heading-section mb-2 px-4 sm:px-0 animate-fade-in">熱門{selectedMarket === 'US' ? '美股' : '台股'}</h3>
-              <p className="body-small text-muted-foreground px-4 sm:px-0 animate-fade-in animate-delay-100">市場關注度最高的股票</p>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 px-4 sm:px-0">熱門{selectedMarket === 'US' ? '美股' : '台股'}</h3>
+              <p className="text-sm sm:text-base text-muted-foreground px-4 sm:px-0">市場關注度最高的股票</p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -804,8 +804,8 @@ export default function Home() {
                   className="h-20 flex flex-col items-center justify-center hover:bg-primary/10 hover:border-primary/50 hover:shadow-md transition-all card-hover border-2"
                   onClick={() => setLocation(`/stock/${stock.symbol}`)}
                 >
-                  <span className="number-display-medium text-foreground">{displaySymbol}</span>
-                  <span className="body-small text-muted-foreground mt-1">{stock.name}</span>
+                  <span className="text-xl font-bold text-foreground">{displaySymbol}</span>
+                  <span className="text-sm text-muted-foreground mt-1">{stock.name}</span>
                 </Button>
               );
             })}
@@ -822,7 +822,7 @@ export default function Home() {
                   <Shield className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">安全可靠的投資分析平台</span>
                 </div>
-                <h3 className="heading-secondary mb-6 animate-fade-in">
+                <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight">
                   開始您的
                   <span className="text-primary drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]"> 智能投資 </span>
                   之旅

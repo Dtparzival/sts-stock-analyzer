@@ -214,7 +214,7 @@ export default function Watchlist() {
                 size="default"
                 onClick={() => batchAnalyze.mutate()}
                 disabled={batchAnalyze.isPending}
-                className="btn-primary"
+                className="bg-gradient-primary text-white border-0 shadow-md button-hover"
               >
                 {batchAnalyze.isPending ? (
                   <>
@@ -236,7 +236,7 @@ export default function Watchlist() {
               variant={marketFilter === 'all' ? 'default' : 'outline'}
               size="default"
               onClick={() => setMarketFilter('all')}
-              className={marketFilter === 'all' ? 'btn-primary font-semibold' : 'btn-outline font-semibold'}
+              className={marketFilter === 'all' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               全部
             </Button>
@@ -244,7 +244,7 @@ export default function Watchlist() {
               variant={marketFilter === 'US' ? 'default' : 'outline'}
               size="default"
               onClick={() => setMarketFilter('US')}
-              className={marketFilter === 'US' ? 'btn-primary font-semibold' : 'btn-outline font-semibold'}
+              className={marketFilter === 'US' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               美股
             </Button>
@@ -252,7 +252,7 @@ export default function Watchlist() {
               variant={marketFilter === 'TW' ? 'default' : 'outline'}
               size="default"
               onClick={() => setMarketFilter('TW')}
-              className={marketFilter === 'TW' ? 'btn-primary font-semibold' : 'btn-outline font-semibold'}
+              className={marketFilter === 'TW' ? 'bg-gradient-primary text-white border-0 shadow-md button-hover font-semibold' : 'hover:border-primary/50 hover:bg-primary/5 button-hover font-semibold'}
             >
               台股
             </Button>
@@ -265,7 +265,7 @@ export default function Watchlist() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : !watchlist || watchlist.length === 0 ? (
-          <Card className="card-unified">
+          <Card className="border-2 shadow-lg">
             <CardContent className="py-20 text-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-full bg-yellow-500/10">
@@ -275,14 +275,14 @@ export default function Watchlist() {
                   <p className="text-xl font-semibold mb-2">尚未收藏任何股票</p>
                   <p className="text-muted-foreground">開始搜尋並收藏您關注的股票</p>
                 </div>
-                <Button onClick={() => setLocation("/")} className="mt-4 btn-primary">
+                <Button onClick={() => setLocation("/")} className="mt-4 bg-gradient-primary text-white border-0 shadow-md button-hover">
                   前往首頁搜尋
                 </Button>
               </div>
             </CardContent>
           </Card>
         ) : filteredWatchlist.length === 0 ? (
-          <Card className="card-unified">
+          <Card className="border-2 shadow-lg">
             <CardContent className="py-20 text-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 rounded-full bg-yellow-500/10">
@@ -317,7 +317,7 @@ export default function Watchlist() {
               return (
                 <Card
                   key={item.id}
-                  className="card-unified card-hover cursor-pointer bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
+                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
                   onClick={() => setLocation(`/stock/${item.symbol}`)}
                 >
                   {/* 市場標籤 */}
@@ -429,7 +429,7 @@ export default function Watchlist() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: index * 0.05, duration: 0.3 }}
                     >
-                      <Card className="card-unified card-hover overflow-hidden">
+                      <Card className="border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden">
                         <CardContent className="p-0">
                           <div className="flex flex-col md:flex-row">
                             {/* 左側：股票資訊和投資建議 */}
@@ -513,7 +513,7 @@ export default function Watchlist() {
                                       variant="outline"
                                       size="sm"
                                       onClick={() => toggleExpand(result.symbol)}
-                                      className="btn-outline"
+                                      className="hover:bg-primary/5 hover:border-primary/50 button-hover"
                                     >
                                       {isExpanded ? (
                                         <>
@@ -532,7 +532,7 @@ export default function Watchlist() {
                                     variant="default"
                                     size="sm"
                                     onClick={() => setLocation(`/stock/${result.symbol}`)}
-                                    className="btn-primary"
+                                    className="bg-gradient-primary text-white border-0 shadow-md button-hover"
                                   >
                                     <ExternalLink className="h-4 w-4 mr-1" />
                                     查看詳情
@@ -552,7 +552,7 @@ export default function Watchlist() {
             <div className="flex justify-end pt-4 border-t">
               <Button 
                 onClick={() => setShowBatchAnalysis(false)}
-                className="btn-primary"
+                className="bg-gradient-primary text-white border-0 shadow-md button-hover"
               >
                 關閉
               </Button>

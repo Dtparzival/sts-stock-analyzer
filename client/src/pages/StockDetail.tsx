@@ -75,7 +75,7 @@ function AnalysisHistoryCard({ record, index, isSelected = false, onToggleSelect
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`card-unified card-hover overflow-hidden ${style.bg}`}
+      className={`rounded-xl border-2 overflow-hidden transition-all duration-300 hover:border-purple-300 hover:shadow-lg ${style.bg}`}
     >
       <div className="p-5">
         {/* 標頭區域 */}
@@ -704,7 +704,7 @@ export default function StockDetail() {
                     {isAnalyzing ? (
                       <AILoadingAnimation type="analysis" />
                     ) : (
-                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="btn-primary h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base min-h-[44px]">
+                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
                         開始分析
                       </Button>
                     )}
@@ -721,7 +721,7 @@ export default function StockDetail() {
                       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="btn-outline font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial">
+                            <Button variant="outline" size="sm" className="button-hover font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial">
                               <History className="h-4 w-4 mr-2" />
                               歷史記錄
                             </Button>
@@ -867,7 +867,7 @@ export default function StockDetail() {
                               <Button
                                 onClick={() => setShowCompareDialog(true)}
                                 disabled={selectedRecords.length !== 2}
-                                className="btn-primary min-h-[44px] text-sm sm:text-base"
+                                className="button-hover bg-gradient-primary text-white min-h-[44px] text-sm sm:text-base"
                               >
                                 <GitCompare className="h-4 w-4 mr-2" />
                                 對比分析 ({selectedRecords.length}/2)
@@ -878,7 +878,7 @@ export default function StockDetail() {
                                   setSelectedRecords([]);
                                 }}
                                 variant="outline"
-                                className="btn-outline min-h-[44px] text-sm sm:text-base"
+                                className="button-hover min-h-[44px] text-sm sm:text-base"
                               >
                                 關閉
                               </Button>
@@ -899,7 +899,7 @@ export default function StockDetail() {
                           size="sm"
                           onClick={() => handleGetAnalysis(true)} 
                           disabled={isAnalyzing}
-                          className="btn-outline font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial"
+                          className="button-hover font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial"
                         >
                           {isAnalyzing ? (
                             <>
@@ -942,7 +942,7 @@ export default function StockDetail() {
                     {isPredicting ? (
                       <AILoadingAnimation type="prediction" />
                     ) : (
-                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="btn-primary h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base min-h-[44px]">
+                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
                         開始預測
                       </Button>
                     )}
