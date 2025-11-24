@@ -35,6 +35,8 @@ import ShareButton from "@/components/ShareButton";
 import { ChevronDown, ChevronUp, Clock, Filter, SortAsc, GitCompare, BarChart3 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import CompareAnalysisDialog from "@/components/CompareAnalysisDialog";
+import AnalysisSummaryCard from "@/components/AnalysisSummaryCard";
+import AnalysisContentAccordion from "@/components/AnalysisContentAccordion";
 
 // AI 分析歷史記錄卡片組件
 interface AnalysisHistoryCardProps {
@@ -265,6 +267,7 @@ export default function StockDetail() {
 
   const [analysis, setAnalysis] = useState<string>("");
   const [analysisCachedAt, setAnalysisCachedAt] = useState<Date | null>(null);
+  const [recommendation, setRecommendation] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string>("");
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   
@@ -366,6 +369,17 @@ export default function StockDetail() {
       });
       setAnalysis(result.analysis);
       setAnalysisCachedAt(result.cachedAt ? new Date(result.cachedAt) : null);
+      
+      // 提取建議（買入/持有/賣出）
+      let rec = null;
+      if (result.analysis.includes('買入') || result.analysis.includes('买入')) {
+        rec = '買入';
+      } else if (result.analysis.includes('賣出') || result.analysis.includes('卖出')) {
+        rec = '賣出';
+      } else if (result.analysis.includes('持有')) {
+        rec = '持有';
+      }
+      setRecommendation(rec);
       if (result.fromCache) {
         toast.info("顯示緩存的分析結果");
       } else if (forceRefresh) {
@@ -736,6 +750,9 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
+                    {/* AI 分析重點摘要卡片 */}
+                    <AnalysisSummaryCard analysis={analysis} recommendation={recommendation} />
+                    
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
                       <div className="text-xs sm:text-sm text-muted-foreground">
                         分析時間：{analysisCachedAt ? new Date(analysisCachedAt).toLocaleString('zh-TW') : '剛剛'}
@@ -935,7 +952,13 @@ export default function StockDetail() {
                         </Button>
                       </div>
                     </div>
-                    <div className="prose prose-sm sm:prose prose-slate dark:prose-invert max-w-none">
+                    {/* 使用可折疊的分段結構（手機版友善） */}
+                    <div className="block sm:hidden">
+                      <AnalysisContentAccordion analysis={analysis} />
+                    </div>
+                    
+                    {/* 桌面版保持原有的完整顯示 */}
+                    <div className="hidden sm:block prose prose-sm sm:prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{analysis}</Streamdown>
                     </div>
                   </div>
