@@ -86,22 +86,22 @@ export default function PredictionSummaryCard({ prediction }: PredictionSummaryC
       gradient: 'from-green-500 to-emerald-500', 
       icon: TrendingUp, 
       text: '看漲趨勢',
-      bg: 'from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20',
-      border: 'border-green-200 dark:border-green-800'
+      bg: 'from-green-50/50 to-emerald-50/50',
+      border: 'border-green-200'
     };
     if (trendType === 'down') return { 
       gradient: 'from-red-500 to-rose-500', 
       icon: TrendingDown, 
       text: '看跌趨勢',
-      bg: 'from-red-50/50 to-rose-50/50 dark:from-red-950/20 dark:to-rose-950/20',
-      border: 'border-red-200 dark:border-red-800'
+      bg: 'from-red-50/50 to-rose-50/50',
+      border: 'border-red-200'
     };
     return { 
       gradient: 'from-blue-500 to-cyan-500', 
       icon: Target, 
       text: '震盪整理',
-      bg: 'from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10',
-      border: 'border-primary/20 dark:border-primary/80'
+      bg: 'from-primary/5 to-accent/5',
+      border: 'border-primary/20'
     };
   };
 
@@ -143,7 +143,7 @@ export default function PredictionSummaryCard({ prediction }: PredictionSummaryC
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className={`p-2 sm:p-3 rounded-lg bg-gradient-to-br from-white to-${trend === 'up' ? 'green' : trend === 'down' ? 'red' : 'blue'}-50/50 dark:from-gray-900 dark:to-${trend === 'up' ? 'green' : trend === 'down' ? 'red' : 'blue'}-950/30 border-2 ${style.border} text-center`}
+                  className={`p-2 sm:p-3 rounded-lg bg-gradient-to-br from-white to-${trend === 'up' ? 'green' : trend === 'down' ? 'red' : 'blue'}-50/50 === 'up' ? 'green' : trend === 'down' ? 'red' : 'blue'}-950/30 border-2 ${style.border} text-center`}
                 >
                   <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-1">
                     {metric.label}
@@ -164,7 +164,7 @@ export default function PredictionSummaryCard({ prediction }: PredictionSummaryC
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`flex items-start gap-2 sm:gap-2.5 lg:gap-3 p-2.5 sm:p-3 lg:p-4 rounded-lg bg-white/60 dark:bg-black/20 border ${style.border.replace('border-', 'border-').replace('dark:border-', 'dark:border-')} hover:border-opacity-100 transition-colors duration-200`}
+                className={`flex items-start gap-2 sm:gap-2.5 lg:gap-3 p-2.5 sm:p-3 lg:p-4 rounded-lg bg-white/60 border ${style.border.replace('border-', 'border-').replace('dark:border-', 'dark:border-')} hover:border-opacity-100 transition-colors duration-200`}
               >
                 <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-r ${style.gradient} mt-1.5 sm:mt-2 flex-shrink-0`} />
                 <p className="text-xs sm:text-sm lg:text-base text-foreground/90 leading-relaxed sm:leading-relaxed lg:leading-loose flex-1">

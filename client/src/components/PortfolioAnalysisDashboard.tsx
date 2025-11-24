@@ -144,7 +144,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
       {/* 持倉分布圓餅圖 */}
       <motion.div variants={itemVariants}>
       <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -238,7 +238,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                     key={item.symbol} 
                     className={`flex items-center justify-between text-xs sm:text-sm gap-2 p-3 rounded-lg border transition-all cursor-pointer ${
                       isHighlighted 
-                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md' 
+                        ? 'border-primary bg-primary/5 shadow-md' 
                         : 'border-border/50 hover:border-border hover:bg-accent/50'
                     }`}
                     onClick={() => {
@@ -274,7 +274,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
       <motion.div className="flex flex-col gap-4 sm:gap-6" variants={itemVariants}>
         {/* 風險指標 */}
         <Card className="flex-1 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-orange-50 to-transparent dark:from-orange-950/20">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-transparent">
             <CardTitle className="flex items-center gap-2">
               <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
               風險評估
@@ -307,10 +307,10 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                 最大單一持倉佔比，越低表示風險越分散
               </p>
               {hasHighConcentration && highConcentrationStock && (
-                <div className="mt-3 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="mt-3 bg-red-50 p-3 rounded-lg border border-red-200">
                   <div className="flex gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-800 dark:text-red-200">
+                    <p className="text-xs text-red-800">
                       <span className="font-semibold">{highConcentrationStock.symbol}</span> 持倉占比達 {highConcentrationStock.percentage.toFixed(1)}%，超過 50% 警戒線，建議分散投資。
                     </p>
                   </div>
@@ -348,7 +348,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
 
         {/* 投資建議 */}
         <Card className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-transparent dark:from-green-950/20">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-transparent">
             <CardTitle className="flex items-center gap-2">
               <div className="w-1 h-6 bg-green-600 rounded-full"></div>
               投資建議
@@ -360,18 +360,18 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
               <div 
                 key={index}
                 className={`flex gap-3 p-3 rounded-lg ${
-                  rec.type === 'warning' ? 'bg-red-50 dark:bg-red-950/20' :
-                  rec.type === 'success' ? 'bg-green-50 dark:bg-green-950/20' :
-                  'bg-primary/5 dark:bg-primary/10'
+                  rec.type === 'warning' ? 'bg-red-50' :
+                  rec.type === 'success' ? 'bg-green-50' :
+                  'bg-primary/5'
                 }`}
               >
                 {rec.type === 'warning' && <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />}
                 {rec.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />}
                 {rec.type === 'info' && <TrendingUp className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />}
                 <p className={`text-sm ${
-                  rec.type === 'warning' ? 'text-red-900 dark:text-red-100' :
-                  rec.type === 'success' ? 'text-green-900 dark:text-green-100' :
-                  'text-blue-900 dark:text-blue-100'
+                  rec.type === 'warning' ? 'text-red-900' :
+                  rec.type === 'success' ? 'text-green-900' :
+                  'text-blue-900'
                 }`}>
                   {rec.message}
                 </p>
@@ -416,12 +416,12 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
             </div>
 
             {selectedStock.percentage > 50 && (
-              <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                 <div className="flex gap-2">
                   <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-orange-900 dark:text-orange-100">集中度警示</p>
-                    <p className="text-sm text-orange-800 dark:text-orange-200">
+                    <p className="text-sm font-semibold text-orange-900">集中度警示</p>
+                    <p className="text-sm text-orange-800">
                       該股票占投資組合超過 50%，建議分散投資以降低集中度風險。
                     </p>
                   </div>

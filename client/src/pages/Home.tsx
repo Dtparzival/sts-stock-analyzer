@@ -500,7 +500,7 @@ export default function Home() {
                 {/* 區塊標題 */}
                 <div className="text-center mb-8 relative">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
-                    <Sparkles className="h-5 w-5 text-accent dark:text-accent animate-pulse" />
+                    <Sparkles className="h-5 w-5 text-accent animate-pulse" />
                     <span className="text-base font-bold text-primary">為您推薦</span>
                   </div>
                   <p className="text-sm text-muted-foreground">根據您的瀏覽記錄精選推薦</p>
@@ -547,8 +547,8 @@ export default function Home() {
                         <div className="absolute top-2 right-2 z-10">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                             market === 'US' 
-                              ? 'bg-primary/20 text-primary dark:text-primary' 
-                              : 'bg-green-500/20 text-green-700 dark:text-green-300'
+                              ? 'bg-primary/20 text-primary' 
+                              : 'bg-green-500/20 text-green-700'
                           }`}>
                             <Globe className="h-3 w-3" />
                             {market === 'US' ? '美股' : '台股'}
@@ -629,8 +629,8 @@ export default function Home() {
                                 {/* 漲跌幅 */}
                                 <div className={`text-xs sm:text-sm font-semibold ${
                                   isPositive 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : 'text-red-600 dark:text-red-400'
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
                                 }`}>
                                   {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
                                 </div>

@@ -67,8 +67,8 @@ function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date 
       {/* 漲跌幅 */}
       <div className={`text-xs sm:text-sm font-semibold ${
         isPositive 
-          ? 'text-green-600 dark:text-green-400' 
-          : 'text-red-600 dark:text-red-400'
+          ? 'text-green-600' 
+          : 'text-red-600'
       }`}>
         {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
       </div>
@@ -324,8 +324,8 @@ export default function Watchlist() {
                   <div className="absolute top-2 right-2 z-10">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                       market === 'US' 
-                        ? 'bg-primary/20 text-primary dark:text-primary' 
-                        : 'bg-green-500/20 text-green-700 dark:text-green-300'
+                        ? 'bg-primary/20 text-primary' 
+                        : 'bg-green-500/20 text-green-700'
                     }`}>
                       <Globe className="h-3 w-3" />
                       {market === 'US' ? '美股' : '台股'}

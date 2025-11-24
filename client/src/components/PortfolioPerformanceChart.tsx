@@ -231,10 +231,10 @@ export function PortfolioPerformanceChart({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               <div className="p-6 bg-muted/30 rounded-xl border border-border/50 hover:border-border transition-colors">
                 <p className="text-sm font-medium text-muted-foreground mb-2">期間報酬</p>
-                <p className={`text-4xl font-bold mb-1 ${periodGainLoss >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                <p className={`text-4xl font-bold mb-1 ${periodGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {periodGainLoss >= 0 ? '+' : ''}${periodGainLoss.toFixed(2)}
                 </p>
-                <p className={`text-base font-medium ${periodGainLossPercent >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                <p className={`text-base font-medium ${periodGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {periodGainLossPercent >= 0 ? '+' : ''}{periodGainLossPercent.toFixed(2)}%
                 </p>
               </div>

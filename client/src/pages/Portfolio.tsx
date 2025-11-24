@@ -527,13 +527,13 @@ export default function Portfolio() {
                         
                         {/* 自動完成建議下拉列表 */}
                         {stockSuggestions.length > 0 && (
-                          <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-blue-300 dark:border-blue-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                          <div className="absolute z-50 w-full mt-2 bg-white border-2 border-blue-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                             {stockSuggestions.map((suggestion, index) => (
                               <button
                                 key={index}
                                 type="button"
                                 onClick={() => handleSelectSuggestion(suggestion.symbol)}
-                                className="w-full px-4 py-3 text-left hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
+                                className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-200 last:border-b-0 flex items-center gap-3"
                               >
                                 <div className="flex-shrink-0 w-16 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-md flex items-center justify-center">
                                   <span className="text-white font-bold text-sm">{suggestion.symbol}</span>
@@ -550,17 +550,17 @@ export default function Portfolio() {
                       
                       {/* 即時價格顯示 */}
                       {isLoadingPrice && (
-                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                           <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          <span className="text-sm font-medium text-gray-600">
                             正在獲取即時價格...
                           </span>
                         </div>
                       )}
                       {!isLoadingPrice && currentPrice !== null && (
-                        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <TrendingUp className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                          <span className="text-sm font-medium text-blue-700">
                             當前市價: {formData.market === "TW" ? "NT$" : "$"}{currentPrice.toFixed(2)}
                           </span>
                           <button
@@ -615,9 +615,9 @@ export default function Portfolio() {
                         </span>
                       </div>
                       {formData.shares && formData.purchasePrice && (
-                        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
                           <DollarSignIcon className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                          <span className="text-sm font-medium text-green-700">
                             總成本: {formData.market === "TW" ? "NT$" : "$"}{(parseFloat(formData.shares) * parseFloat(formData.purchasePrice)).toFixed(2)}
                           </span>
                         </div>
@@ -664,7 +664,7 @@ export default function Portfolio() {
                         setIsAddDialogOpen(false);
                         resetForm();
                       }}
-                      className="h-12 px-6 font-semibold border-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                      className="h-12 px-6 font-semibold border-2 hover:bg-gray-100 transition-all"
                     >
                       取消
                     </Button>
@@ -961,7 +961,7 @@ export default function Portfolio() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="prose prose-sm max-w-none dark:prose-invert [&>*]:mb-3 [&>h1]:text-lg [&>h2]:text-base [&>h3]:text-sm [&>ul]:pl-4 [&>ol]:pl-4">
+              <div className="prose prose-sm max-w-none [&>*]:mb-3 [&>h1]:text-lg [&>h2]:text-base [&>h3]:text-sm [&>ul]:pl-4 [&>ol]:pl-4">
                 <Streamdown>{aiAnalysis}</Streamdown>
               </div>
             </CardContent>

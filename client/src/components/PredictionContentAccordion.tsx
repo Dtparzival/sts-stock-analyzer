@@ -86,7 +86,7 @@ export default function PredictionContentAccordion({ prediction }: PredictionCon
             <AccordionItem 
               key={`section-${index}`} 
               value={`section-${index}`}
-              className="border-2 rounded-xl overflow-hidden bg-gradient-to-br from-white/50 to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50 shadow-md hover:shadow-lg transition-all duration-300"
+              className="border-2 rounded-xl overflow-hidden bg-gradient-to-br from-white/50 to-gray-50/50 shadow-md hover:shadow-lg transition-all duration-300"
             >
               <AccordionTrigger className="px-3 sm:px-6 py-3 sm:py-4 hover:no-underline group">
                 <div className="flex items-center gap-2 sm:gap-3 text-left">
@@ -103,7 +103,7 @@ export default function PredictionContentAccordion({ prediction }: PredictionCon
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="prose prose-sm sm:prose lg:prose-lg prose-slate dark:prose-invert max-w-none pt-2 sm:pt-3 lg:pt-4 [&>p]:leading-relaxed [&>p]:sm:leading-relaxed [&>p]:lg:leading-loose [&>p]:mb-3 [&>p]:sm:mb-4 [&>p]:lg:mb-6"
+                  className="prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none pt-2 sm:pt-3 lg:pt-4 [&>p]:leading-relaxed [&>p]:sm:leading-relaxed [&>p]:lg:leading-loose [&>p]:mb-3 [&>p]:sm:mb-4 [&>p]:lg:mb-6"
                 >
                   <Streamdown>{section.content}</Streamdown>
                 </motion.div>

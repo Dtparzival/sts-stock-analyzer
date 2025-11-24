@@ -76,10 +76,10 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
 
   // 根據建議類型返回樣式
   const getRecommendationStyle = (recommendation: string | null) => {
-    if (!recommendation) return { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', gradient: 'from-gray-500 to-gray-600' };
-    if (recommendation === '買入') return { bg: 'bg-green-100 dark:bg-green-950/30', text: 'text-green-700 dark:text-green-400', gradient: 'from-green-500 to-emerald-500' };
-    if (recommendation === '賣出') return { bg: 'bg-red-100 dark:bg-red-950/30', text: 'text-red-700 dark:text-red-400', gradient: 'from-red-500 to-rose-500' };
-    return { bg: 'bg-yellow-100 dark:bg-yellow-950/30', text: 'text-yellow-700 dark:text-yellow-400', gradient: 'from-yellow-500 to-amber-500' };
+    if (!recommendation) return { bg: 'bg-gray-100', text: 'text-gray-600', gradient: 'from-gray-500 to-gray-600' };
+    if (recommendation === '買入') return { bg: 'bg-green-100', text: 'text-green-700', gradient: 'from-green-500 to-emerald-500' };
+    if (recommendation === '賣出') return { bg: 'bg-red-100', text: 'text-red-700', gradient: 'from-red-500 to-rose-500' };
+    return { bg: 'bg-yellow-100', text: 'text-yellow-700', gradient: 'from-yellow-500 to-amber-500' };
   };
 
   return (
@@ -108,7 +108,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border-2 border-primary/20 dark:border-primary/80 bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 p-4 sm:p-6"
+            className="rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-4 sm:p-6"
           >
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="h-5 w-5 text-accent" />
@@ -138,7 +138,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
             </ResponsiveContainer>
             {priceChange !== null && (
               <div className="mt-4 text-center">
-                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-white/50 dark:bg-black/20">
+                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-white/50">
                   {priceChange >= 0 ? (
                     <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                   ) : (
@@ -162,7 +162,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
+              className="rounded-xl border-2 border-primary/20 overflow-hidden"
             >
               <div className="bg-gradient-to-r from-primary via-primary to-accent p-4 text-white">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -176,7 +176,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               <div className="p-4 space-y-3">
                 {/* 當時股價 */}
                 {record1.priceAtAnalysis && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
                       當時股價
@@ -186,7 +186,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                 )}
                 {/* 投資建議 */}
                 {record1.recommendation && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                     <span className="text-sm font-medium text-muted-foreground">投資建議</span>
                     <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record1.recommendation).gradient}`}>
                       <span className="text-white font-bold">{record1.recommendation}</span>
@@ -194,7 +194,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                 )}
                 {/* 分析摘要 */}
-                <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
+                <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                   <p className="text-sm font-medium text-muted-foreground mb-2">分析摘要</p>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     {record1.content.substring(0, 150)}...
@@ -208,7 +208,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
-              className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
+              className="rounded-xl border-2 border-primary/20 overflow-hidden"
             >
               <div className="bg-gradient-to-r from-accent via-accent to-primary p-4 text-white">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               <div className="p-4 space-y-3">
                 {/* 當時股價 */}
                 {record2.priceAtAnalysis && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5">
                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
                       當時股價
@@ -232,7 +232,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                 )}
                 {/* 投資建議 */}
                 {record2.recommendation && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5">
                     <span className="text-sm font-medium text-muted-foreground">投資建議</span>
                     <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record2.recommendation).gradient}`}>
                       <span className="text-white font-bold">{record2.recommendation}</span>
@@ -240,7 +240,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                 )}
                 {/* 分析摘要 */}
-                <div className="p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
+                <div className="p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5">
                   <p className="text-sm font-medium text-muted-foreground mb-2">分析摘要</p>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     {record2.content.substring(0, 150)}...
@@ -298,7 +298,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border-2 border-primary/20 dark:border-primary/80 bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 p-4"
+                  className="rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-4"
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className="h-5 w-5 text-accent" />
@@ -328,7 +328,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </ResponsiveContainer>
                   {priceChange !== null && (
                     <div className="mt-4 text-center">
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/50 dark:bg-black/20">
+                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/50">
                         {priceChange >= 0 ? (
                           <TrendingUp className="h-4 w-4 text-green-600" />
                         ) : (
@@ -356,7 +356,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
+                  className="rounded-xl border-2 border-primary/20 overflow-hidden"
                 >
                   <div className="bg-gradient-to-r from-primary via-primary to-accent p-4 text-white">
                     <h3 className="text-base font-semibold flex items-center gap-2">
@@ -369,7 +369,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                   <div className="p-4 space-y-3">
                     {record1.priceAtAnalysis && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                         <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                           <DollarSign className="h-3 w-3" />
                           當時股價
@@ -378,14 +378,14 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                       </div>
                     )}
                     {record1.recommendation && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                         <span className="text-xs font-medium text-muted-foreground">投資建議</span>
                         <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record1.recommendation).gradient}`}>
                           <span className="text-white text-xs font-bold">{record1.recommendation}</span>
                         </div>
                       </div>
                     )}
-                    <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
+                    <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                       <p className="text-xs font-medium text-muted-foreground mb-2">分析摘要</p>
                       <p className="text-xs text-foreground/80 leading-relaxed">
                         {record1.content.substring(0, 200)}...
@@ -405,7 +405,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
+                  className="rounded-xl border-2 border-primary/20 overflow-hidden"
                 >
                   <div className="bg-gradient-to-r from-accent via-accent to-primary p-4 text-white">
                     <h3 className="text-base font-semibold flex items-center gap-2">
@@ -418,7 +418,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                   <div className="p-4 space-y-3">
                     {record2.priceAtAnalysis && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5">
                         <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                           <DollarSign className="h-3 w-3" />
                           當時股價
@@ -427,14 +427,14 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                       </div>
                     )}
                     {record2.recommendation && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5">
                         <span className="text-xs font-medium text-muted-foreground">投資建議</span>
                         <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record2.recommendation).gradient}`}>
                           <span className="text-white text-xs font-bold">{record2.recommendation}</span>
                         </div>
                       </div>
                     )}
-                    <div className="p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
+                    <div className="p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5">
                       <p className="text-xs font-medium text-muted-foreground mb-2">分析摘要</p>
                       <p className="text-xs text-foreground/80 leading-relaxed">
                         {record2.content.substring(0, 200)}...

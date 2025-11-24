@@ -103,12 +103,12 @@ export default function AnalysisContentAccordion({ analysis }: AnalysisContentAc
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
-            className="border-2 border-purple-100 dark:border-purple-900 rounded-xl overflow-hidden bg-white/50 dark:bg-black/20 shadow-sm"
+            className="border-2 border-purple-100 rounded-xl overflow-hidden bg-white/50 shadow-sm"
           >
             {/* 標題按鈕 */}
             <button
               onClick={() => toggleSection(index)}
-              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-accent/10 dark:hover:bg-accent/20 transition-colors min-h-[44px]"
+              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-accent/10 transition-colors min-h-[44px]"
             >
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
@@ -137,8 +137,8 @@ export default function AnalysisContentAccordion({ analysis }: AnalysisContentAc
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden"
                 >
-                  <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 lg:pb-6 pt-0 border-t border-purple-100 dark:border-purple-900">
-                    <div className="prose prose-sm sm:prose lg:prose-lg prose-slate dark:prose-invert max-w-none mt-3 sm:mt-4 lg:mt-6 [&>p]:leading-relaxed [&>p]:sm:leading-relaxed [&>p]:lg:leading-loose [&>p]:mb-3 [&>p]:sm:mb-4 [&>p]:lg:mb-6">
+                  <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 lg:pb-6 pt-0 border-t border-purple-100">
+                    <div className="prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none mt-3 sm:mt-4 lg:mt-6 [&>p]:leading-relaxed [&>p]:sm:leading-relaxed [&>p]:lg:leading-loose [&>p]:mb-3 [&>p]:sm:mb-4 [&>p]:lg:mb-6">
                       <Streamdown>{section.content}</Streamdown>
                     </div>
                   </div>

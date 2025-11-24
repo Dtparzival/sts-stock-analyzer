@@ -62,10 +62,10 @@ function AnalysisHistoryCard({ record, index, isSelected = false, onToggleSelect
 
   // 根據建議類型返回不同的樣式
   const getRecommendationStyle = (recommendation: string | null) => {
-    if (!recommendation) return { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', gradient: 'from-gray-400 to-gray-500' };
-    if (recommendation === '買入') return { bg: 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30', text: 'text-green-700 dark:text-green-400', gradient: 'from-green-500 to-emerald-500' };
-    if (recommendation === '賣出') return { bg: 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30', text: 'text-red-700 dark:text-red-400', gradient: 'from-red-500 to-rose-500' };
-    return { bg: 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30', text: 'text-yellow-700 dark:text-yellow-400', gradient: 'from-yellow-500 to-amber-500' };
+    if (!recommendation) return { bg: 'bg-gray-100', text: 'text-gray-600', gradient: 'from-gray-400 to-gray-500' };
+    if (recommendation === '買入') return { bg: 'bg-gradient-to-r from-green-50 to-emerald-50', text: 'text-green-700', gradient: 'from-green-500 to-emerald-500' };
+    if (recommendation === '賣出') return { bg: 'bg-gradient-to-r from-red-50 to-rose-50', text: 'text-red-700', gradient: 'from-red-500 to-rose-500' };
+    return { bg: 'bg-gradient-to-r from-yellow-50 to-amber-50', text: 'text-yellow-700', gradient: 'from-yellow-500 to-amber-500' };
   };
 
   const style = getRecommendationStyle(record.recommendation);
@@ -132,7 +132,7 @@ function AnalysisHistoryCard({ record, index, isSelected = false, onToggleSelect
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-accent hover:text-accent/80 hover:bg-accent/10 dark:hover:bg-accent/20 -ml-2"
+              className="text-accent hover:text-accent/80 hover:bg-accent/10 -ml-2"
             >
               {isExpanded ? (
                 <>
@@ -753,7 +753,7 @@ export default function StockDetail() {
                                     投資建議篩選
                                   </label>
                                   <Select value={filterRecommendation} onValueChange={setFilterRecommendation}>
-                                    <SelectTrigger className="w-full bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-purple-200 dark:border-purple-800">
+                                    <SelectTrigger className="w-full bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -772,7 +772,7 @@ export default function StockDetail() {
                                     排序方式
                                   </label>
                                   <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className="w-full bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-purple-200 dark:border-purple-800">
+                                    <SelectTrigger className="w-full bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -919,7 +919,7 @@ export default function StockDetail() {
                     </div>
                     
                     {/* 桌面版保持原有的完整顯示 */}
-                    <div className="hidden sm:block prose prose-sm sm:prose prose-slate dark:prose-invert max-w-none">
+                    <div className="hidden sm:block prose prose-sm sm:prose prose-slate max-w-none">
                       <Streamdown>{analysis}</Streamdown>
                     </div>
                   </div>

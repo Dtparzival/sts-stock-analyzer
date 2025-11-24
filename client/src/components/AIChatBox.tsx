@@ -234,7 +234,7 @@ export function AIChatBox({
                       key={index}
                       onClick={() => onSendMessage(prompt)}
                       disabled={isLoading}
-                      className="rounded-xl border-2 border-accent/20 dark:border-accent/80 bg-gradient-to-br from-white to-accent/5 dark:from-gray-800 dark:to-accent/10 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-accent hover:shadow-md hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                      className="rounded-xl border-2 border-accent/20 bg-gradient-to-br from-white to-accent/5 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-accent hover:shadow-md hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                     >
                       {prompt}
                     </button>
@@ -283,11 +283,11 @@ export function AIChatBox({
                         "max-w-[80%] rounded-2xl px-4 py-3 shadow-sm",
                         message.role === "user"
                           ? "bg-gradient-primary text-white"
-                          : "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 text-foreground border border-gray-200 dark:border-gray-700"
+                          : "bg-gradient-to-br from-gray-50 to-gray-100 text-foreground border border-gray-200"
                       )}
                     >
                       {message.role === "assistant" ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <div className="prose prose-sm max-w-none">
                           <Streamdown>{message.content}</Streamdown>
                         </div>
                       ) : (
@@ -319,9 +319,9 @@ export function AIChatBox({
                   <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-primary flex items-center justify-center shadow-md animate-pulse">
                     <Sparkles className="size-4 text-white" />
                   </div>
-                  <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-4 py-3 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-3 border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin text-accent dark:text-accent" />
+                      <Loader2 className="size-4 animate-spin text-accent" />
                       <span className="text-sm text-muted-foreground">AI 正在思考中...</span>
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export function AIChatBox({
 
       {/* Quick Templates (always shown when available) */}
       {quickTemplates && quickTemplates.length > 0 && (
-        <div className="border-t bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10 px-4 py-3">
+        <div className="border-t bg-gradient-to-r from-accent/5 to-primary/5 px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {quickTemplates.map((template, index) => (
               <button
@@ -349,7 +349,7 @@ export function AIChatBox({
                   }
                 }}
                 disabled={isLoading}
-                className="rounded-lg border border-accent/30 dark:border-accent/70 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-accent hover:bg-accent/10 dark:hover:bg-accent/20 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg border border-accent/30 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-all hover:border-accent hover:bg-accent/10 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {template}
               </button>
@@ -362,7 +362,7 @@ export function AIChatBox({
       <form
         ref={inputAreaRef}
         onSubmit={handleSubmit}
-        className="flex gap-2 p-4 border-t bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 items-end"
+        className="flex gap-2 p-4 border-t bg-gradient-to-r from-gray-50 to-white items-end"
       >
         {onClearMessages && displayMessages.length > 0 && (
           <Button
@@ -370,7 +370,7 @@ export function AIChatBox({
             variant="ghost"
             size="icon"
             onClick={onClearMessages}
-            className="shrink-0 h-10 w-10 rounded-xl text-gray-500 hover:text-accent hover:bg-accent/10 dark:hover:bg-accent/20 transition-all"
+            className="shrink-0 h-10 w-10 rounded-xl text-gray-500 hover:text-accent hover:bg-accent/10 transition-all"
             title="清空對話"
           >
             <RotateCcw className="size-4" />
@@ -382,7 +382,7 @@ export function AIChatBox({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 max-h-32 resize-none min-h-10 rounded-xl border-2 focus:border-accent focus:ring-2 focus:ring-accent/20 dark:focus:ring-accent/30 transition-all"
+          className="flex-1 max-h-32 resize-none min-h-10 rounded-xl border-2 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
           rows={1}
         />
         <Button
