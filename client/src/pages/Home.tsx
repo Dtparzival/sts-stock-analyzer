@@ -394,12 +394,14 @@ export default function Home() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight px-4 animate-fade-in">
-                <span className="bg-gradient-primary bg-clip-text text-transparent">智慧投資，</span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight px-4 animate-slide-up">
+                <span className="bg-gradient-primary bg-clip-text text-transparent">
+                  智慧投資，
+                </span>
                 <br />
                 <span className="text-foreground">做出明智投資決策</span>
               </h2>
-              <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4 animate-fade-in animate-delay-100">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4 animate-fade-in animate-delay-100">
                 透過 AI 深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，
                 <br className="hidden md:block" />
                 為您的投資組合提供專業建議
@@ -411,9 +413,9 @@ export default function Home() {
               <Button
                 variant={selectedMarket === 'US' ? 'default' : 'outline'}
                 onClick={() => setSelectedMarket('US')}
-                className={`gap-2 px-6 py-3 text-sm sm:text-base font-medium transition-all duration-300 w-full sm:w-auto touch-target button-hover-enhanced ${
+                className={`gap-2 px-4 sm:px-6 py-4 sm:py-6 text-sm sm:text-base font-medium transition-all w-full sm:w-auto ${
                   selectedMarket === 'US' 
-                    ? 'bg-gradient-primary text-white shadow-lg' 
+                    ? 'bg-gradient-primary text-white shadow-lg scale-105' 
                     : 'hover:border-primary/50 hover:bg-primary/5'
                 }`}
               >
@@ -423,9 +425,9 @@ export default function Home() {
               <Button
                 variant={selectedMarket === 'TW' ? 'default' : 'outline'}
                 onClick={() => setSelectedMarket('TW')}
-                className={`gap-2 px-6 py-3 text-sm sm:text-base font-medium transition-all duration-300 w-full sm:w-auto touch-target button-hover-enhanced ${
+                className={`gap-2 px-4 sm:px-6 py-4 sm:py-6 text-sm sm:text-base font-medium transition-all w-full sm:w-auto ${
                   selectedMarket === 'TW' 
-                    ? 'bg-gradient-primary text-white shadow-lg' 
+                    ? 'bg-gradient-primary text-white shadow-lg scale-105' 
                     : 'hover:border-primary/50 hover:bg-primary/5'
                 }`}
               >
@@ -478,10 +480,10 @@ export default function Home() {
                     <Button 
                       type="submit" 
                       size="lg" 
-                      className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 touch-target button-gold-hover"
+                      className="h-14 px-8 text-base font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover"
                     >
-                      <span className="hidden sm:inline">搜尋</span>
-                      <ArrowRight className="h-5 w-5 sm:ml-2" />
+                      搜尋
+                      <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -518,7 +520,7 @@ export default function Home() {
                 </div>
                 
                 {/* 推薦卡片網格 */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                   {filteredRecommendations.slice(0, 6).map((item) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
@@ -538,7 +540,7 @@ export default function Home() {
                     return (
                       <Card
                         key={item.id}
-                        className="group relative overflow-hidden cursor-pointer card-hover-enhanced card-active bg-gradient-to-br from-card via-card to-primary/5"
+                        className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
                         onClick={() => setLocation(`/stock/${item.symbol}`)}
                       >
                         {/* 市場標籤 */}
@@ -556,7 +558,7 @@ export default function Home() {
                         {/* 漸層背景裝飾 */}
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
-                        <CardContent className="relative p-4 md:p-5 flex flex-col items-center justify-center min-h-[160px] md:min-h-[140px] touch-target">
+                        <CardContent className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[120px]">
                           {/* 股票圖標 */}
                           <div className="mb-2 sm:mb-3 p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
                             <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
