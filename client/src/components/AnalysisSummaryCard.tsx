@@ -22,25 +22,49 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
       .trim();
     
     // 嘗試提取包含關鍵詞的句子
-    const keywords = ['建議', '風險', '機會', '趨勢', '預期', '目標', '支撐', '阻力', '突破'];
+    const keywords = ['建議', '風險', '機會', '趨勢', '預期', '目標', '支撐', '阻力', '突破', '評級', '潛力'];
     const sentences = cleanText.split(/[。！？\n]/);
     
     keywords.forEach(keyword => {
-      const found = sentences.find(s => s.includes(keyword) && s.length > 10 && s.length < 100);
-      if (found && points.length < 3) {
+      const found = sentences.find(s => s.includes(keyword) && s.length > 10 && s.length < 120);
+      if (found && points.length < 4) {
         points.push(found.trim());
       }
     });
     
     // 如果沒找到足夠的關鍵點，使用前幾句
     if (points.length === 0) {
-      points.push(...sentences.slice(0, 2).filter(s => s.length > 10).map(s => s.trim()));
+      points.push(...sentences.slice(0, 3).filter(s => s.length > 10).map(s => s.trim()));
     }
     
-    return points.slice(0, 3);
+    return points.slice(0, 4);
+  };
+
+  // 提取關鍵指標（數字、百分比、價格等）
+  const extractKeyMetrics = (text: string): Array<{label: string, value: string}> => {
+    const metrics: Array<{label: string, value: string}> = [];
+    
+    // 匹配常見的指標模式
+    const patterns = [
+      { regex: /目標價[：:]*\s*([\d.,]+)/i, label: '目標價' },
+      { regex: /市盈率[：:]*\s*([\d.,]+)/i, label: 'P/E' },
+      { regex: /漲幅[：:]*\s*([\d.,]+%)/i, label: '預期漲幅' },
+      { regex: /風險等級[：:]*\s*(\S+)/i, label: '風險等級' },
+      { regex: /評級[：:]*\s*(\S+)/i, label: '評級' },
+    ];
+    
+    patterns.forEach(({ regex, label }) => {
+      const match = text.match(regex);
+      if (match && match[1] && metrics.length < 3) {
+        metrics.push({ label, value: match[1].trim() });
+      }
+    });
+    
+    return metrics;
   };
 
   const keyPoints = extractKeyPoints(analysis);
+  const keyMetrics = extractKeyMetrics(analysis);
 
   // 根據建議類型返回樣式
   const getRecommendationStyle = (rec: string | null) => {
@@ -81,6 +105,28 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
             </div>
           )}
 
+          {/* 關鍵指標（如果有）*/}
+          {keyMetrics.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+              {keyMetrics.map((metric, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-white to-purple-50/50 dark:from-gray-900 dark:to-purple-950/30 border-2 border-purple-200 dark:border-purple-800 text-center"
+                >
+                  <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">
+                    {metric.label}
+                  </div>
+                  <div className={`text-sm sm:text-base font-bold bg-gradient-to-r ${style.gradient} bg-clip-text text-transparent`}>
+                    {metric.value}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
           {/* 關鍵要點列表 */}
           <div className="space-y-2 sm:space-y-3">
             {keyPoints.map((point, index) => (
@@ -89,7 +135,7 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-white/60 dark:bg-black/20 border border-purple-100 dark:border-purple-900"
+                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-white/60 dark:bg-black/20 border border-purple-100 dark:border-purple-900 hover:border-purple-300 dark:hover:border-purple-700 transition-colors duration-200"
               >
                 <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-r ${style.gradient} mt-1.5 sm:mt-2 flex-shrink-0`} />
                 <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed flex-1">

@@ -39,6 +39,7 @@ import AnalysisSummaryCard from "@/components/AnalysisSummaryCard";
 import AnalysisContentAccordion from "@/components/AnalysisContentAccordion";
 import PredictionSummaryCard from "@/components/PredictionSummaryCard";
 import PredictionContentAccordion from "@/components/PredictionContentAccordion";
+import AILoadingAnimation from "@/components/AILoadingAnimation";
 
 // AI 分析歷史記錄卡片組件
 interface AnalysisHistoryCardProps {
@@ -701,49 +702,7 @@ export default function StockDetail() {
                 {!analysis ? (
                   <div className="text-center py-8 sm:py-12 lg:py-16">
                     {isAnalyzing ? (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-4 sm:space-y-6"
-                      >
-                        <div className="flex justify-center">
-                          <motion.div
-                            animate={{
-                              rotate: 360,
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-                              scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
-                            }}
-                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
-                          >
-                            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                          </motion.div>
-                        </div>
-                        <motion.div
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="text-base sm:text-lg font-semibold text-foreground"
-                        >
-                          AI 正在深度分析中...
-                        </motion.div>
-                        <div className="flex justify-center gap-2">
-                          {[0, 1, 2].map((i) => (
-                            <motion.div
-                              key={i}
-                              animate={{ y: [0, -10, 0] }}
-                              transition={{
-                                duration: 0.6,
-                                repeat: Infinity,
-                                delay: i * 0.2,
-                                ease: "easeInOut",
-                              }}
-                              className="w-2 h-2 rounded-full bg-gradient-primary"
-                            />
-                          ))}
-                        </div>
-                      </motion.div>
+                      <AILoadingAnimation type="analysis" />
                     ) : (
                       <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
                         開始分析
@@ -981,49 +940,7 @@ export default function StockDetail() {
                 {!prediction ? (
                   <div className="text-center py-8 sm:py-12 lg:py-16">
                     {isPredicting ? (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-4 sm:space-y-6"
-                      >
-                        <div className="flex justify-center">
-                          <motion.div
-                            animate={{
-                              rotate: 360,
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-                              scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
-                            }}
-                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-primary shadow-lg flex items-center justify-center"
-                          >
-                            <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                          </motion.div>
-                        </div>
-                        <motion.div
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="text-base sm:text-lg font-semibold text-foreground"
-                        >
-                          AI 正在預測未來趨勢...
-                        </motion.div>
-                        <div className="flex justify-center gap-2">
-                          {[0, 1, 2].map((i) => (
-                            <motion.div
-                              key={i}
-                              animate={{ y: [0, -10, 0] }}
-                              transition={{
-                                duration: 0.6,
-                                repeat: Infinity,
-                                delay: i * 0.2,
-                                ease: "easeInOut",
-                              }}
-                              className="w-2 h-2 rounded-full bg-gradient-primary"
-                            />
-                          ))}
-                        </div>
-                      </motion.div>
+                      <AILoadingAnimation type="prediction" />
                     ) : (
                       <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
                         開始預測
