@@ -128,17 +128,17 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
           )}
 
           {/* 關鍵要點列表 */}
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2 sm:space-y-2.5 lg:space-y-3">
             {keyPoints.map((point, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-white/60 dark:bg-black/20 border border-purple-100 dark:border-purple-900 hover:border-purple-300 dark:hover:border-purple-700 transition-colors duration-200"
+                className="flex items-start gap-2 sm:gap-2.5 lg:gap-3 p-2.5 sm:p-3 lg:p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-purple-100 dark:border-purple-900 hover:border-purple-300 dark:hover:border-purple-700 transition-colors duration-200"
               >
                 <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-r ${style.gradient} mt-1.5 sm:mt-2 flex-shrink-0`} />
-                <p className="text-xs sm:text-sm lg:text-base text-foreground/90 leading-relaxed lg:leading-loose flex-1">
+                <p className="text-xs sm:text-sm lg:text-base text-foreground/90 leading-relaxed sm:leading-relaxed lg:leading-loose flex-1">
                   {point}
                 </p>
               </motion.div>

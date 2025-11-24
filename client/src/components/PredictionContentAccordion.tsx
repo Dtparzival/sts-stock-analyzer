@@ -103,7 +103,7 @@ export default function PredictionContentAccordion({ prediction }: PredictionCon
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="prose prose-sm sm:prose lg:prose-lg prose-slate dark:prose-invert max-w-none pt-2 sm:pt-3 lg:pt-4 [&>p]:leading-relaxed lg:[&>p]:leading-loose [&>p]:mb-4 lg:[&>p]:mb-6"
+                  className="prose prose-sm sm:prose lg:prose-lg prose-slate dark:prose-invert max-w-none pt-2 sm:pt-3 lg:pt-4 [&>p]:leading-relaxed [&>p]:sm:leading-relaxed [&>p]:lg:leading-loose [&>p]:mb-3 [&>p]:sm:mb-4 [&>p]:lg:mb-6"
                 >
                   <Streamdown>{section.content}</Streamdown>
                 </motion.div>
