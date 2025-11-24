@@ -148,7 +148,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+                <div className="w-1 h-6 bg-primary rounded-full"></div>
                 持倉分布
                 {hasHighConcentration && (
                   <div className="relative group">
@@ -238,7 +238,7 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                     key={item.symbol} 
                     className={`flex items-center justify-between text-xs sm:text-sm gap-2 p-3 rounded-lg border transition-all cursor-pointer ${
                       isHighlighted 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-md' 
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md' 
                         : 'border-border/50 hover:border-border hover:bg-accent/50'
                     }`}
                     onClick={() => {
@@ -362,12 +362,12 @@ export function PortfolioAnalysisDashboard({ distribution, riskMetrics }: Portfo
                 className={`flex gap-3 p-3 rounded-lg ${
                   rec.type === 'warning' ? 'bg-red-50 dark:bg-red-950/20' :
                   rec.type === 'success' ? 'bg-green-50 dark:bg-green-950/20' :
-                  'bg-blue-50 dark:bg-blue-950/20'
+                  'bg-primary/5 dark:bg-primary/10'
                 }`}
               >
                 {rec.type === 'warning' && <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />}
                 {rec.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />}
-                {rec.type === 'info' && <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />}
+                {rec.type === 'info' && <TrendingUp className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />}
                 <p className={`text-sm ${
                   rec.type === 'warning' ? 'text-red-900 dark:text-red-100' :
                   rec.type === 'success' ? 'text-green-900 dark:text-green-100' :

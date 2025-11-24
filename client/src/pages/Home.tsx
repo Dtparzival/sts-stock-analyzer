@@ -324,7 +324,7 @@ export default function Home() {
               <div className="p-2 rounded-lg bg-gradient-primary">
                 <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent truncate max-w-[120px] md:max-w-none">
+              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent truncate max-w-[120px] md:max-w-none">
                 {APP_TITLE}
               </h1>
             </div>
@@ -383,8 +383,8 @@ export default function Home() {
         <div className="relative mb-20">
           {/* 背景裝飾 */}
           <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
           </div>
           
           <div className="text-center max-w-4xl mx-auto">
@@ -395,7 +395,7 @@ export default function Home() {
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                   精準掌握市場脈動
                 </span>
                 <br />
@@ -499,9 +499,9 @@ export default function Home() {
                 <div className="mt-12 max-w-6xl mx-auto px-4">
                 {/* 區塊標題 */}
                 <div className="text-center mb-8 relative">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
-                    <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-pulse" />
-                    <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">為您推薦</span>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
+                    <Sparkles className="h-5 w-5 text-accent dark:text-accent animate-pulse" />
+                    <span className="text-base font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent">為您推薦</span>
                   </div>
                   <p className="text-sm text-muted-foreground">根據您的瀏覽記錄精選推薦</p>
                   
@@ -547,7 +547,7 @@ export default function Home() {
                         <div className="absolute top-2 right-2 z-10">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                             market === 'US' 
-                              ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' 
+                              ? 'bg-primary/20 text-primary dark:text-primary' 
                               : 'bg-green-500/20 text-green-700 dark:text-green-300'
                           }`}>
                             <Globe className="h-3 w-3" />
@@ -770,8 +770,8 @@ export default function Home() {
             
             <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/history")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-blue-500/10 w-fit">
-                  <History className="h-10 w-10 text-blue-600" />
+                <div className="mx-auto mb-4 p-4 rounded-2xl bg-primary/10 w-fit">
+                  <History className="h-10 w-10 text-primary" />
                 </div>
                 <CardTitle className="text-xl mb-2">搜尋歷史</CardTitle>
                 <CardDescription className="text-base">
@@ -815,7 +815,7 @@ export default function Home() {
         {/* CTA Section - 全新設計 */}
         {!user && (
           <Card className="relative overflow-hidden border-2 border-primary/30 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-blue-600/20"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/20 to-primary/20"></div>
             <CardContent className="relative text-center py-16 px-6">
               <div className="max-w-2xl mx-auto">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
@@ -824,7 +824,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight">
                   開始您的
-                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> 智能投資 </span>
+                  <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> 智能投資 </span>
                   之旅
                 </h3>
                 <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
@@ -852,7 +852,7 @@ export default function Home() {
               <div className="p-2 rounded-lg bg-gradient-primary">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {APP_TITLE}
               </span>
             </div>

@@ -324,7 +324,7 @@ export default function Watchlist() {
                   <div className="absolute top-2 right-2 z-10">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                       market === 'US' 
-                        ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' 
+                        ? 'bg-primary/20 text-primary dark:text-primary' 
                         : 'bg-green-500/20 text-green-700 dark:text-green-300'
                     }`}>
                       <Globe className="h-3 w-3" />

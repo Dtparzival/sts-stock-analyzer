@@ -124,7 +124,7 @@ export default function ShareButton({
                 onClick={handleCopyLink}
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-blue-500 text-blue-600 hover:bg-blue-50 transition-colors"
+                className="shrink-0 border-primary text-primary hover:bg-primary/10 transition-colors"
               >
                 {copied ? (
                   <Check className="w-4 h-4" />

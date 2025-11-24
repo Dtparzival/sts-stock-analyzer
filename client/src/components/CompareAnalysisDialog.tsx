@@ -87,11 +87,11 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
       <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] sm:w-full overflow-hidden flex flex-col">
         <DialogHeader className="border-b pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-primary to-accent flex items-center justify-center">
               <GitCompare className="h-6 w-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 AI 分析對比
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
@@ -108,10 +108,10 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 p-4 sm:p-6"
+            className="rounded-xl border-2 border-primary/20 dark:border-primary/80 bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 p-4 sm:p-6"
           >
             <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="h-5 w-5 text-purple-600" />
+              <BarChart3 className="h-5 w-5 text-accent" />
               <h3 className="text-base sm:text-lg font-semibold">股價變化趋勢</h3>
             </div>
             <ResponsiveContainer width="100%" height={200}>
@@ -162,9 +162,9 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden"
+              className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 text-white">
+              <div className="bg-gradient-to-r from-primary via-primary to-accent p-4 text-white">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   第一次分析
@@ -176,7 +176,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               <div className="p-4 space-y-3">
                 {/* 當時股價 */}
                 {record1.priceAtAnalysis && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
                       當時股價
@@ -186,7 +186,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                 )}
                 {/* 投資建議 */}
                 {record1.recommendation && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
                     <span className="text-sm font-medium text-muted-foreground">投資建議</span>
                     <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record1.recommendation).gradient}`}>
                       <span className="text-white font-bold">{record1.recommendation}</span>
@@ -194,7 +194,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                 )}
                 {/* 分析摘要 */}
-                <div className="p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+                <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
                   <p className="text-sm font-medium text-muted-foreground mb-2">分析摘要</p>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     {record1.content.substring(0, 150)}...
@@ -208,9 +208,9 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
-              className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden"
+              className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 text-white">
+              <div className="bg-gradient-to-r from-accent via-accent to-primary p-4 text-white">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   第二次分析
@@ -222,7 +222,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
               <div className="p-4 space-y-3">
                 {/* 當時股價 */}
                 {record2.priceAtAnalysis && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
                       當時股價
@@ -232,7 +232,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                 )}
                 {/* 投資建議 */}
                 {record2.recommendation && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
                     <span className="text-sm font-medium text-muted-foreground">投資建議</span>
                     <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record2.recommendation).gradient}`}>
                       <span className="text-white font-bold">{record2.recommendation}</span>
@@ -240,7 +240,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                 )}
                 {/* 分析摘要 */}
-                <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                <div className="p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
                   <p className="text-sm font-medium text-muted-foreground mb-2">分析摘要</p>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     {record2.content.substring(0, 150)}...
@@ -298,10 +298,10 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 p-4"
+                  className="rounded-xl border-2 border-primary/20 dark:border-primary/80 bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 p-4"
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <BarChart3 className="h-5 w-5 text-purple-600" />
+                    <BarChart3 className="h-5 w-5 text-accent" />
                     <h3 className="text-base font-semibold">股價變化趋勢</h3>
                   </div>
                   <ResponsiveContainer width="100%" height={180}>
@@ -356,9 +356,9 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden"
+                  className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
                 >
-                  <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 text-white">
+                  <div className="bg-gradient-to-r from-primary via-primary to-accent p-4 text-white">
                     <h3 className="text-base font-semibold flex items-center gap-2">
                       <Clock className="h-4 w-4" />
                       第一次分析
@@ -369,7 +369,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                   <div className="p-4 space-y-3">
                     {record1.priceAtAnalysis && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
                         <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                           <DollarSign className="h-3 w-3" />
                           當時股價
@@ -378,14 +378,14 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                       </div>
                     )}
                     {record1.recommendation && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
                         <span className="text-xs font-medium text-muted-foreground">投資建議</span>
                         <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record1.recommendation).gradient}`}>
                           <span className="text-white text-xs font-bold">{record1.recommendation}</span>
                         </div>
                       </div>
                     )}
-                    <div className="p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
+                    <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10">
                       <p className="text-xs font-medium text-muted-foreground mb-2">分析摘要</p>
                       <p className="text-xs text-foreground/80 leading-relaxed">
                         {record1.content.substring(0, 200)}...
@@ -405,9 +405,9 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden"
+                  className="rounded-xl border-2 border-primary/20 dark:border-primary/80 overflow-hidden"
                 >
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 text-white">
+                  <div className="bg-gradient-to-r from-accent via-accent to-primary p-4 text-white">
                     <h3 className="text-base font-semibold flex items-center gap-2">
                       <Clock className="h-4 w-4" />
                       第二次分析
@@ -418,7 +418,7 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                   </div>
                   <div className="p-4 space-y-3">
                     {record2.priceAtAnalysis && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
                         <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                           <DollarSign className="h-3 w-3" />
                           當時股價
@@ -427,14 +427,14 @@ export default function CompareAnalysisDialog({ open, onOpenChange, records, sym
                       </div>
                     )}
                     {record2.recommendation && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
                         <span className="text-xs font-medium text-muted-foreground">投資建議</span>
                         <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${getRecommendationStyle(record2.recommendation).gradient}`}>
                           <span className="text-white text-xs font-bold">{record2.recommendation}</span>
                         </div>
                       </div>
                     )}
-                    <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                    <div className="p-3 rounded-lg bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10">
                       <p className="text-xs font-medium text-muted-foreground mb-2">分析摘要</p>
                       <p className="text-xs text-foreground/80 leading-relaxed">
                         {record2.content.substring(0, 200)}...

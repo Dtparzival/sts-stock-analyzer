@@ -234,7 +234,7 @@ export function AIChatBox({
                       key={index}
                       onClick={() => onSendMessage(prompt)}
                       disabled={isLoading}
-                      className="rounded-xl border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-950 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-purple-400 hover:shadow-md hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                      className="rounded-xl border-2 border-accent/20 dark:border-accent/80 bg-gradient-to-br from-white to-accent/5 dark:from-gray-800 dark:to-accent/10 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-accent hover:shadow-md hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                     >
                       {prompt}
                     </button>
@@ -273,7 +273,7 @@ export function AIChatBox({
                       }
                     >
                     {message.role === "assistant" && (
-                      <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-md">
+                      <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-primary flex items-center justify-center shadow-md">
                         <Sparkles className="size-4 text-white" />
                       </div>
                     )}
@@ -282,7 +282,7 @@ export function AIChatBox({
                       className={cn(
                         "max-w-[80%] rounded-2xl px-4 py-3 shadow-sm",
                         message.role === "user"
-                          ? "bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 text-white"
+                          ? "bg-gradient-primary text-white"
                           : "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 text-foreground border border-gray-200 dark:border-gray-700"
                       )}
                     >
@@ -316,12 +316,12 @@ export function AIChatBox({
                       : undefined
                   }
                 >
-                  <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-md animate-pulse">
+                  <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-primary flex items-center justify-center shadow-md animate-pulse">
                     <Sparkles className="size-4 text-white" />
                   </div>
                   <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-4 py-3 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin text-purple-600 dark:text-purple-400" />
+                      <Loader2 className="size-4 animate-spin text-accent dark:text-accent" />
                       <span className="text-sm text-muted-foreground">AI 正在思考中...</span>
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export function AIChatBox({
 
       {/* Quick Templates (always shown when available) */}
       {quickTemplates && quickTemplates.length > 0 && (
-        <div className="border-t bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 px-4 py-3">
+        <div className="border-t bg-gradient-to-r from-accent/5 to-primary/5 dark:from-accent/10 dark:to-primary/10 px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {quickTemplates.map((template, index) => (
               <button
@@ -349,7 +349,7 @@ export function AIChatBox({
                   }
                 }}
                 disabled={isLoading}
-                className="rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg border border-accent/30 dark:border-accent/70 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 transition-all hover:border-accent hover:bg-accent/10 dark:hover:bg-accent/20 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {template}
               </button>
@@ -370,7 +370,7 @@ export function AIChatBox({
             variant="ghost"
             size="icon"
             onClick={onClearMessages}
-            className="shrink-0 h-10 w-10 rounded-xl text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950 transition-all"
+            className="shrink-0 h-10 w-10 rounded-xl text-gray-500 hover:text-accent hover:bg-accent/10 dark:hover:bg-accent/20 transition-all"
             title="清空對話"
           >
             <RotateCcw className="size-4" />
@@ -382,14 +382,14 @@ export function AIChatBox({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 max-h-32 resize-none min-h-10 rounded-xl border-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900 transition-all"
+          className="flex-1 max-h-32 resize-none min-h-10 rounded-xl border-2 focus:border-accent focus:ring-2 focus:ring-accent/20 dark:focus:ring-accent/30 transition-all"
           rows={1}
         />
         <Button
           type="submit"
           size="icon"
           disabled={!input.trim() || isLoading}
-          className="shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 h-10 w-10 rounded-xl bg-gradient-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <Loader2 className="size-4 animate-spin" />

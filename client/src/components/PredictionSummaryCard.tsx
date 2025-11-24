@@ -100,8 +100,8 @@ export default function PredictionSummaryCard({ prediction }: PredictionSummaryC
       gradient: 'from-blue-500 to-cyan-500', 
       icon: Target, 
       text: '震盪整理',
-      bg: 'from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20',
-      border: 'border-blue-200 dark:border-blue-800'
+      bg: 'from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10',
+      border: 'border-primary/20 dark:border-primary/80'
     };
   };
 

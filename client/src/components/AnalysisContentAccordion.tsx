@@ -108,7 +108,7 @@ export default function AnalysisContentAccordion({ analysis }: AnalysisContentAc
             {/* 標題按鈕 */}
             <button
               onClick={() => toggleSection(index)}
-              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-purple-50/50 dark:hover:bg-purple-950/30 transition-colors min-h-[44px]"
+              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-accent/10 dark:hover:bg-accent/20 transition-colors min-h-[44px]"
             >
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">

@@ -132,7 +132,7 @@ function AnalysisHistoryCard({ record, index, isSelected = false, onToggleSelect
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 -ml-2"
+              className="text-accent hover:text-accent/80 hover:bg-accent/10 dark:hover:bg-accent/20 -ml-2"
             >
               {isExpanded ? (
                 <>
@@ -632,7 +632,7 @@ export default function StockDetail() {
                   </div>
                   {(stockData as any)._metadata.isFromCache && (
                     <Badge variant="secondary" className="gap-1.5">
-                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                      <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
                       使用緩存數據
                     </Badge>
                   )}
