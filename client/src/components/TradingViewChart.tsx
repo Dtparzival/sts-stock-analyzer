@@ -266,14 +266,16 @@ export default function TradingViewChart({
 
     chartRef.current = chart;
 
-    // 創建 K 線系列
+    // 創建 K 線系列（使用專業信任藍配色方案）
+    const upColor = "#3b82f6"; // 藍色（上漲）
+    const downColor = "#ef4444"; // 紅色（下跌）
     const candlestickSeriesInstance = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e", // 綠色（上漲）
-      downColor: "#ef4444", // 紅色（下跌）
-      borderUpColor: "#22c55e",
-      borderDownColor: "#ef4444",
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
+      upColor: upColor,
+      downColor: downColor,
+      borderUpColor: upColor,
+      borderDownColor: downColor,
+      wickUpColor: upColor,
+      wickDownColor: downColor,
     });
 
     candlestickSeriesRef.current = candlestickSeriesInstance as any;
@@ -286,8 +288,8 @@ export default function TradingViewChart({
 
       candlestickSeriesInstance.createPriceLine({
         price: lastPrice,
-        color: isUp ? "#22c55e" : "#ef4444",
-        lineWidth: 1,
+        color: isUp ? "#3b82f6" : "#ef4444", // 使用藍色表示上漲
+        lineWidth: 2,
         lineStyle: 2, // Dashed
         axisLabelVisible: true,
         title: "當前價格",
@@ -926,7 +928,7 @@ export default function TradingViewChart({
           className="fixed z-50 min-w-[130px] rounded-md border bg-background/98 backdrop-blur-sm p-1.5 text-[10px] shadow-md pointer-events-none"
           style={{
             ...getTooltipPosition(),
-            borderColor: tooltipData.changePercent >= 0 ? "#22c55e" : "#ef4444",
+            borderColor: tooltipData.changePercent >= 0 ? "#3b82f6" : "#ef4444",
             borderWidth: "1px",
           }}
         >
