@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -88,41 +88,7 @@
   --sidebar-ring: oklch(0.623 0.214 259.815);
 }
 
-.dark {
-  /* Professional Trust Blue - Deep navy blue background with gold accents */
-  --primary: oklch(0.55 0.18 240);
-  --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.55 0.18 240);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --background: oklch(0.15 0.05 240);
-  --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.20 0.05 240);
-  --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.20 0.05 240);
-  --popover-foreground: oklch(0.95 0.01 240);
-  --secondary: oklch(0.75 0.15 80);
-  --secondary-foreground: oklch(0.15 0.05 240);
-  --muted: oklch(0.28 0.05 240);
-  --muted-foreground: oklch(0.65 0.03 240);
-  --accent: oklch(0.75 0.15 80);
-  --accent-foreground: oklch(0.15 0.05 240);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.30 0.05 240);
-  --input: oklch(0.30 0.05 240);
-  --ring: oklch(0.55 0.18 240);
-  --chart-1: oklch(0.55 0.18 240);
-  --chart-2: oklch(0.75 0.15 80);
-  --chart-3: oklch(0.60 0.15 220);
-  --chart-4: oklch(0.50 0.20 260);
-  --chart-5: oklch(0.65 0.12 200);
-  --sidebar: oklch(0.20 0.05 240);
-  --sidebar-foreground: oklch(0.95 0.01 240);
-  --sidebar-accent: oklch(0.28 0.05 240);
-  --sidebar-accent-foreground: oklch(0.95 0.01 240);
-  --sidebar-border: oklch(0.30 0.05 240);
-  --sidebar-ring: oklch(0.55 0.18 240);
-}
+
 
 @layer base {
   * {
@@ -139,7 +105,6 @@
     font-family: 'IBM Plex Mono', 'Courier New', monospace;
   }
   button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
   [type="submit"]:not(:disabled),
   [type="reset"]:not(:disabled),
@@ -329,7 +294,7 @@
     @apply hidden sm:block;
   }
   
-  /* 觸控友好的按鈕尺寸（符合 WCAG 2.1 標準） */
+  /* 觸控友好的按鈕尺寸 */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
   }
