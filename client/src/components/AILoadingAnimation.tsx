@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Loader2, TrendingUp } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface AILoadingAnimationProps {
@@ -26,8 +26,7 @@ export default function AILoadingAnimation({ type }: AILoadingAnimationProps) {
   const [currentStep, setCurrentStep] = useState(0);
   
   const steps = type === "analysis" ? analysisSteps : predictionSteps;
-  const icon = type === "analysis" ? Loader2 : TrendingUp;
-  const Icon = icon;
+  const Icon = Loader2;
 
   useEffect(() => {
     // 模擬進度增長

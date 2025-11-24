@@ -116,10 +116,10 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="p-2 sm:p-3 rounded-lg bg-gradient-to-br from-white to-purple-50/50 dark:from-gray-900 dark:to-purple-950/30 border-2 border-purple-200 dark:border-purple-800 text-center"
                 >
-                  <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">
+                  <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-1">
                     {metric.label}
                   </div>
-                  <div className={`text-sm sm:text-base font-bold bg-gradient-to-r ${style.gradient} bg-clip-text text-transparent`}>
+                  <div className={`text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r ${style.gradient} bg-clip-text text-transparent`}>
                     {metric.value}
                   </div>
                 </motion.div>
@@ -138,7 +138,7 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
                 className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-white/60 dark:bg-black/20 border border-purple-100 dark:border-purple-900 hover:border-purple-300 dark:hover:border-purple-700 transition-colors duration-200"
               >
                 <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gradient-to-r ${style.gradient} mt-1.5 sm:mt-2 flex-shrink-0`} />
-                <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed flex-1">
+                <p className="text-xs sm:text-sm lg:text-base text-foreground/90 leading-relaxed lg:leading-loose flex-1">
                   {point}
                 </p>
               </motion.div>
