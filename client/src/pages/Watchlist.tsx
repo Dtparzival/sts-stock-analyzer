@@ -61,11 +61,11 @@ function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
       {/* 當前股價 */}
-      <div className="text-sm sm:text-base font-bold text-foreground">
+      <div className="number-display text-sm sm:text-base font-bold text-foreground">
         ${currentPrice.toFixed(2)}
       </div>
       {/* 漲跌幅 */}
-      <div className={`text-xs sm:text-sm font-semibold ${
+      <div className={`number-display text-xs sm:text-sm font-semibold ${
         isPositive 
           ? 'text-green-600' 
           : 'text-red-600'

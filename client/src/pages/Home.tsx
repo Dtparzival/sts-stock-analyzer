@@ -394,14 +394,14 @@ export default function Home() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                <span className="text-primary drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]">
-                  精準掌握市場脈動
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight px-4 animate-slide-up">
+                <span className="bg-gradient-primary bg-clip-text text-transparent">
+                  智慧投資，
                 </span>
                 <br />
                 <span className="text-foreground">做出明智投資決策</span>
               </h2>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4 animate-fade-in animate-delay-100">
                 透過 AI 深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，
                 <br className="hidden md:block" />
                 為您的投資組合提供專業建議
@@ -480,7 +480,7 @@ export default function Home() {
                     <Button 
                       type="submit" 
                       size="lg" 
-                      className="h-14 px-8 text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover"
+                      className="h-14 px-8 text-base font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover"
                     >
                       搜尋
                       <ArrowRight className="ml-2 h-5 w-5" />
@@ -623,11 +623,11 @@ export default function Home() {
                             return (
                               <div className="flex flex-col items-center gap-1 w-full">
                                 {/* 當前股價 */}
-                                <div className="text-sm sm:text-base font-bold text-foreground">
+                                <div className="number-display text-sm sm:text-base font-bold text-foreground">
                                   ${currentPrice.toFixed(2)}
                                 </div>
                                 {/* 漲跌幅 */}
-                                <div className={`text-xs sm:text-sm font-semibold ${
+                                <div className={`number-display text-xs sm:text-sm font-semibold ${
                                   isPositive 
                                     ? 'text-green-600' 
                                     : 'text-red-600'
@@ -698,9 +698,9 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-100" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-secondary w-fit">
+                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-secondary w-fit shadow-blue">
                   <BarChart3 className="h-10 w-10 text-white" />
                 </div>
                 <CardTitle className="text-xl mb-2">即時股票數據</CardTitle>
@@ -710,9 +710,9 @@ export default function Home() {
               </CardHeader>
             </Card>
 
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <Card className="card-hover border-2 hover:border-gold cursor-pointer group animate-fade-in animate-delay-200 shadow-gold" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-primary w-fit">
+                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-gold w-fit shadow-gold-lg">
                   <Brain className="h-10 w-10 text-white" />
                 </div>
                 <CardTitle className="text-xl mb-2">AI 投資分析</CardTitle>
@@ -722,7 +722,7 @@ export default function Home() {
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group" onClick={() => setLocation("/portfolio")}>
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-300" onClick={() => setLocation("/portfolio")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-accent w-fit">
                   <Wallet className="h-10 w-10 text-white" />

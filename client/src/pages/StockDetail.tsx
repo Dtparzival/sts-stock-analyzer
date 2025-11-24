@@ -103,8 +103,8 @@ function AnalysisHistoryCard({ record, index, isSelected = false, onToggleSelect
                 })}
               </div>
               {record.priceAtAnalysis && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  當時股價: <span className="font-semibold">${(record.priceAtAnalysis / 100).toFixed(2)}</span>
+                 <div className="text-xs text-muted-foreground mt-1">
+                  當時股價: <span className="number-display font-semibold">${(record.priceAtAnalysis / 100).toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -557,7 +557,7 @@ export default function StockDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-border">
               <div className="text-center md:text-left">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">當前價格</p>
-                <p className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{currencySymbol}{currentPrice?.toFixed(2)}</p>
+                <p className="number-display text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{currencySymbol}{currentPrice?.toFixed(2)}</p>
               </div>
               <div className="text-center md:text-left">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">漲跌幅</p>
@@ -572,10 +572,10 @@ export default function StockDetail() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className={`text-2xl sm:text-3xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'} break-words`}>
+                    <p className={`number-display text-2xl sm:text-3xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'} break-words`}>
                       {priceChange >= 0 ? '+' : ''}{currencySymbol}{priceChange.toFixed(2)}
                     </p>
-                    <p className={`text-lg sm:text-xl font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`number-display text-lg sm:text-xl font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ({priceChangePercent.toFixed(2)}%)
                     </p>
                   </div>
@@ -587,19 +587,19 @@ export default function StockDetail() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">開盤價</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
+                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">昨收價</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
+                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">最高價</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
+                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">最低價</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
+                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">成交量</p>
@@ -607,7 +607,7 @@ export default function StockDetail() {
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">市值</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">
+                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">
                   {meta?.marketCap ? `$${(meta.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
                 </p>
               </div>
