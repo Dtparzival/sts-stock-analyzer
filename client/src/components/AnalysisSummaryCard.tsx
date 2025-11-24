@@ -13,9 +13,17 @@ export default function AnalysisSummaryCard({ analysis, recommendation }: Analys
   const extractKeyPoints = (text: string): string[] => {
     const points: string[] = [];
     
+    // 移除 Markdown 標記（###、####、**、* 等）
+    const cleanText = text
+      .replace(/#{1,6}\s+/g, '') // 移除標題標記
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // 移除粗體標記
+      .replace(/\*([^*]+)\*/g, '$1') // 移除斜體標記
+      .replace(/^[-*]\s+/gm, '') // 移除列表標記
+      .trim();
+    
     // 嘗試提取包含關鍵詞的句子
     const keywords = ['建議', '風險', '機會', '趨勢', '預期', '目標', '支撐', '阻力', '突破'];
-    const sentences = text.split(/[。！？\n]/);
+    const sentences = cleanText.split(/[。！？\n]/);
     
     keywords.forEach(keyword => {
       const found = sentences.find(s => s.includes(keyword) && s.length > 10 && s.length < 100);

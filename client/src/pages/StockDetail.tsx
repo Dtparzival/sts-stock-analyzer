@@ -37,6 +37,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import CompareAnalysisDialog from "@/components/CompareAnalysisDialog";
 import AnalysisSummaryCard from "@/components/AnalysisSummaryCard";
 import AnalysisContentAccordion from "@/components/AnalysisContentAccordion";
+import PredictionSummaryCard from "@/components/PredictionSummaryCard";
+import PredictionContentAccordion from "@/components/PredictionContentAccordion";
 
 // AI 分析歷史記錄卡片組件
 interface AnalysisHistoryCardProps {
@@ -1030,9 +1032,11 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
-                    <div className="prose prose-sm sm:prose prose-slate dark:prose-invert max-w-none">
-                      <Streamdown>{prediction}</Streamdown>
-                    </div>
+                    {/* 預測重點摘要卡片 */}
+                    <PredictionSummaryCard prediction={prediction} />
+                    
+                    {/* 預測內容可折疊區塊 */}
+                    <PredictionContentAccordion prediction={prediction} />
                   </div>
                 )}
               </CardContent>
