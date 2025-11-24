@@ -324,7 +324,7 @@ export default function Home() {
               <div className="p-2 rounded-lg bg-gradient-primary">
                 <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent truncate max-w-[120px] md:max-w-none">
+              <h1 className="text-lg md:text-2xl font-bold text-primary truncate max-w-[120px] md:max-w-none">
                 {APP_TITLE}
               </h1>
             </div>
@@ -395,7 +395,7 @@ export default function Home() {
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                <span className="text-primary drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]">
                   精準掌握市場脈動
                 </span>
                 <br />
@@ -501,7 +501,7 @@ export default function Home() {
                 <div className="text-center mb-8 relative">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
                     <Sparkles className="h-5 w-5 text-accent dark:text-accent animate-pulse" />
-                    <span className="text-base font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent">為您推薦</span>
+                    <span className="text-base font-bold text-primary">為您推薦</span>
                   </div>
                   <p className="text-sm text-muted-foreground">根據您的瀏覽記錄精選推薦</p>
                   
@@ -824,7 +824,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight">
                   開始您的
-                  <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> 智能投資 </span>
+                  <span className="text-primary drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]"> 智能投資 </span>
                   之旅
                 </h3>
                 <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
@@ -852,7 +852,7 @@ export default function Home() {
               <div className="p-2 rounded-lg bg-gradient-primary">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <span className="text-xl font-bold text-primary">
                 {APP_TITLE}
               </span>
             </div>
