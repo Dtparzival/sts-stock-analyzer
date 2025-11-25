@@ -394,15 +394,14 @@ export default function Home() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
-              <h2 className="text-display-1 font-extrabold mb-6 leading-tight px-4 animate-slide-down">
-                <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  智慧投資，
+              <h2 className="text-display-1 mb-6 leading-tight px-4 animate-slide-down">
+                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                  智能分析
                 </span>
                 <br />
                 <span className="text-foreground">做出明智投資決策</span>
               </h2>
-              <p className="text-body-large text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4 animate-slide-up animate-delay-100">
-                透過 AI 深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，
+              <p className="text-body-large text-text-secondary max-w-2xl mx-auto leading-relaxed px-4 animate-slide-up animate-delay-100"> 深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，
                 <br className="hidden md:block" />
                 為您的投資組合提供專業建議
               </p>
@@ -693,8 +692,8 @@ export default function Home() {
         {/* 核心功能特色 - 全新設計 */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h3 className="text-heading-2 font-bold mb-4 px-4">強大的分析功能</h3>
-            <p className="text-body-large text-muted-foreground px-4">一站式投資分析平台，助您輕鬆管理投資組合</p>
+            <h3 className="text-heading-2 font-bold mb-4 px-4 animate-fade-in">強大的分析功能</h3>
+            <p className="text-body-large text-muted-foreground px-4 animate-fade-in animate-delay-100">一站式投資分析平台，助您輕鬆管理投資組合</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -832,7 +831,7 @@ export default function Home() {
                   <br className="hidden md:block" />
                   讓 AI 成為您的投資顧問
                 </p>
-                <Button size="lg" asChild className="h-14 px-10 text-lg font-semibold bg-gradient-primary text-white border-0 shadow-xl button-hover">
+                <Button size="lg" asChild className="h-14 px-10 text-lg font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover">
                   <a href={getLoginUrl()}>
                     立即登入
                     <ArrowRight className="ml-2 h-5 w-5" />

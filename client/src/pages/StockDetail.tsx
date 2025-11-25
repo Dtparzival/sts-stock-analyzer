@@ -551,7 +551,7 @@ export default function StockDetail() {
 
         {/* 價格資訊卡片 - 優化設計 */}
         <motion.div variants={itemVariants}>
-        <Card className="mb-4 sm:mb-6 border-2 shadow-lg">
+        <Card className="mb-4 sm:mb-6 border-2 shadow-lg gradient-border">
           <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
             {/* 主要價格資訊 - 突出顯示 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-border">
@@ -903,7 +903,7 @@ export default function StockDetail() {
                         >
                           {isAnalyzing ? (
                             <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              <Loader2 className="h-4 w-4 mr-2 loading-spin text-primary" />
                               <span className="hidden sm:inline">重新分析中...</span>
                               <span className="sm:hidden">分析中...</span>
                             </>

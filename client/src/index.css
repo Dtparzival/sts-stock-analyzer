@@ -52,22 +52,95 @@
   --chart-3: var(--color-blue-600);
   --chart-4: var(--color-blue-700);
   --chart-5: var(--color-blue-800);
-  --radius: 0.75rem;
   
-  /* 專業信任藍配色方案 - 淺色模式 */
+  /* 專業信任藍配色方案 - 淺色模式 (3.0 版本) */
+  /* 主要色彩 */
+  --color-primary-main: #0d47a1;
+  --color-primary-hover: #0b3d8c;
+  --color-primary-active: #093377;
+  --color-secondary-main: #00509e;
+  --color-secondary-hover: #00468c;
+  --color-secondary-active: #003c7a;
+  
+  /* 金色點綴 (3.0 新增) */
+  --color-accent-gold: #d4af37;
+  --color-accent-gold-hover: #c19b2e;
+  --color-accent-gold-light: #f4e5a1;
+  
+  /* 背景與表面 */
+  --color-background-main: #ffffff;
+  --color-surface-main: #fafafa;
+  --color-surface-elevated: #ffffff;
+  
+  /* 文字色彩 (3.0 優化對比度) */
+  --color-text-primary: #212121;
+  --color-text-secondary: #616161;
+  --color-text-tertiary: #9e9e9e;
+  --color-text-disabled: #bdbdbd;
+  
+  /* 狀態色彩 */
+  --color-success-main: #2e7d32;
+  --color-success-light: #4caf50;
+  --color-success-dark: #1b5e20;
+  --color-warning-main: #f57c00;
+  --color-warning-light: #ff9800;
+  --color-warning-dark: #e65100;
+  --color-error-main: #c62828;
+  --color-error-light: #e53935;
+  --color-error-dark: #b71c1c;
+  
+  /* 邊框與分隔 */
+  --color-border-main: #e0e0e0;
+  --color-border-light: #f0f0f0;
+  --color-border-dark: #bdbdbd;
+  
+  /* 圓角系統 (3.0 新增) */
+  --radius: 0.75rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* 間距系統 (3.0 新增) */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* 陰影系統 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* 字體系統 */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  
+  /* 漸層效果 */
   --gradient-primary: linear-gradient(135deg, oklch(0.55 0.18 240) 0%, oklch(0.45 0.20 250) 100%);
   --gradient-secondary: linear-gradient(135deg, oklch(0.60 0.15 220) 0%, oklch(0.50 0.18 240) 100%);
   --gradient-accent: linear-gradient(135deg, oklch(0.75 0.15 80) 0%, oklch(0.70 0.18 70) 100%);
+  
+  /* 金色漸層效果（用於 CTA 按鈕和重要指標） */
+  --gradient-gold: linear-gradient(135deg, oklch(0.80 0.15 85) 0%, oklch(0.70 0.18 75) 50%, oklch(0.75 0.15 80) 100%);
+  --gradient-gold-hover: linear-gradient(135deg, oklch(0.85 0.18 85) 0%, oklch(0.75 0.20 75) 50%, oklch(0.80 0.18 80) 100%);
+  
+  /* 藍色系漸層效果 (3.0 新增) */
+  --gradient-blue-primary: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+  --gradient-blue-secondary: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  --gradient-blue-subtle: linear-gradient(135deg, rgba(13, 71, 161, 0.05) 0%, rgba(25, 118, 210, 0.05) 100%);
   
   /* 強調色 */
   --accent-gold: oklch(0.75 0.15 80);
   --accent-gold-dark: oklch(0.65 0.18 70);
   --accent-blue: oklch(0.55 0.18 240);
   --accent-light-blue: oklch(0.60 0.15 220);
-  
-  /* 金色漸層效果（用於 CTA 按鈕和重要指標） */
-  --gradient-gold: linear-gradient(135deg, oklch(0.80 0.15 85) 0%, oklch(0.70 0.18 75) 50%, oklch(0.75 0.15 80) 100%);
-  --gradient-gold-hover: linear-gradient(135deg, oklch(0.85 0.18 85) 0%, oklch(0.75 0.20 75) 50%, oklch(0.80 0.18 80) 100%);
   --background: oklch(1 0 0);
   --foreground: oklch(0.235 0.015 65);
   --card: oklch(1 0 0);
@@ -269,6 +342,90 @@
     background: var(--gradient-gold-hover);
     transform: translateY(-2px);
     box-shadow: 0 8px 16px oklch(0.75 0.15 80 / 0.3);
+  }
+  
+  .btn-gold:active {
+    transform: translateY(1px);
+  }
+  
+  /* 藍色系漸層效果 (3.0 新增) */
+  .gradient-blue-primary {
+    background: var(--gradient-blue-primary);
+  }
+  
+  .gradient-blue-secondary {
+    background: var(--gradient-blue-secondary);
+  }
+  
+  .gradient-blue-subtle {
+    background: var(--gradient-blue-subtle);
+  }
+  
+  /* 漸層邊框效果 (3.0 新增) */
+  .gradient-border {
+    position: relative;
+    background: var(--color-surface-main);
+    border-radius: var(--radius-lg);
+  }
+  
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    padding: 2px;
+    background: var(--gradient-blue-primary);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  
+  /* 統一的卡片樣式 (3.0 新增) */
+  .card {
+    background-color: var(--color-surface-main);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--color-border-main);
+  }
+  
+  .card-elevated {
+    background-color: var(--color-surface-elevated);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-lg);
+  }
+  
+  /* 統一的按鈕樣式 (3.0 新增) */
+  .btn {
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .btn:active {
+    transform: translateY(1px);
+  }
+  
+  .btn-primary {
+    background-color: var(--color-primary-main);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--color-primary-hover);
+  }
+  
+  .btn-primary:active {
+    background-color: var(--color-primary-active);
   }
   
   /* 藍色陰影效果 */
