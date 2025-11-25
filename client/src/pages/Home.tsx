@@ -401,7 +401,8 @@ export default function Home() {
                 <br />
                 <span className="text-foreground">做出明智投資決策</span>
               </h2>
-              <p className="text-body-large text-text-secondary max-w-2xl mx-auto leading-relaxed px-4 animate-slide-up animate-delay-100"> 深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趨勢，
+              <p className="text-body-large max-w-2xl mx-auto leading-relaxed px-4 animate-slide-up animate-delay-100" style={{ color: 'var(--color-text-secondary)' }}>
+                深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趋势，
                 <br className="hidden md:block" />
                 為您的投資組合提供專業建議
               </p>

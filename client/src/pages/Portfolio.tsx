@@ -703,7 +703,7 @@ export default function Portfolio() {
                 <CardDescription className="text-xs font-medium">總投資金額</CardDescription>
                 <DollarSign className="h-4 w-4 text-blue-500" />
               </div>
-              <CardTitle className="text-2xl sm:text-3xl font-bold">
+              <CardTitle className="number-display-lg">
                 {getCurrencySymbol()}{convertCurrency(stats.totalInvestment).toFixed(2)}
               </CardTitle>
             </CardHeader>
@@ -724,7 +724,7 @@ export default function Portfolio() {
                 <CardDescription className="text-xs font-medium">當前總價值</CardDescription>
                 <PieChart className="h-4 w-4 text-purple-500" />
               </div>
-              <CardTitle className="text-2xl sm:text-3xl font-bold">
+              <CardTitle className="number-display-lg">
                 {!allPricesLoaded ? (
                   <span className="flex items-center gap-2 text-muted-foreground text-xl">
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -752,7 +752,7 @@ export default function Portfolio() {
                 <CardDescription className="text-xs font-medium">總損益</CardDescription>
                 {stats.totalGainLoss >= 0 ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
               </div>
-              <CardTitle className={`text-2xl sm:text-3xl font-bold flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <CardTitle className={`number-display-lg flex items-center gap-2 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {!allPricesLoaded ? (
                   <span className="flex items-center gap-2 text-muted-foreground text-xl">
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -782,7 +782,7 @@ export default function Portfolio() {
                 <CardDescription className="text-xs font-medium">總報酬率</CardDescription>
                 <TrendingUpIcon className={`h-4 w-4 ${stats.totalGainLossPercent >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
-              <CardTitle className={`text-2xl sm:text-3xl font-bold ${stats.totalGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <CardTitle className={`number-display-lg ${stats.totalGainLossPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {!allPricesLoaded ? (
                   <span className="flex items-center gap-2 text-muted-foreground text-xl">
                     <Loader2 className="h-5 w-5 animate-spin" />
