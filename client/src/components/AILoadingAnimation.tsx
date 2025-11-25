@@ -76,7 +76,7 @@ export default function AILoadingAnimation({ type }: AILoadingAnimationProps) {
               cy="50"
               r="45"
               fill="none"
-              className="stroke-white/20"
+              stroke="rgba(255,255,255,0.2)"
               strokeWidth="4"
             />
             <motion.circle
