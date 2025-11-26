@@ -192,6 +192,17 @@
     text-rendering: optimizeLegibility;
     font-feature-settings: "kern" 1;
   }
+  
+  /* 全站文字渲染優化 - 確保所有文字清晰可讀 */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* 移除影響文字清晰度的 text-shadow */
+  h1, h2, h3, h4, h5, h6, p, span, a, button, div {
+    text-shadow: none;
+  }
   /* Monospace font for numbers and code */
   .font-mono,
   .price-display,

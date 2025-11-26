@@ -916,7 +916,7 @@ export default function StockDetail() {
                     {/* 桌面版和平板版優化長文本閱讀體驗 */}
                     <div className="hidden sm:block">
                       <div className="mx-auto">
-                        <div className="prose prose-sm sm:prose lg:prose-lg prose-slate">
+                        <div className="prose prose-sm sm:prose lg:prose-lg prose-slate reading-optimized">
                           <Streamdown>{analysis}</Streamdown>
                         </div>
                       </div>
@@ -956,7 +956,7 @@ export default function StockDetail() {
                     {/* 桌面版和平板版優化長文本閱讀體驗 */}
                     <div className="hidden sm:block">
                       <div className="mx-auto">
-                        <div className="prose prose-sm sm:prose lg:prose-lg prose-slate">
+                        <div className="prose prose-sm sm:prose lg:prose-lg prose-slate reading-optimized">
                           <Streamdown>{prediction}</Streamdown>
                         </div>
                       </div>

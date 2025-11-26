@@ -520,8 +520,8 @@ export default function Home() {
                   </Button>
                 </div>
                 
-                {/* 推薦卡片網格 */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                {/* 推薦卡片網格 - 優化觸控體驗 */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
                   {filteredRecommendations.slice(0, 6).map((item) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
@@ -541,7 +541,7 @@ export default function Home() {
                     return (
                       <Card
                         key={item.id}
-                        className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
+                        className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95 rounded-xl sm:rounded-2xl shadow-md touch-manipulation"
                         onClick={() => setLocation(`/stock/${item.symbol}`)}
                       >
                         {/* 市場標籤 */}
@@ -559,7 +559,7 @@ export default function Home() {
                         {/* 漸層背景裝飾 */}
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
-                        <CardContent className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[120px]">
+                        <CardContent className="relative p-4 sm:p-5 lg:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[180px] lg:min-h-[200px]">
                           {/* 股票圖標 */}
                           <div className="mb-2 sm:mb-3 p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
                             <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
@@ -639,11 +639,11 @@ export default function Home() {
                             );
                           })()}
                           
-                          {/* 收藏按鈕 - 所有裝置都顯示 */}
+                          {/* 收藏按鈕 - 所有裝置都顯示 - 優化觸控區域 */}
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="absolute top-2 left-2 z-10 h-8 w-8 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm"
+                            className="absolute top-2 left-2 z-10 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm touch-manipulation"
                             onClick={(e) => toggleWatchlist(e, item.symbol, displayName || item.companyName || '')}
                             disabled={addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending}
                           >
