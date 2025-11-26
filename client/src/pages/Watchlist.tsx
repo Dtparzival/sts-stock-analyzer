@@ -296,7 +296,7 @@ export default function Watchlist() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
             {filteredWatchlist.map((item) => {
               const market = getMarketFromSymbol(item.symbol);
               const displaySymbol = market === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol;
@@ -317,7 +317,7 @@ export default function Watchlist() {
               return (
                 <Card
                   key={item.id}
-                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95"
+                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95 rounded-xl sm:rounded-2xl shadow-md touch-manipulation"
                   onClick={() => setLocation(`/stock/${item.symbol}`)}
                 >
                   {/* 市場標籤 */}
@@ -335,7 +335,7 @@ export default function Watchlist() {
                   {/* 漸層背景裝飾 */}
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
-                  <CardContent className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[160px]">
+                  <CardContent className="relative p-4 sm:p-5 lg:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[180px] lg:min-h-[200px]">
                     {/* 股票圖標與收藏按鈕 */}
                     <div className="mb-2 sm:mb-3 flex items-center gap-2">
                       <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
@@ -344,11 +344,11 @@ export default function Watchlist() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm"
+                        className="h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm touch-manipulation"
                         onClick={(e) => handleRemove(e, item.symbol)}
                         title="移除收藏"
                       >
-                        <Star className="h-4 w-4 fill-yellow-600 text-yellow-600" />
+                        <Star className="h-5 w-5 sm:h-4 sm:w-4 fill-yellow-600 text-yellow-600" />
                       </Button>
                     </div>
                     

@@ -395,17 +395,18 @@ export default function Home() {
                 <span className="text-sm font-medium text-primary">AI 驅動的智能投資分析</span>
               </div>
               <h2 className="text-display-1 mb-6 leading-tight px-4 animate-slide-down">
+                透過
                 <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                   智能分析
                 </span>
                 <br />
                 <span className="text-foreground">做出明智投資決策</span>
               </h2>
-              <p className="text-body-large max-w-2xl mx-auto leading-relaxed px-4 animate-slide-up animate-delay-100" style={{ color: 'var(--color-text-secondary)' }}>
-                深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趋势，
-                <br className="hidden md:block" />
-                為您的投資組合提供專業建議
-              </p>
+              <div className="reading-optimized px-4 animate-slide-up animate-delay-100">
+                <p className="text-body-large" style={{ color: 'var(--color-text-secondary)' }}>
+                  深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趋势，為您的投資組合提供專業建議。
+                </p>
+              </div>
             </div>
 
             {/* 市場切換器 - 優化設計 */}
@@ -818,7 +819,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/20 to-primary/20"></div>
             <CardContent className="relative text-center py-16 px-6">
               <div className="max-w-2xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
                   <Shield className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">安全可靠的投資分析平台</span>
                 </div>
@@ -827,11 +828,11 @@ export default function Home() {
                   <span className="text-primary drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]"> 智能投資 </span>
                   之旅
                 </h3>
-                <p className="text-body-large text-muted-foreground mb-8 leading-relaxed">
-                  登入以解鎖完整功能：收藏股票、管理投資組合、查看分析趨勢
-                  <br className="hidden md:block" />
-                  讓 AI 成為您的投資顧問
-                </p>
+                <div className="reading-optimized">
+                  <p className="text-body-large text-muted-foreground mb-8">
+                    登入以解鎖完整功能：收藏股票、管理投資組合、查看分析趋勢，讓 AI 成為您的投資顧問。
+                  </p>
+                </div>
                 <Button size="lg" asChild className="h-14 px-10 text-lg font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover">
                   <a href={getLoginUrl()}>
                     立即登入
