@@ -138,7 +138,7 @@ export default function AnalysisContentAccordion({ analysis }: AnalysisContentAc
                   className="overflow-hidden"
                 >
                   <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 lg:pb-6 pt-0 border-t border-purple-100">
-                    <div className="prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none mt-3 sm:mt-4 lg:mt-6 [&>p]:leading-relaxed [&>p]:sm:leading-relaxed [&>p]:lg:leading-loose [&>p]:mb-3 [&>p]:sm:mb-4 [&>p]:lg:mb-6">
+                    <div className="prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none mt-3 sm:mt-4 lg:mt-6">
                       <Streamdown>{section.content}</Streamdown>
                     </div>
                   </div>

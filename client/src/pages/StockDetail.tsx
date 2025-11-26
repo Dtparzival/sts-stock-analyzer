@@ -914,9 +914,11 @@ export default function StockDetail() {
                     </div>
                     
                     {/* 桌面版和平板版優化長文本閱讀體驗 */}
-                    <div className="hidden sm:block prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none">
-                      <div className="space-y-4 leading-relaxed">
-                        <Streamdown>{analysis}</Streamdown>
+                    <div className="hidden sm:block">
+                      <div className="mx-auto">
+                        <div className="prose prose-sm sm:prose lg:prose-lg prose-slate">
+                          <Streamdown>{analysis}</Streamdown>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -952,9 +954,11 @@ export default function StockDetail() {
                     </div>
                     
                     {/* 桌面版和平板版優化長文本閱讀體驗 */}
-                    <div className="hidden sm:block prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none">
-                      <div className="space-y-4 leading-relaxed">
-                        <Streamdown>{prediction}</Streamdown>
+                    <div className="hidden sm:block">
+                      <div className="mx-auto">
+                        <div className="prose prose-sm sm:prose lg:prose-lg prose-slate">
+                          <Streamdown>{prediction}</Streamdown>
+                        </div>
                       </div>
                     </div>
                   </div>
