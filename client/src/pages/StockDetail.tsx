@@ -35,9 +35,7 @@ import ShareButton from "@/components/ShareButton";
 import { ChevronDown, ChevronUp, Clock, Filter, SortAsc, GitCompare, BarChart3 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import CompareAnalysisDialog from "@/components/CompareAnalysisDialog";
-import AnalysisSummaryCard from "@/components/AnalysisSummaryCard";
 import AnalysisContentAccordion from "@/components/AnalysisContentAccordion";
-import PredictionSummaryCard from "@/components/PredictionSummaryCard";
 import PredictionContentAccordion from "@/components/PredictionContentAccordion";
 import AILoadingAnimation from "@/components/AILoadingAnimation";
 
@@ -711,9 +709,6 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
-                    {/* AI 分析重點摘要卡片 */}
-                    <AnalysisSummaryCard analysis={analysis} recommendation={recommendation} />
-                    
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
                       <div className="text-xs sm:text-sm text-muted-foreground">
                         分析時間：{analysisCachedAt ? new Date(analysisCachedAt).toLocaleString('zh-TW') : '剛剛'}
@@ -918,9 +913,11 @@ export default function StockDetail() {
                       <AnalysisContentAccordion analysis={analysis} />
                     </div>
                     
-                    {/* 桌面版保持原有的完整顯示 */}
-                    <div className="hidden sm:block prose prose-sm sm:prose prose-slate max-w-none">
-                      <Streamdown>{analysis}</Streamdown>
+                    {/* 桌面版和平板版優化長文本閱讀體驗 */}
+                    <div className="hidden sm:block prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none">
+                      <div className="space-y-4 leading-relaxed">
+                        <Streamdown>{analysis}</Streamdown>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -949,11 +946,17 @@ export default function StockDetail() {
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
-                    {/* 預測重點摘要卡片 */}
-                    <PredictionSummaryCard prediction={prediction} />
+                    {/* 使用可折疊的分段結構（手機版友善） */}
+                    <div className="block sm:hidden">
+                      <PredictionContentAccordion prediction={prediction} />
+                    </div>
                     
-                    {/* 預測內容可折疊區塊 */}
-                    <PredictionContentAccordion prediction={prediction} />
+                    {/* 桌面版和平板版優化長文本閱讀體驗 */}
+                    <div className="hidden sm:block prose prose-sm sm:prose lg:prose-lg prose-slate max-w-none">
+                      <div className="space-y-4 leading-relaxed">
+                        <Streamdown>{prediction}</Streamdown>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>

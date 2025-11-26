@@ -594,6 +594,136 @@
     will-change: transform, opacity;
   }
   
+  /* 長文本閱讀體驗優化 (3.0 版本) */
+  .prose {
+    color: var(--color-text-primary);
+    max-width: 65ch;
+  }
+  
+  .prose p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    line-height: 1.75;
+  }
+  
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    margin-top: 2em;
+    margin-bottom: 1em;
+    line-height: 1.4;
+  }
+  
+  .prose h1 {
+    font-size: 2em;
+  }
+  
+  .prose h2 {
+    font-size: 1.5em;
+  }
+  
+  .prose h3 {
+    font-size: 1.25em;
+  }
+  
+  .prose h4 {
+    font-size: 1.125em;
+  }
+  
+  .prose ul,
+  .prose ol {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.625em;
+  }
+  
+  .prose li {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.75;
+  }
+  
+  .prose strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+  
+  .prose code {
+    color: var(--color-primary-main);
+    font-weight: 500;
+    font-size: 0.875em;
+  }
+  
+  .prose blockquote {
+    font-style: italic;
+    border-left: 0.25rem solid var(--color-border-main);
+    padding-left: 1em;
+    margin-top: 1.6em;
+    margin-bottom: 1.6em;
+    color: var(--color-text-secondary);
+  }
+  
+  /* 平板版 prose 樣式 */
+  @media (min-width: 640px) {
+    .prose p {
+      line-height: 1.8;
+      font-size: 1.0625rem;
+    }
+    
+    .prose li {
+      line-height: 1.8;
+    }
+  }
+  
+  /* 桌面版 prose 樣式 */
+  @media (min-width: 1024px) {
+    .prose-lg p {
+      line-height: 1.85;
+      font-size: 1.125rem;
+      margin-top: 1.5em;
+      margin-bottom: 1.5em;
+    }
+    
+    .prose-lg h1,
+    .prose-lg h2,
+    .prose-lg h3,
+    .prose-lg h4 {
+      margin-top: 2.25em;
+      margin-bottom: 1.25em;
+    }
+    
+    .prose-lg h1 {
+      font-size: 2.25em;
+    }
+    
+    .prose-lg h2 {
+      font-size: 1.75em;
+    }
+    
+    .prose-lg h3 {
+      font-size: 1.375em;
+    }
+    
+    .prose-lg h4 {
+      font-size: 1.25em;
+    }
+    
+    .prose-lg li {
+      line-height: 1.85;
+      margin-top: 0.625em;
+      margin-bottom: 0.625em;
+    }
+    
+    .prose-lg ul,
+    .prose-lg ol {
+      margin-top: 1.5em;
+      margin-bottom: 1.5em;
+    }
+  }
+  
   /* 進場動畫 (3.0 版本) */
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out;
