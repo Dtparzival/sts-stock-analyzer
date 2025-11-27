@@ -701,9 +701,6 @@ export default function Home() {
                     const input = document.querySelector('input[type="text"]') as HTMLInputElement;
                     input?.focus();
                   }}
-                  onStockClick={(symbol) => {
-                    setLocation(`/stock/${symbol}`);
-                  }}
                 />
               )
             )}
