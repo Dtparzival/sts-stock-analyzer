@@ -362,6 +362,10 @@
     box-shadow: 0 10px 15px -3px oklch(0.75 0.15 80 / 0.15), 0 4px 6px -2px oklch(0.75 0.15 80 / 0.08);
   }
   
+  .shadow-gold-xl {
+    box-shadow: 0 20px 25px -5px oklch(0.75 0.15 80 / 0.2), 0 10px 10px -5px oklch(0.75 0.15 80 / 0.1);
+  }
+  
   /* 金色按鈕樣式 (3.0 版本) */
   .btn-gold {
     background: var(--gradient-gold);
