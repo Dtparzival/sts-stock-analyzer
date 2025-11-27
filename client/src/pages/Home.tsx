@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, ArrowRight, BarChart3, Brain, Shield, Heart, Loader2, RefreshCw, MessageCircle } from "lucide-react";
+import { Search, TrendingUp, Wallet, History, Star, Sparkles, LogOut, Globe, Target, ArrowRight, BarChart3, Brain, Shield, Heart, Loader2, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { MARKETS, HOT_STOCKS, type MarketType, searchTWStockByName, cleanTWSymbol, TW_STOCK_NAMES, getMarketFromSymbol } from "@shared/markets";
@@ -716,7 +716,7 @@ export default function Home() {
             <p className="text-body-large text-muted-foreground px-4 animate-fade-in animate-delay-100">一站式投資分析平台，助您輕鬆管理投資組合</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-100" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-secondary w-fit shadow-blue">
@@ -762,17 +762,16 @@ export default function Home() {
             <p className="text-body-large text-muted-foreground px-4">深入了解投資表現，做出更精準的決策</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <Card className="card-hover border-2 hover:border-primary/50">
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/analysis-accuracy")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-gold w-fit">
-                  <MessageCircle className="h-10 w-10 text-white" />
+                <div className="mx-auto mb-4 p-4 rounded-2xl bg-green-500/10 w-fit">
+                  <Target className="h-10 w-10 text-green-600" />
                 </div>
-                <CardTitle className="text-xl mb-2">AI 投資顧問</CardTitle>
-                <CardDescription className="text-base mb-4">
-                  24/7 智能助手，即時解答投資問題，提供專業分析建議
+                <CardTitle className="text-xl mb-2">AI 分析準確度追蹤</CardTitle>
+                <CardDescription className="text-base">
+                  自動比對歷史分析建議與實際股價走勢，評估 AI 分析的可靠性
                 </CardDescription>
-                <FloatingAIChat inline={true} />
               </CardHeader>
             </Card>
             
@@ -884,7 +883,8 @@ export default function Home() {
         </div>
       </footer>
       
-
+      {/* 浮動 AI 顧問 */}
+      <FloatingAIChat />
     </div>
   );
 }

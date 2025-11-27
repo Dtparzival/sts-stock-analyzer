@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Loader2, TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -46,16 +46,6 @@ export default function AnalysisAccuracy() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  
-  // 從 URL 參數獲取股票代號
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const symbolParam = params.get('symbol');
-    if (symbolParam) {
-      setSelectedSymbol(symbolParam);
-      setIsReportDialogOpen(true);
-    }
-  }, []);
 
   const { data: accuracyStats, isLoading, error } = (trpc as any).analysis.getAccuracyStats.useQuery();
   const { data: accuracyTrend, isLoading: isTrendLoading } = (trpc as any).analysis.getAccuracyTrend.useQuery({
