@@ -862,6 +862,58 @@ export async function trackUserViewTime(userId: number, symbol: string, viewTime
 }
 
 /**
+ * 記錄用戶點擊推薦卡片的行為
+ */
+export async function trackUserClick(userId: number, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot track click: database not available");
+    return;
+  }
+
+  try {
+    // 檢查是否已存在記錄
+    const existing = await db
+      .select()
+      .from(userBehavior)
+      .where(and(
+        eq(userBehavior.userId, userId),
+        eq(userBehavior.symbol, symbol)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 更新現有記錄
+      await db
+        .update(userBehavior)
+        .set({
+          clickCount: sql`${userBehavior.clickCount} + 1`,
+          lastClickedAt: new Date(),
+          lastViewedAt: new Date(),
+        })
+        .where(and(
+          eq(userBehavior.userId, userId),
+          eq(userBehavior.symbol, symbol)
+        ));
+    } else {
+      // 創建新記錄
+      await db.insert(userBehavior).values({
+        userId,
+        symbol,
+        viewCount: 0,
+        searchCount: 0,
+        totalViewTime: 0,
+        clickCount: 1,
+        lastClickedAt: new Date(),
+        lastViewedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to track click:", error);
+  }
+}
+
+/**
  * 獲取用戶的行為數據
  */
 export async function getUserBehavior(userId: number, symbol: string): Promise<UserBehavior | undefined> {

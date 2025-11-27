@@ -996,6 +996,16 @@ ${stocksInfo}
         return { success: true };
       }),
     
+    // 追蹤點擊推薦卡片行為
+    trackClick: protectedProcedure
+      .input(z.object({
+        symbol: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.trackUserClick(ctx.user.id, input.symbol);
+        return { success: true };
+      }),
+    
     // 獲取最常查看的股票排行榜
     getTopStocks: protectedProcedure
       .input(z.object({
@@ -1003,6 +1013,89 @@ ${stocksInfo}
       }))
       .query(async ({ input, ctx }) => {
         return db.getTopStocks(ctx.user.id, input.limit);
+      }),
+    
+    // 獲取個人化建議（空狀態推薦）
+    getPersonalizedSuggestions: protectedProcedure
+      .input(z.object({
+        market: z.enum(['US', 'TW']),
+        limit: z.number().optional().default(6),
+      }))
+      .query(async ({ input, ctx }) => {
+        // 獲取用戶歷史搜尋記錄
+        const searchHistory = await db.getUserSearchHistory(ctx.user.id, 50);
+        
+        // 獲取用戶行為數據
+        const behaviorData = await db.getAllUserBehavior(ctx.user.id);
+        
+        // 統計用戶最常搜尋的市場類型
+        const marketCounts = searchHistory.reduce((acc, item) => {
+          const market = item.symbol.includes('.TW') ? 'TW' : 'US';
+          acc[market] = (acc[market] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        // 統計用戶最常查看的股票類型（根據 symbol 首字母或數字）
+        const symbolPatterns = searchHistory.reduce((acc, item) => {
+          const firstChar = item.symbol.charAt(0);
+          acc[firstChar] = (acc[firstChar] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        // 根據用戶偏好生成建議
+        const suggestions: Array<{ symbol: string; name: string; reason: string }> = [];
+        
+        if (input.market === 'US') {
+          // 美股建議
+          const usHistory = searchHistory.filter(item => !item.symbol.includes('.TW'));
+          
+          if (usHistory.length > 0) {
+            // 有美股搜尋歷史，推薦相關股票
+            const hasTech = usHistory.some(item => 
+              ['AAPL', 'GOOGL', 'MSFT', 'NVDA', 'META', 'TSLA'].includes(item.symbol)
+            );
+            
+            if (hasTech) {
+              suggestions.push(
+                { symbol: 'NVDA', name: 'NVIDIA Corp.', reason: '您對科技股感興趣' },
+                { symbol: 'AMD', name: 'Advanced Micro Devices', reason: 'AI 晶片領域' },
+                { symbol: 'MSFT', name: 'Microsoft Corp.', reason: '雲端與 AI 領導者' },
+              );
+            } else {
+              suggestions.push(
+                { symbol: 'AAPL', name: 'Apple Inc.', reason: '科技龍頭' },
+                { symbol: 'TSLA', name: 'Tesla Inc.', reason: '電動車領導者' },
+                { symbol: 'GOOGL', name: 'Alphabet Inc.', reason: '搜尋引擎巨頭' },
+              );
+            }
+          }
+        } else {
+          // 台股建議
+          const twHistory = searchHistory.filter(item => item.symbol.includes('.TW'));
+          
+          if (twHistory.length > 0) {
+            // 有台股搜尋歷史，推薦相關股票
+            const hasSemiconductor = twHistory.some(item => 
+              ['2330.TW', '2454.TW', '2303.TW'].includes(item.symbol)
+            );
+            
+            if (hasSemiconductor) {
+              suggestions.push(
+                { symbol: '2330', name: '台積電', reason: '您對半導體股感興趣' },
+                { symbol: '2454', name: '聯發科', reason: 'IC 設計龍頭' },
+                { symbol: '3711', name: '日月光', reason: '半導體設備' },
+              );
+            } else {
+              suggestions.push(
+                { symbol: '2330', name: '台積電', reason: '半導體龍頭' },
+                { symbol: '0050', name: '元大台灣 50', reason: 'ETF 首選' },
+                { symbol: '2317', name: '鴻海', reason: '電子代工龍頭' },
+              );
+            }
+          }
+        }
+        
+        return suggestions.slice(0, input.limit);
       }),
     
     // 獲取智能推薦（整合行為數據進行排序）
@@ -1040,6 +1133,7 @@ ${stocksInfo}
           // - 查看頻率權重：viewCount × 0.5 分
           // - 搜尋頻率權重：searchCount × 0.3 分
           // - 停留時間權重：totalViewTime / 60 × 0.2 分（分鐘）
+          // - 點擊頻率權重：clickCount × 0.4 分
           let score = 0;
           
           if (isInWatchlist) {
@@ -1050,6 +1144,7 @@ ${stocksInfo}
             score += behavior.viewCount * 0.5;
             score += behavior.searchCount * 0.3;
             score += (behavior.totalViewTime / 60) * 0.2;
+            score += behavior.clickCount * 0.4;
           }
           
           return {

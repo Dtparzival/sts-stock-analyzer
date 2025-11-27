@@ -24,19 +24,19 @@ export default function FloatingAIChat() {
   const [lastClickedQuestion, setLastClickedQuestion] = useState<string | null>(null);
 
   // 獲取用戶最常使用的快速問題（已登入用戶）
-  const { data: userTopQuestions } = trpc.stock.getTopQuestions.useQuery(
+  const { data: userTopQuestions } = (trpc as any).stock.getTopQuestions.useQuery(
     { limit: 6 },
     { enabled: isAuthenticated }
   );
 
   // 獲取全局熱門問題（未登入用戶）
-  const { data: globalTopQuestions } = trpc.stock.getGlobalTopQuestions.useQuery(
+  const { data: globalTopQuestions } = (trpc as any).stock.getGlobalTopQuestions.useQuery(
     { limit: 6 },
     { enabled: !isAuthenticated }
   );
 
-  const chatMutation = trpc.stock.chatWithAI.useMutation({
-    onSuccess: (response) => {
+  const chatMutation = (trpc as any).stock.chatWithAI.useMutation({
+    onSuccess: (response: any) => {
       setMessages(prev => [...prev, {
         role: "assistant",
         content: response.message
@@ -49,8 +49,8 @@ export default function FloatingAIChat() {
     }
   });
 
-  const compareStocksMutation = trpc.stock.compareStocks.useMutation({
-    onSuccess: (response) => {
+  const compareStocksMutation = (trpc as any).stock.compareStocks.useMutation({
+    onSuccess: (response: any) => {
       setMessages(prev => [...prev, {
         role: "assistant",
         content: response.comparison
@@ -122,9 +122,9 @@ export default function FloatingAIChat() {
 
   // 智能動態調整快速問題（優先顯示用戶最常使用的）
   const quickTemplates = isAuthenticated && userTopQuestions && userTopQuestions.length > 0
-    ? userTopQuestions.map(q => q.question)
+    ? userTopQuestions.map((q: any) => q.question)
     : !isAuthenticated && globalTopQuestions && globalTopQuestions.length > 0
-    ? globalTopQuestions.map(q => q.question)
+    ? globalTopQuestions.map((q: any) => q.question)
     : defaultQuickTemplates;
 
   const handleQuickQuestion = (question: string) => {

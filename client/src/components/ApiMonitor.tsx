@@ -11,7 +11,7 @@ export function ApiMonitor() {
   const [showMonitor, setShowMonitor] = useState(false);
   
   // 每 30 秒查詢一次 API 使用狀況
-  const { data: monitorData } = trpc.apiMonitor.getTwelveDataStats.useQuery(undefined, {
+  const { data: monitorData } = (trpc as any).apiMonitor.getTwelveDataStats.useQuery(undefined, {
     refetchInterval: 30000, // 30 秒
     enabled: true,
   });

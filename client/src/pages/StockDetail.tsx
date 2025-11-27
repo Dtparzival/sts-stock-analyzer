@@ -170,7 +170,7 @@ export default function StockDetail() {
   const [selectedRecords, setSelectedRecords] = useState<number[]>([]);
   const [showCompareDialog, setShowCompareDialog] = useState(false);
 
-  const { data: stockData, isLoading: loadingStock, error: stockError, refetch: refetchStockData } = trpc.stock.getStockData.useQuery(
+  const { data: stockData, isLoading: loadingStock, error: stockError, refetch: refetchStockData } = (trpc as any).stock.getStockData.useQuery(
     { symbol, range: chartRange, interval: chartInterval },
     { 
       enabled: !!symbol,
@@ -195,7 +195,7 @@ export default function StockDetail() {
   const market = getMarketFromSymbol(symbol);
   const marketOpen = isMarketOpen(market);
 
-  const { data: watchlistCheck, refetch: refetchWatchlistCheck } = trpc.watchlist.check.useQuery(
+  const { data: watchlistCheck, refetch: refetchWatchlistCheck } = (trpc as any).watchlist.check.useQuery(
     { symbol },
     { 
       enabled: !!user && !!symbol,
@@ -213,18 +213,18 @@ export default function StockDetail() {
   }, [symbol, user, refetchWatchlistCheck]);
 
   const utils = trpc.useUtils();
-  const addToWatchlist = trpc.watchlist.add.useMutation({
+  const addToWatchlist = (trpc as any).watchlist.add.useMutation({
     onMutate: async () => {
       // 樂觀更新：立即更新 UI
-      await utils.watchlist.check.cancel({ symbol });
-      const previousData = utils.watchlist.check.getData({ symbol });
-      utils.watchlist.check.setData({ symbol }, { isInWatchlist: true });
+      await (utils as any).watchlist.check.cancel({ symbol });
+      const previousData = (utils as any).watchlist.check.getData({ symbol });
+      (utils as any).watchlist.check.setData({ symbol }, { isInWatchlist: true });
       return { previousData };
     },
-    onError: (error, variables, context) => {
+    onError: (error: any, variables: any, context: any) => {
       // 回滾樂觀更新
       if (context?.previousData) {
-        utils.watchlist.check.setData({ symbol }, context.previousData);
+        (utils as any).watchlist.check.setData({ symbol }, context.previousData);
       }
       toast.error("添加到收藏失敗，請稍後再試");
     },
@@ -233,23 +233,23 @@ export default function StockDetail() {
     },
     onSettled: () => {
       // 確保數據同步
-      utils.watchlist.check.invalidate({ symbol });
-      utils.watchlist.list.invalidate();
+      (utils as any).watchlist.check.invalidate({ symbol });
+      (utils as any).watchlist.list.invalidate();
     },
   });
 
-  const removeFromWatchlist = trpc.watchlist.remove.useMutation({
+  const removeFromWatchlist = (trpc as any).watchlist.remove.useMutation({
     onMutate: async () => {
       // 樂觀更新：立即更新 UI
-      await utils.watchlist.check.cancel({ symbol });
-      const previousData = utils.watchlist.check.getData({ symbol });
-      utils.watchlist.check.setData({ symbol }, { isInWatchlist: false });
+      await (utils as any).watchlist.check.cancel({ symbol });
+      const previousData = (utils as any).watchlist.check.getData({ symbol });
+      (utils as any).watchlist.check.setData({ symbol }, { isInWatchlist: false });
       return { previousData };
     },
-    onError: (error, variables, context) => {
+    onError: (error: any, variables: any, context: any) => {
       // 回滾樂觀更新
       if (context?.previousData) {
-        utils.watchlist.check.setData({ symbol }, context.previousData);
+        (utils as any).watchlist.check.setData({ symbol }, context.previousData);
       }
       toast.error("移除收藏失敗，請稍後再試");
     },
@@ -258,13 +258,13 @@ export default function StockDetail() {
     },
     onSettled: () => {
       // 確保數據同步
-      utils.watchlist.check.invalidate({ symbol });
-      utils.watchlist.list.invalidate();
+      (utils as any).watchlist.check.invalidate({ symbol });
+      (utils as any).watchlist.list.invalidate();
     },
   });
 
-  const getAIAnalysis = trpc.stock.getAIAnalysis.useMutation();
-  const getTrendPrediction = trpc.stock.getTrendPrediction.useMutation();
+  const getAIAnalysis = (trpc as any).stock.getAIAnalysis.useMutation();
+  const getTrendPrediction = (trpc as any).stock.getTrendPrediction.useMutation();
 
   const [analysis, setAnalysis] = useState<string>("");
   const [analysisCachedAt, setAnalysisCachedAt] = useState<Date | null>(null);
@@ -273,7 +273,7 @@ export default function StockDetail() {
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   
   // 獲取歷史分析記錄
-  const { data: analysisHistory } = trpc.stock.getAnalysisHistory.useQuery(
+  const { data: analysisHistory } = (trpc as any).stock.getAnalysisHistory.useQuery(
     { symbol, analysisType: 'investment_analysis', limit: 10 },
     { enabled: showHistoryDialog }
   );
@@ -808,7 +808,7 @@ export default function StockDetail() {
                                     // 篩選邏輯
                                     let filtered = analysisHistory;
                                     if (filterRecommendation !== "all") {
-                                      filtered = filtered.filter(record => record.recommendation === filterRecommendation);
+                                      filtered = filtered.filter((record: any) => record.recommendation === filterRecommendation);
                                     }
                                     
                                     // 排序邏輯
@@ -885,7 +885,7 @@ export default function StockDetail() {
                         <CompareAnalysisDialog
                           open={showCompareDialog}
                           onOpenChange={setShowCompareDialog}
-                          records={analysisHistory?.filter(r => selectedRecords.includes(r.id)) || []}
+                          records={analysisHistory?.filter((r: any) => selectedRecords.includes(r.id)) || []}
                           symbol={symbol}
                         />
                         

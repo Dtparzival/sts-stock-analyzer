@@ -235,6 +235,8 @@ export const userBehavior = mysqlTable("userBehavior", {
   viewCount: int("viewCount").default(0).notNull(), // 查看次數
   searchCount: int("searchCount").default(0).notNull(), // 搜尋次數
   totalViewTime: int("totalViewTime").default(0).notNull(), // 總停留時間（秒）
+  clickCount: int("clickCount").default(0).notNull(), // 點擊推薦卡片次數
+  lastClickedAt: timestamp("lastClickedAt"), // 最後點擊時間
   lastViewedAt: timestamp("lastViewedAt").defaultNow().notNull(), // 最後查看時間
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -22,7 +22,7 @@ type MarketFilter = 'all' | 'US' | 'TW';
 
 // 股價顯示組件 - 優化為與「為您推薦」區塊一致的樣式
 function StockPriceDisplay({ symbol, addedAt }: { symbol: string; addedAt: Date }) {
-  const { data: stockData, isLoading, error } = trpc.stock.getStockData.useQuery(
+  const { data: stockData, isLoading, error } = (trpc as any).stock.getStockData.useQuery(
     { symbol, range: '1d', interval: '1d' },
     { 
       enabled: !!symbol,
@@ -102,46 +102,46 @@ export default function Watchlist() {
     });
   };
 
-  const { data: watchlist, isLoading } = trpc.watchlist.list.useQuery(undefined, {
+  const { data: watchlist, isLoading } = (trpc as any).watchlist.list.useQuery(undefined, {
     enabled: !!user,
   });
 
   const utils = trpc.useUtils();
   
-  const batchAnalyze = trpc.watchlist.batchAnalyze.useMutation({
-    onSuccess: (data) => {
+  const batchAnalyze = (trpc as any).watchlist.batchAnalyze.useMutation({
+    onSuccess: (data: any) => {
       setBatchResults(data.results);
       setShowBatchAnalysis(true);
       toast.success(`成功分析 ${data.results.length} 支股票`);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "批量分析失敗，請稍後再試");
     },
   });
   
-  const removeFromWatchlist = trpc.watchlist.remove.useMutation({
-    onMutate: async ({ symbol }) => {
-      // 樂觀更新：立即從列表中移除
-      await utils.watchlist.list.cancel();
-      const previousData = utils.watchlist.list.getData();
-      utils.watchlist.list.setData(undefined, (old) => 
-        old ? old.filter(item => item.symbol !== symbol) : []
+  const removeFromWatchlist = (trpc as any).watchlist.remove.useMutation({
+    onMutate: async ({ symbol }: { symbol: string }) => {
+      // 樂觀更新:立即從列表中移除
+      await (utils as any).watchlist.list.cancel();
+      const previousData = (utils as any).watchlist.list.getData();
+      (utils as any).watchlist.list.setData(undefined, (old: any) => 
+        old ? old.filter((item: any) => item.symbol !== symbol) : []
       );
       return { previousData };
     },
-    onError: (error, variables, context) => {
+    onError: (error: any, variables: any, context: any) => {
       // 回滾樂觀更新
       if (context?.previousData) {
-        utils.watchlist.list.setData(undefined, context.previousData);
+        (utils as any).watchlist.list.setData(undefined, context.previousData);
       }
-      toast.error("移除收藏失敗，請稍後再試");
+      toast.error("移除收藏失敗,請稍後再試");
     },
     onSuccess: () => {
       toast.success("已從收藏中移除");
     },
     onSettled: () => {
       // 確保數據同步
-      utils.watchlist.list.invalidate();
+      (utils as any).watchlist.list.invalidate();
     },
   });
 
@@ -154,7 +154,7 @@ export default function Watchlist() {
   const filteredWatchlist = useMemo(() => {
     if (!watchlist) return [];
     if (marketFilter === 'all') return watchlist;
-    return watchlist.filter(item => getMarketFromSymbol(item.symbol) === marketFilter);
+    return watchlist.filter((item: any) => getMarketFromSymbol(item.symbol) === marketFilter);
   }, [watchlist, marketFilter]);
 
   if (loading) {
@@ -297,7 +297,7 @@ export default function Watchlist() {
           </Card>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
-            {filteredWatchlist.map((item) => {
+            {filteredWatchlist.map((item: any) => {
               const market = getMarketFromSymbol(item.symbol);
               const displaySymbol = market === 'TW' ? cleanTWSymbol(item.symbol) : item.symbol;
               

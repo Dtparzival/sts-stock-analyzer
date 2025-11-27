@@ -32,7 +32,7 @@ export default function Portfolio() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // 選中的日期，用於聯動高亮
 
   // 獲取即時匯率
-  const { data: exchangeRateData } = trpc.exchangeRate.getUSDToTWD.useQuery();
+  const { data: exchangeRateData } = (trpc as any).exchangeRate.getUSDToTWD.useQuery();
   const usdToTwdRate = exchangeRateData?.rate || 31.5; // 如果 API 失敗，使用備用匯率
   const twdToUsdRate = 1 / usdToTwdRate;
 
@@ -49,33 +49,33 @@ export default function Portfolio() {
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
-  const { data: portfolio = [], isLoading, refetch } = trpc.portfolio.list.useQuery(undefined, {
+  const { data: portfolio = [], isLoading, refetch } = (trpc as any).portfolio.list.useQuery(undefined, {
     enabled: !!user,
   });
 
-  const addMutation = trpc.portfolio.add.useMutation({
+  const addMutation = (trpc as any).portfolio.add.useMutation({
     onSuccess: () => {
       toast.success("持倉已添加");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`添加失敗: ${error.message}`);
     },
   });
 
-  const deleteMutation = trpc.portfolio.delete.useMutation({
+  const deleteMutation = (trpc as any).portfolio.delete.useMutation({
     onSuccess: () => {
       toast.success("持倉已刪除");
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`刪除失敗: ${error.message}`);
     },
   });
 
-  const aiAnalysisMutation = trpc.portfolio.getPortfolioAIAnalysis.useMutation({
+  const aiAnalysisMutation = (trpc as any).portfolio.getPortfolioAIAnalysis.useMutation({
     onSuccess: (data: { analysis: string; fromCache: boolean }) => {
       setAiAnalysis(data.analysis);
       setIsAnalyzing(false);
@@ -130,7 +130,7 @@ export default function Portfolio() {
       // 台股：搜尋中文名稱建議（暫時禁用，因為 API 路徑問題）
       // if (formData.market === "TW" && formData.symbol.length >= 2) {
       //   try {
-      //     const results = await utils.stock.searchTWStock.fetch({ query: formData.symbol });
+      //     const results = await (utils as any).stock.searchTWStock.fetch({ query: formData.symbol });
       //     setStockSuggestions(results.slice(0, 5)); // 最多 5 個建議
       //   } catch (error) {
       //     console.error("Search failed:", error);
@@ -143,7 +143,7 @@ export default function Portfolio() {
         setIsLoadingPrice(true);
         try {
           const fullSymbol = formData.market === "TW" ? `${formData.symbol}.TW` : formData.symbol;
-          const data = await utils.stock.getStockData.fetch({
+          const data = await (utils as any).stock.getStockData.fetch({
             symbol: fullSymbol,
             range: "1d",
             interval: "1d"
@@ -208,7 +208,7 @@ export default function Portfolio() {
       
       for (const item of portfolio) {
         try {
-          const data = await utils.stock.getStockData.fetch({
+          const data = await (utils as any).stock.getStockData.fetch({
             symbol: item.symbol,
             range: "1d",
             interval: "1d"
@@ -233,7 +233,7 @@ export default function Portfolio() {
     let totalInvestment = 0;
     let totalCurrentValue = 0;
 
-    portfolio.forEach((item) => {
+    portfolio.forEach((item: any) => {
       const market = getMarketFromSymbol(item.symbol);
       const purchasePrice = item.purchasePrice / 100; // 轉換回原始價格
       const currentPrice = stockPrices[item.symbol] || purchasePrice;
@@ -272,28 +272,28 @@ export default function Portfolio() {
   const stats = calculateStats();
   
   // 檢查是否所有股票價格都已載入
-  const allPricesLoaded = portfolio.length > 0 && portfolio.every(item => stockPrices[item.symbol] !== undefined);
+  const allPricesLoaded = portfolio.length > 0 && portfolio.every((item: any) => stockPrices[item.symbol] !== undefined);
 
   // 獲取歷史記錄
-  const { data: historyData = [] } = trpc.portfolio.getHistory.useQuery(
+  const { data: historyData = [] } = (trpc as any).portfolio.getHistory.useQuery(
     { days: undefined }, // 獲取所有歷史
     { enabled: !!user }
   );
 
   // 獲取持倉分析數據
-  const { data: analysisData } = trpc.portfolio.getAnalysis.useQuery(undefined, {
+  const { data: analysisData } = (trpc as any).portfolio.getAnalysis.useQuery(undefined, {
     enabled: !!user && portfolio.length > 0,
   });
 
   // 記錄當前價值的 mutation
-  const recordValueMutation = trpc.portfolio.recordCurrentValue.useMutation();
+  const recordValueMutation = (trpc as any).portfolio.recordCurrentValue.useMutation();
 
   // 當統計數據更新時，自動記錄當前價值
   useEffect(() => {
     if (!user || portfolio.length === 0 || Object.keys(stockPrices).length === 0) return;
     
     // 檢查是否所有股票都已獲取價格
-    const allPricesFetched = portfolio.every(item => stockPrices[item.symbol] !== undefined);
+    const allPricesFetched = portfolio.every((item: any) => stockPrices[item.symbol] !== undefined);
     if (!allPricesFetched) return;
 
     // 記錄當前價值
@@ -851,7 +851,7 @@ export default function Portfolio() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {portfolio.map((item) => {
+                    {portfolio.map((item: any) => {
                       const purchasePrice = item.purchasePrice / 100;
                       const currentPrice = stockPrices[item.symbol] || purchasePrice;
                       const market = getMarketFromSymbol(item.symbol);

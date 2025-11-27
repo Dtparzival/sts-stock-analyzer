@@ -43,7 +43,7 @@ export default function Home() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   // 獲取智能推薦（整合行為數據進行排序）
-  const { data: recentHistory, isLoading: isLoadingHistory, refetch: refetchRecommendations } = trpc.history.getRecommendations.useQuery(
+  const { data: recentHistory, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getRecommendations.useQuery(
     { limit: 6 },
     { 
       enabled: !!user,
@@ -61,7 +61,7 @@ export default function Home() {
       // 同時刷新推薦列表和收藏狀態
       await Promise.all([
         refetchRecommendations(),
-        utils.watchlist.list.invalidate(),
+        (utils as any).watchlist.list.invalidate(),
       ]);
       toast.success('已刷新推薦內容');
     } catch (error) {
@@ -75,7 +75,7 @@ export default function Home() {
   const filteredRecommendations = useMemo(() => {
     if (!recentHistory) return [];
     
-    return recentHistory.filter(item => {
+    return recentHistory.filter((item: any) => {
       const market = getMarketFromSymbol(item.symbol);
       return market === selectedMarket;
     });
@@ -83,32 +83,32 @@ export default function Home() {
   
   // 獲取推薦股票的即時股價資訊（使用 useMemo 穩定引用）
   const recommendedSymbols = useMemo(
-    () => filteredRecommendations.slice(0, 6).map(item => item.symbol) || [],
+    () => filteredRecommendations.slice(0, 6).map((item: any) => item.symbol) || [],
     [filteredRecommendations]
   );
   
   // 獲取第一個股票的數據
-  const stock0 = trpc.stock.getStockData.useQuery(
+  const stock0 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[0] || '' },
     { enabled: !!user && !!recommendedSymbols[0], staleTime: 30000, retry: 1 }
   );
-  const stock1 = trpc.stock.getStockData.useQuery(
+  const stock1 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[1] || '' },
     { enabled: !!user && !!recommendedSymbols[1], staleTime: 30000, retry: 1 }
   );
-  const stock2 = trpc.stock.getStockData.useQuery(
+  const stock2 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[2] || '' },
     { enabled: !!user && !!recommendedSymbols[2], staleTime: 30000, retry: 1 }
   );
-  const stock3 = trpc.stock.getStockData.useQuery(
+  const stock3 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[3] || '' },
     { enabled: !!user && !!recommendedSymbols[3], staleTime: 30000, retry: 1 }
   );
-  const stock4 = trpc.stock.getStockData.useQuery(
+  const stock4 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[4] || '' },
     { enabled: !!user && !!recommendedSymbols[4], staleTime: 30000, retry: 1 }
   );
-  const stock5 = trpc.stock.getStockData.useQuery(
+  const stock5 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[5] || '' },
     { enabled: !!user && !!recommendedSymbols[5], staleTime: 30000, retry: 1 }
   );
@@ -116,37 +116,37 @@ export default function Home() {
   const stockDataQueries = [stock0, stock1, stock2, stock3, stock4, stock5];
   
   // 創建股價數據映射表
-  const stockPriceMap = new Map(
+  const stockPriceMap = new Map<string, any>(
     stockDataQueries
-      .filter(query => query.data)
-      .map((query, index) => [
+      .filter((query: any) => query.data)
+      .map((query: any, index: number) => [
         recommendedSymbols[index],
         query.data
       ])
   );
   
   // 獲取收藏狀態
-  const { data: watchlistData } = trpc.watchlist.list.useQuery(
+  const { data: watchlistData } = (trpc as any).watchlist.list.useQuery(
     undefined,
     { enabled: !!user }
   );
   
   // 創建收藏狀態映射表
-  const watchlistMap = new Map(
-    watchlistData?.map(item => [item.symbol, true]) || []
+  const watchlistMap = new Map<string, any>(
+    (watchlistData?.map((item: any) => [item.symbol, true]) || []) as [string, any][]
   );
   
   const utils = trpc.useUtils();
   
   // 添加收藏 mutation
-  const addToWatchlistMutation = trpc.watchlist.add.useMutation({
-    onMutate: async ({ symbol, companyName }) => {
+  const addToWatchlistMutation = (trpc as any).watchlist.add.useMutation({
+    onMutate: async ({ symbol, companyName }: any) => {
       // 樂觀更新：立即更新 UI
-      await utils.watchlist.list.cancel();
-      const previousData = utils.watchlist.list.getData();
+      await (utils as any).watchlist.list.cancel();
+      const previousData = (utils as any).watchlist.list.getData();
       
       // 添加到收藏列表
-      utils.watchlist.list.setData(undefined, (old) => [
+      (utils as any).watchlist.list.setData(undefined, (old: any) => [
         ...(old || []),
         {
           id: Date.now(),
@@ -159,10 +159,10 @@ export default function Home() {
       
       return { previousData };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables: any, context: any) => {
       // 回滾樂觀更新
       if (context?.previousData) {
-        utils.watchlist.list.setData(undefined, context.previousData);
+        (utils as any).watchlist.list.setData(undefined, context.previousData);
       }
       toast.error('加入收藏失敗');
     },
@@ -173,28 +173,28 @@ export default function Home() {
     },
     onSettled: () => {
       // 重新獲取數據以確保一致性
-      utils.watchlist.list.invalidate();
+      (utils as any).watchlist.list.invalidate();
     },
   });
   
   // 移除收藏 mutation
-  const removeFromWatchlistMutation = trpc.watchlist.remove.useMutation({
-    onMutate: async ({ symbol }) => {
+  const removeFromWatchlistMutation = (trpc as any).watchlist.remove.useMutation({
+    onMutate: async ({ symbol }: any) => {
       // 樂觀更新：立即更新 UI
-      await utils.watchlist.list.cancel();
-      const previousData = utils.watchlist.list.getData();
+      await (utils as any).watchlist.list.cancel();
+      const previousData = (utils as any).watchlist.list.getData();
       
       // 從收藏列表移除
-      utils.watchlist.list.setData(undefined, (old) =>
-        (old || []).filter(item => item.symbol !== symbol)
+      (utils as any).watchlist.list.setData(undefined, (old: any) =>
+        (old || []).filter((item: any) => item.symbol !== symbol)
       );
       
       return { previousData };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables: any, context: any) => {
       // 回滾樂觀更新
       if (context?.previousData) {
-        utils.watchlist.list.setData(undefined, context.previousData);
+        (utils as any).watchlist.list.setData(undefined, context.previousData);
       }
       toast.error('取消收藏失敗');
     },
@@ -205,7 +205,7 @@ export default function Home() {
     },
     onSettled: () => {
       // 重新獲取數據以確保一致性
-      utils.watchlist.list.invalidate();
+      (utils as any).watchlist.list.invalidate();
     },
   });
   
@@ -528,7 +528,7 @@ export default function Home() {
                     recommendations={filteredRecommendations.slice(0, 6)}
                     stockPriceMap={stockPriceMap}
                     stockDataQueries={stockDataQueries}
-                    watchlistMap={watchlistMap}
+                    watchlistMap={watchlistMap as any}
                     toggleWatchlist={toggleWatchlist}
                     addToWatchlistMutation={addToWatchlistMutation}
                     removeFromWatchlistMutation={removeFromWatchlistMutation}
@@ -538,7 +538,7 @@ export default function Home() {
                 
                 {/* 平板/桌面版：網格佈局 */}
                 <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
-                  {filteredRecommendations.slice(0, 6).map((item) => {
+                  {filteredRecommendations.slice(0, 6).map((item: any) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
                     let displayName = item.shortName || item.companyName;

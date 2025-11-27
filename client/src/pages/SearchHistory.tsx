@@ -28,12 +28,12 @@ export default function SearchHistory() {
   const [, setLocation] = useLocation();
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
 
-  const { data: history, isLoading } = trpc.history.list.useQuery(
+  const { data: history, isLoading } = (trpc as any).history.list.useQuery(
     { limit: 50 },
     { enabled: !!user }
   );
   
-  const { data: topStocks, isLoading: loadingTopStocks } = trpc.history.getTopStocks.useQuery(
+  const { data: topStocks, isLoading: loadingTopStocks } = (trpc as any).history.getTopStocks.useQuery(
     { limit: 10 },
     { enabled: !!user }
   );
@@ -44,9 +44,9 @@ export default function SearchHistory() {
   
   const utils = trpc.useUtils();
   
-  const deleteOneMutation = trpc.history.deleteOne.useMutation({
+  const deleteOneMutation = (trpc as any).history.deleteOne.useMutation({
     onSuccess: () => {
-      utils.history.list.invalidate();
+      (utils as any).history.list.invalidate();
       toast.success("已刪除搜尋記錄");
       setDeleteDialogOpen(false);
       setDeletingId(null);
@@ -56,9 +56,9 @@ export default function SearchHistory() {
     },
   });
   
-  const deleteAllMutation = trpc.history.deleteAll.useMutation({
+  const deleteAllMutation = (trpc as any).history.deleteAll.useMutation({
     onSuccess: () => {
-      utils.history.list.invalidate();
+      (utils as any).history.list.invalidate();
       toast.success("已清空所有搜尋記錄");
       setDeleteAllDialogOpen(false);
     },
@@ -87,7 +87,7 @@ export default function SearchHistory() {
   const filteredHistory = useMemo(() => {
     if (!history) return [];
     if (marketFilter === 'all') return history;
-    return history.filter(item => getMarketFromSymbol(item.symbol) === marketFilter);
+    return history.filter((item: any) => getMarketFromSymbol(item.symbol) === marketFilter);
   }, [history, marketFilter]);
 
   if (loading) {
@@ -212,7 +212,7 @@ export default function SearchHistory() {
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {topStocks.map((stock, index) => (
+                {topStocks.map((stock: any, index: number) => (
                   <div
                     key={stock.symbol}
                     className="flex items-center justify-between p-3 bg-background rounded-lg cursor-pointer hover:bg-gradient-to-r hover:from-blue-500/5 hover:to-purple-500/5 hover:border-blue-500/20 border border-transparent transition-all"
@@ -272,7 +272,7 @@ export default function SearchHistory() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {filteredHistory.map((item, index) => (
+            {filteredHistory.map((item: any, index: number) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, x: -20 }}

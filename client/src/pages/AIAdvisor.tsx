@@ -20,14 +20,14 @@ export default function AIAdvisor() {
     }
   ]);
 
-  const chatMutation = trpc.stock.chatWithAI.useMutation({
-    onSuccess: (response) => {
+  const chatMutation = (trpc as any).stock.chatWithAI.useMutation({
+    onSuccess: (response: any) => {
       setMessages(prev => [...prev, {
         role: "assistant",
         content: response.message
       }]);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`AI 回應失敗: ${error.message}`);
       // 移除最後一條用戶消息（因為 AI 沒有成功回應）
       setMessages(prev => prev.slice(0, -1));

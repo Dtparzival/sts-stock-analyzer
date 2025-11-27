@@ -47,15 +47,15 @@ export default function AnalysisAccuracy() {
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  const { data: accuracyStats, isLoading, error } = trpc.analysis.getAccuracyStats.useQuery();
-  const { data: accuracyTrend, isLoading: isTrendLoading } = trpc.analysis.getAccuracyTrend.useQuery({
+  const { data: accuracyStats, isLoading, error } = (trpc as any).analysis.getAccuracyStats.useQuery();
+  const { data: accuracyTrend, isLoading: isTrendLoading } = (trpc as any).analysis.getAccuracyTrend.useQuery({
     timeRange: parseInt(timeRange) as 7 | 30 | 90,
   });
-  const { data: stockReport, isLoading: isReportLoading } = trpc.analysis.getStockReport.useQuery(
+  const { data: stockReport, isLoading: isReportLoading } = (trpc as any).analysis.getStockReport.useQuery(
     { symbol: selectedSymbol! },
     { enabled: !!selectedSymbol }
   );
-  const { data: lowAccuracyWarnings } = trpc.analysis.getLowAccuracyWarnings.useQuery({
+  const { data: lowAccuracyWarnings } = (trpc as any).analysis.getLowAccuracyWarnings.useQuery({
     threshold: 0.5,
     timeRange: parseInt(timeRange) as 7 | 30 | 90,
   });
@@ -313,7 +313,7 @@ export default function AnalysisAccuracy() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-3 gap-4">
-                    {lowAccuracyWarnings.map((warning) => (
+                    {lowAccuracyWarnings.map((warning: any) => (
                       <Card key={warning.symbol} className="bg-white">
                         <CardContent className="pt-4">
                           <div className="flex items-center justify-between mb-2">
@@ -367,7 +367,7 @@ export default function AnalysisAccuracy() {
                   </p>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={accuracyTrend.overall.map(d => ({
+                    <LineChart data={accuracyTrend.overall.map((d: any) => ({
                       month: d.month,
                       準確率: d.accuracyRate * 100,
                     }))}>
@@ -411,7 +411,7 @@ export default function AnalysisAccuracy() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.entries(accuracyStats.bySymbol).map(([symbol, stats]) => (
+                    {Object.entries(accuracyStats.bySymbol).map(([symbol, stats]: [string, any]) => (
                       <TableRow key={symbol}>
                         <TableCell className="font-medium">
                           {getMarketFromSymbol(symbol) === 'TW' ? cleanTWSymbol(symbol) : symbol}
@@ -654,7 +654,7 @@ export default function AnalysisAccuracy() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {stockReport.recentCases.map((c) => (
+                      {stockReport.recentCases.map((c: any) => (
                         <TableRow key={c.id}>
                           <TableCell>{new Date(c.date).toLocaleDateString()}</TableCell>
                           <TableCell>

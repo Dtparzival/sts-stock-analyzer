@@ -49,7 +49,7 @@ export function PortfolioPerformanceChart({
   const [brushEndIndex, setBrushEndIndex] = useState<number | undefined>(undefined);
 
   // 獲取交易歷史
-  const { data: transactions = [] } = trpc.portfolio.getTransactions.useQuery(
+  const { data: transactions = [] } = (trpc as any).portfolio.getTransactions.useQuery(
     { days: timeRange === 'all' ? undefined : parseInt(timeRange) },
     { enabled: data.length > 0 }
   );
@@ -62,7 +62,7 @@ export function PortfolioPerformanceChart({
     'all': '1y',
   };
   
-  const { data: benchmarkData } = trpc.portfolio.getBenchmarkIndex.useQuery(
+  const { data: benchmarkData } = (trpc as any).portfolio.getBenchmarkIndex.useQuery(
     {
       indexType: benchmarkIndex as 'SPX' | 'NASDAQ' | 'DOW',
       range: rangeMap[timeRange],
@@ -156,7 +156,7 @@ export function PortfolioPerformanceChart({
   }
 
   // 處理交易標註：將交易日期對應到圖表數據點
-  const transactionAnnotations = transactions.map(transaction => {
+  const transactionAnnotations = transactions.map((transaction: any) => {
     const transactionDate = new Date(transaction.transactionDate).toISOString().split('T')[0];
     const dataPoint = chartData.find(d => d.fullDate === transactionDate);
     

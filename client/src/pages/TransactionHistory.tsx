@@ -75,7 +75,7 @@ export default function TransactionHistory() {
 
 function TransactionHistoryContent({ userId }: { userId: number }) {
   // 獲取交易統計數據
-  const { data: stats, isLoading } = trpc.portfolio.getTransactionStats.useQuery();
+  const { data: stats, isLoading } = (trpc as any).portfolio.getTransactionStats.useQuery();
 
   // 預設值（當 API 返回 null 或無數據時）
   const defaultStats = {
@@ -189,14 +189,14 @@ function TransactionHistoryContent({ userId }: { userId: number }) {
 }
 
 function TransactionCharts({ userId }: { userId: number }) {
-  const { data: transactions, isLoading } = trpc.portfolio.getTransactions.useQuery({});
+  const { data: transactions, isLoading } = (trpc as any).portfolio.getTransactions.useQuery({});
 
   // 按月份統計交易次數
   const monthlyData = useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
     const monthMap = new Map<string, { buy: number; sell: number }>();
     
-    transactions.forEach(t => {
+    transactions.forEach((t: any) => {
       const date = new Date(t.transactionDate);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
@@ -224,8 +224,8 @@ function TransactionCharts({ userId }: { userId: number }) {
   // 買入/賣出比例
   const typeDistribution = useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
-    const buyCount = transactions.filter(t => t.transactionType === 'buy').length;
-    const sellCount = transactions.filter(t => t.transactionType === 'sell').length;
+    const buyCount = transactions.filter((t: any) => t.transactionType === 'buy').length;
+    const sellCount = transactions.filter((t: any) => t.transactionType === 'sell').length;
     
     return [
       { name: '買入', value: buyCount, color: '#10b981' },
@@ -238,7 +238,7 @@ function TransactionCharts({ userId }: { userId: number }) {
     if (!transactions || transactions.length === 0) return [];
     const stockMap = new Map<string, number>();
     
-    transactions.forEach(t => {
+    transactions.forEach((t: any) => {
       const count = stockMap.get(t.symbol) || 0;
       stockMap.set(t.symbol, count + 1);
     });
@@ -377,7 +377,7 @@ function TransactionCharts({ userId }: { userId: number }) {
 
 function TransactionList({ userId }: { userId: number }) {
   // 獲取交易記錄
-  const { data: transactions, isLoading } = trpc.portfolio.getTransactions.useQuery({});
+  const { data: transactions, isLoading } = (trpc as any).portfolio.getTransactions.useQuery({});
 
   // 篩選和排序狀態
   const [searchQuery, setSearchQuery] = useState("");
