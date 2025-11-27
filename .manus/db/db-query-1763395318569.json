@@ -1,0 +1,25 @@
+{
+  "query": "SELECT DISTINCT symbol FROM watchlist ORDER BY symbol;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT DISTINCT symbol FROM watchlist ORDER BY symbol;",
+  "rows": [
+    {
+      "symbol": "2317.TW"
+    },
+    {
+      "symbol": "2330.TW"
+    },
+    {
+      "symbol": "TEM"
+    },
+    {
+      "symbol": "TSLA"
+    },
+    {
+      "symbol": "VOO"
+    }
+  ],
+  "messages": [],
+  "stdout": "symbol\n2317.TW\n2330.TW\nTEM\nTSLA\nVOO\n",
+  "stderr": "",
+  "execution_time_ms": 1534
+}
