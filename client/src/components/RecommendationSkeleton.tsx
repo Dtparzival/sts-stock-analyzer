@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 /**
  * 推薦區塊骨架屏組件
  * 遵循全站漸層風格，提供流暢的載入動畫
+ * 優化版：添加更流暢的漸層動畫效果
  */
 export default function RecommendationSkeleton() {
   return (
@@ -35,28 +36,32 @@ export default function RecommendationSkeleton() {
         {[...Array(6)].map((_, i) => (
           <Card 
             key={i} 
-            className="overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 animate-pulse"
+            className="overflow-hidden bg-gradient-to-br from-card via-card to-primary/5"
+            style={{
+              animation: `pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
+              animationDelay: `${i * 0.1}s`
+            }}
           >
             <CardContent className="p-3 sm:p-4 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[120px]">
               {/* 市場標籤骨架 */}
-              <div className="absolute top-2 right-2 h-5 w-14 bg-muted/50 rounded-full"></div>
+              <div className="absolute top-2 right-2 h-5 w-14 bg-muted/50 rounded-full skeleton"></div>
               
               {/* 收藏按鈕骨架 */}
-              <div className="absolute top-2 left-2 h-8 w-8 bg-muted/50 rounded-full"></div>
+              <div className="absolute top-2 left-2 h-8 w-8 bg-muted/50 rounded-full skeleton"></div>
               
               {/* 股票圖標骨架 */}
-              <div className="mb-2 sm:mb-3 h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10"></div>
+              <div className="mb-2 sm:mb-3 h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 skeleton"></div>
               
               {/* 股票代碼骨架 */}
-              <div className="h-5 w-16 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded mb-1 sm:mb-2"></div>
+              <div className="h-5 w-16 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded mb-1 sm:mb-2 skeleton"></div>
               
               {/* 股票名稱骨架 */}
-              <div className="h-4 w-20 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded mb-1 sm:mb-2"></div>
+              <div className="h-4 w-20 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded mb-1 sm:mb-2 skeleton"></div>
               
               {/* 股價資訊骨架 */}
               <div className="flex flex-col items-center gap-1 w-full mt-1">
-                <div className="h-4 w-16 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded"></div>
-                <div className="h-3 w-24 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded"></div>
+                <div className="h-4 w-16 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded skeleton"></div>
+                <div className="h-3 w-24 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded skeleton"></div>
               </div>
             </CardContent>
           </Card>
