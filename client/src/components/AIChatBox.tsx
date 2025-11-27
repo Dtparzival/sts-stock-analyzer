@@ -2,10 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, User, Sparkles, RotateCcw } from "lucide-react";
+import { Loader2, Send, User, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Streamdown } from "streamdown";
-import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * Message type matching server-side LLM Message interface
@@ -58,23 +57,6 @@ export type AIChatBoxProps = {
    * Click to send directly
    */
   suggestedPrompts?: string[];
-
-  /**
-   * Quick question templates to display above input area
-   * Click to auto-fill the input field
-   */
-  quickTemplates?: string[];
-
-  /**
-   * Callback when a quick template is clicked
-   * If provided, will be called instead of auto-filling input
-   */
-  onQuickTemplateClick?: (template: string) => void;
-
-  /**
-   * Callback to clear all messages (optional)
-   */
-  onClearMessages?: () => void;
 };
 
 /**
@@ -137,9 +119,6 @@ export function AIChatBox({
   height = "600px",
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
-  quickTemplates,
-  onQuickTemplateClick,
-  onClearMessages,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -234,7 +213,7 @@ export function AIChatBox({
                       key={index}
                       onClick={() => onSendMessage(prompt)}
                       disabled={isLoading}
-                      className="rounded-xl border-2 border-accent/20 bg-gradient-to-br from-white to-accent/5 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-accent hover:shadow-md hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                      className="rounded-lg border border-border bg-card px-4 py-2 text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {prompt}
                     </button>
@@ -246,48 +225,43 @@ export function AIChatBox({
         ) : (
           <ScrollArea className="h-full">
             <div className="flex flex-col space-y-4 p-4">
-              <AnimatePresence initial={false}>
-                {displayMessages.map((message, index) => {
-                  // Apply min-height to last message only if NOT loading (when loading, the loading indicator gets it)
-                  const isLastMessage = index === displayMessages.length - 1;
-                  const shouldApplyMinHeight =
-                    isLastMessage && !isLoading && minHeightForLastMessage > 0;
+              {displayMessages.map((message, index) => {
+                // Apply min-height to last message only if NOT loading (when loading, the loading indicator gets it)
+                const isLastMessage = index === displayMessages.length - 1;
+                const shouldApplyMinHeight =
+                  isLastMessage && !isLoading && minHeightForLastMessage > 0;
 
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
-                      className={cn(
-                        "flex gap-3",
-                        message.role === "user"
-                          ? "justify-end items-start"
-                          : "justify-start items-start"
-                      )}
-                      style={
-                        shouldApplyMinHeight
-                          ? { minHeight: `${minHeightForLastMessage}px` }
-                          : undefined
-                      }
-                    >
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex gap-3",
+                      message.role === "user"
+                        ? "justify-end items-start"
+                        : "justify-start items-start"
+                    )}
+                    style={
+                      shouldApplyMinHeight
+                        ? { minHeight: `${minHeightForLastMessage}px` }
+                        : undefined
+                    }
+                  >
                     {message.role === "assistant" && (
-                      <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-primary flex items-center justify-center shadow-md">
-                        <Sparkles className="size-4 text-white" />
+                      <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="size-4 text-primary" />
                       </div>
                     )}
 
                     <div
                       className={cn(
-                        "max-w-[80%] rounded-2xl px-4 py-3 shadow-sm",
+                        "max-w-[80%] rounded-lg px-4 py-2.5",
                         message.role === "user"
-                          ? "bg-gradient-primary text-white"
-                          : "bg-gradient-to-br from-gray-50 to-gray-100 text-foreground border border-gray-200"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground"
                       )}
                     >
                       {message.role === "assistant" ? (
-                        <div className="prose prose-sm max-w-none">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
                           <Streamdown>{message.content}</Streamdown>
                         </div>
                       ) : (
@@ -302,10 +276,9 @@ export function AIChatBox({
                         <User className="size-4 text-secondary-foreground" />
                       </div>
                     )}
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                  </div>
+                );
+              })}
 
               {isLoading && (
                 <div
@@ -316,14 +289,11 @@ export function AIChatBox({
                       : undefined
                   }
                 >
-                  <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-primary flex items-center justify-center shadow-md animate-pulse">
-                    <Sparkles className="size-4 text-white" />
+                  <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="size-4 text-primary" />
                   </div>
-                  <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-3 border border-gray-200 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin text-accent" />
-                      <span className="text-sm text-muted-foreground">AI 正在思考中...</span>
-                    </div>
+                  <div className="rounded-lg bg-muted px-4 py-2.5">
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
                   </div>
                 </div>
               )}
@@ -332,64 +302,26 @@ export function AIChatBox({
         )}
       </div>
 
-      {/* Quick Templates (always shown when available) */}
-      {quickTemplates && quickTemplates.length > 0 && (
-        <div className="border-t bg-gradient-to-r from-accent/5 to-primary/5 px-4 py-3">
-          <div className="flex flex-wrap gap-2">
-            {quickTemplates.map((template, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => {
-                  if (onQuickTemplateClick) {
-                    onQuickTemplateClick(template);
-                  } else {
-                    setInput(template);
-                    textareaRef.current?.focus();
-                  }
-                }}
-                disabled={isLoading}
-                className="rounded-lg border border-accent/30 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-all hover:border-accent hover:bg-accent/10 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {template}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Input Area */}
       <form
         ref={inputAreaRef}
         onSubmit={handleSubmit}
-        className="flex gap-2 p-4 border-t bg-gradient-to-r from-gray-50 to-white items-end"
+        className="flex gap-2 p-4 border-t bg-background/50 items-end"
       >
-        {onClearMessages && displayMessages.length > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClearMessages}
-            className="shrink-0 h-10 w-10 rounded-xl text-gray-500 hover:text-accent hover:bg-accent/10 transition-all"
-            title="清空對話"
-          >
-            <RotateCcw className="size-4" />
-          </Button>
-        )}
         <Textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 max-h-32 resize-none min-h-10 rounded-xl border-2 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+          className="flex-1 max-h-32 resize-none min-h-9"
           rows={1}
         />
         <Button
           type="submit"
           size="icon"
           disabled={!input.trim() || isLoading}
-          className="shrink-0 h-10 w-10 rounded-xl bg-gradient-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 h-[38px] w-[38px]"
         >
           {isLoading ? (
             <Loader2 className="size-4 animate-spin" />

@@ -7,7 +7,4 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-  twelveDataBaseUrl: process.env.TWELVEDATA_BASE_URL ?? "",
-  twelveDataToken: process.env.TWELVEDATA_TOKEN ?? "",
-  tiingoApiToken: process.env.TIINGO_API_TOKEN ?? "",
 };

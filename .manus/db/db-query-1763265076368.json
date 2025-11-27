@@ -1,9 +1,0 @@
-{
-  "query": "INSERT INTO portfolio (userId, symbol, companyName, shares, purchasePrice, purchaseDate, notes) VALUES (1, 'TSLA', 'Tesla Inc.', 1000, 20000, '2024-01-01', '測試持倉2');",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute INSERT INTO portfolio (userId, symbol, companyName, shares, purchasePrice, purchaseDate, notes) VALUES (1, 'TSLA', 'Tesla Inc.', 1000, 20000, '2024-01-01', '測試持倉2');",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1550
-}
