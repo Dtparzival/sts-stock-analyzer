@@ -501,7 +501,7 @@ export default function StockDetail() {
             <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-4">
               <div className="flex-1 min-w-0 w-full">
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2 sm:mb-3">
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{displaySymbol}</h1>
+                  <h1 className="text-heading-2 md:text-heading-1 font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{displaySymbol}</h1>
                   {market === 'TW' && (
                     <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1 flex-shrink-0">台股</Badge>
                   )}
@@ -509,7 +509,7 @@ export default function StockDetail() {
                     <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1 flex-shrink-0">美股</Badge>
                   )}
                 </div>
-                <p className="text-base sm:text-lg lg:text-xl text-muted-foreground font-medium break-words">
+                <p className="text-body-large text-muted-foreground font-medium break-words">
                   {companyName}
                 </p>
               </div>
@@ -525,9 +525,9 @@ export default function StockDetail() {
                   size="lg"
                   onClick={handleWatchlistToggle}
                   disabled={!user}
-                  className={`min-h-[44px] w-full sm:w-auto ${watchlistCheck?.isInWatchlist 
-                    ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 shadow-md hover:from-yellow-600 hover:to-amber-600 transition-all duration-300" 
-                    : "border-2 border-yellow-500/50 hover:border-yellow-500 hover:bg-yellow-500/10 transition-all duration-300"}`}
+                  className={`min-h-[44px] w-full sm:w-auto font-semibold ${watchlistCheck?.isInWatchlist 
+                    ? "bg-gradient-gold text-white border-0 shadow-gold-lg hover:shadow-gold hover:-translate-y-0.5 transition-all duration-300" 
+                    : "border-2 border-gold hover:bg-gradient-gold-subtle transition-all duration-300"}`}
                 >
                   {watchlistCheck?.isInWatchlist ? (
                     <>
@@ -536,7 +536,7 @@ export default function StockDetail() {
                     </>
                   ) : (
                     <>
-                      <Star className="h-5 w-5 mr-2 text-yellow-600" />
+                      <Star className="h-5 w-5 mr-2 text-gold" />
                       <span className="text-sm sm:text-base">加入收藏</span>
                     </>
                   )}
@@ -554,26 +554,26 @@ export default function StockDetail() {
             {/* 主要價格資訊 - 突出顯示 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-border">
               <div className="text-center md:text-left">
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">當前價格</p>
-                <p className="number-display text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{currencySymbol}{currentPrice?.toFixed(2)}</p>
+                <p className="text-caption sm:text-body-small font-semibold text-muted-foreground mb-2 sm:mb-3">當前價格</p>
+                <p className="number-display-xl md:text-display-2 font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent break-words">{currencySymbol}{currentPrice?.toFixed(2)}</p>
               </div>
               <div className="text-center md:text-left">
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">漲跌幅</p>
+                <p className="text-caption sm:text-body-small font-semibold text-muted-foreground mb-2 sm:mb-3">漲跌幅</p>
                 <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3">
                   {priceChange >= 0 ? (
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10 flex-shrink-0">
-                      <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-green-500/10 flex-shrink-0">
+                      <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
                     </div>
                   ) : (
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-red-500/10 flex-shrink-0">
-                      <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-red-500/10 flex-shrink-0">
+                      <TrendingDown className="h-6 w-6 sm:h-7 sm:w-7 text-red-600" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className={`number-display text-2xl sm:text-3xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'} break-words`}>
+                    <p className={`number-display-lg md:number-display-xl font-bold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'} break-words`}>
                       {priceChange >= 0 ? '+' : ''}{currencySymbol}{priceChange.toFixed(2)}
                     </p>
-                    <p className={`number-display text-lg sm:text-xl font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`number-display md:number-display-lg font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ({priceChangePercent.toFixed(2)}%)
                     </p>
                   </div>
@@ -582,30 +582,30 @@ export default function StockDetail() {
             </div>
             
             {/* 其他價格資訊 */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">開盤價</p>
-                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+              <div className="gradient-blue-subtle rounded-lg p-3 sm:p-4">
+                <p className="text-caption sm:text-body-small font-medium text-muted-foreground mb-2">開盤價</p>
+                <p className="number-display-lg font-semibold text-foreground break-words">{currencySymbol}{meta?.regularMarketOpen?.toFixed(2) || 'N/A'}</p>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">昨收價</p>
-                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
+              <div className="gradient-blue-subtle rounded-lg p-3 sm:p-4">
+                <p className="text-caption sm:text-body-small font-medium text-muted-foreground mb-2">昨收價</p>
+                <p className="number-display-lg font-semibold text-foreground break-words">{currencySymbol}{previousClose?.toFixed(2) || 'N/A'}</p>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">最高價</p>
-                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
+              <div className="gradient-blue-subtle rounded-lg p-3 sm:p-4">
+                <p className="text-caption sm:text-body-small font-medium text-muted-foreground mb-2">最高價</p>
+                <p className="number-display-lg font-semibold text-foreground break-words">{currencySymbol}{meta?.regularMarketDayHigh?.toFixed(2) || 'N/A'}</p>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">最低價</p>
-                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
+              <div className="gradient-blue-subtle rounded-lg p-3 sm:p-4">
+                <p className="text-caption sm:text-body-small font-medium text-muted-foreground mb-2">最低價</p>
+                <p className="number-display-lg font-semibold text-foreground break-words">{currencySymbol}{meta?.regularMarketDayLow?.toFixed(2) || 'N/A'}</p>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">成交量</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">{meta?.regularMarketVolume?.toLocaleString() || 'N/A'}</p>
+              <div className="gradient-blue-subtle rounded-lg p-3 sm:p-4">
+                <p className="text-caption sm:text-body-small font-medium text-muted-foreground mb-2">成交量</p>
+                <p className="number-display-lg font-semibold text-foreground break-words">{meta?.regularMarketVolume?.toLocaleString() || 'N/A'}</p>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">市值</p>
-                <p className="number-display text-lg sm:text-xl lg:text-2xl font-semibold break-words">
+              <div className="gradient-blue-subtle rounded-lg p-3 sm:p-4">
+                <p className="text-caption sm:text-body-small font-medium text-muted-foreground mb-2">市值</p>
+                <p className="number-display-lg font-semibold text-foreground break-words">
                   {meta?.marketCap ? `$${(meta.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
                 </p>
               </div>
@@ -691,8 +691,8 @@ export default function StockDetail() {
           <TabsContent value="analysis">
             <Card className="border-2 shadow-lg">
               <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6">
-                <CardTitle className="text-xl sm:text-2xl">AI 投資分析</CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardTitle className="text-heading-4 sm:text-heading-3">AI 投資分析</CardTitle>
+                <CardDescription className="text-body-small sm:text-body">
                   基於公司基本面、技術面和市場情緒的綜合分析
                 </CardDescription>
               </CardHeader>
@@ -702,7 +702,7 @@ export default function StockDetail() {
                     {isAnalyzing ? (
                       <AILoadingAnimation type="analysis" />
                     ) : (
-                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
+                      <Button onClick={() => handleGetAnalysis(false)} disabled={isAnalyzing} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-gold text-white border-0 shadow-gold-lg hover:shadow-gold hover:-translate-y-0.5 transition-all duration-300 min-h-[44px]">
                         開始分析
                       </Button>
                     )}
@@ -930,8 +930,8 @@ export default function StockDetail() {
           <TabsContent value="prediction">
             <Card className="border-2 shadow-lg">
               <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6">
-                <CardTitle className="text-xl sm:text-2xl">未來趨勢預測</CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardTitle className="text-heading-4 sm:text-heading-3">未來趋勢預測</CardTitle>
+                <CardDescription className="text-body-small sm:text-body">
                   基於歷史數據和市場趋勢的未來走勢預測
                 </CardDescription>
               </CardHeader>
@@ -941,7 +941,7 @@ export default function StockDetail() {
                     {isPredicting ? (
                       <AILoadingAnimation type="prediction" />
                     ) : (
-                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-primary text-white border-0 shadow-lg button-hover min-h-[44px]">
+                      <Button onClick={handleGetPrediction} disabled={isPredicting} size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold bg-gradient-gold text-white border-0 shadow-gold-lg hover:shadow-gold hover:-translate-y-0.5 transition-all duration-300 min-h-[44px]">
                         開始預測
                       </Button>
                     )}
