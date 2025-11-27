@@ -90,3 +90,131 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // TODO: add feature queries here as your schema grows.
+
+// ===== 搜尋歷史相關 =====
+import { searchHistory, InsertSearchHistory, watchlist, InsertWatchlist, userInteractions, InsertUserInteraction } from "../drizzle/schema";
+import { desc, and, sql } from "drizzle-orm";
+
+export async function addSearchHistory(data: InsertSearchHistory) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    await db.insert(searchHistory).values(data);
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to add search history:", error);
+    return null;
+  }
+}
+
+export async function getSearchHistory(userId: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const results = await db
+      .select()
+      .from(searchHistory)
+      .where(eq(searchHistory.userId, userId))
+      .orderBy(desc(searchHistory.searchedAt))
+      .limit(limit);
+    
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get search history:", error);
+    return [];
+  }
+}
+
+// ===== 收藏清單相關 =====
+
+export async function addToWatchlist(data: InsertWatchlist) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    await db.insert(watchlist).values(data);
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to add to watchlist:", error);
+    return null;
+  }
+}
+
+export async function removeFromWatchlist(userId: number, symbol: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    await db
+      .delete(watchlist)
+      .where(and(eq(watchlist.userId, userId), eq(watchlist.symbol, symbol)));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to remove from watchlist:", error);
+    return null;
+  }
+}
+
+export async function getWatchlist(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const results = await db
+      .select()
+      .from(watchlist)
+      .where(eq(watchlist.userId, userId))
+      .orderBy(desc(watchlist.addedAt));
+    
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get watchlist:", error);
+    return [];
+  }
+}
+
+// ===== 用戶互動追蹤 =====
+
+export async function trackInteraction(data: InsertUserInteraction) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    await db.insert(userInteractions).values(data);
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to track interaction:", error);
+    return null;
+  }
+}
+
+// ===== 簡化版推薦演算法 =====
+
+export async function getRecommendations(userId: number, market: 'US' | 'TW', limit: number = 6) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    // 簡化版：基於搜尋歷史頻率推薦
+    const results = await db
+      .select({
+        symbol: searchHistory.symbol,
+        shortName: searchHistory.shortName,
+        companyName: searchHistory.companyName,
+        searchCount: sql<number>`COUNT(*)`.as('searchCount'),
+        lastSearched: sql<Date>`MAX(${searchHistory.searchedAt})`.as('lastSearched'),
+      })
+      .from(searchHistory)
+      .where(eq(searchHistory.userId, userId))
+      .groupBy(searchHistory.symbol, searchHistory.shortName, searchHistory.companyName)
+      .orderBy(desc(sql`searchCount`), desc(sql`lastSearched`))
+      .limit(limit);
+    
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get recommendations:", error);
+    return [];
+  }
+}

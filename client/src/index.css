@@ -43,6 +43,16 @@
 }
 
 :root {
+  /* 專業信任藍配色方案 */
+  --color-primary: #0d47a1;
+  --color-secondary: #00509e;
+  --color-accent-gold: #d4af37;
+  --color-text-primary: #212121;
+  --color-text-secondary: #616161;
+  --color-success: #2e7d32;
+  --color-warning: #f57c00;
+  --color-error: #c62828;
+  
   --primary: var(--color-blue-700);
   --primary-foreground: var(--color-blue-50);
   --sidebar-primary: var(--color-blue-600);
