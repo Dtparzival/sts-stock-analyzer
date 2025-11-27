@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, History, Share2 } from "lucide-react";
+import { ArrowLeft, Star, StarOff, TrendingUp, TrendingDown, Loader2, History, Share2, Target } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
@@ -714,6 +714,15 @@ export default function StockDetail() {
                         分析時間：{analysisCachedAt ? new Date(analysisCachedAt).toLocaleString('zh-TW') : '剛剛'}
                       </div>
                       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setLocation(`/analysis-accuracy?symbol=${symbol}`)}
+                          className="button-hover font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial bg-gradient-gold-subtle border-gold hover:bg-gradient-gold hover:text-white transition-all"
+                        >
+                          <Target className="h-4 w-4 mr-2" />
+                          準確度追蹤
+                        </Button>
                         <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm" className="button-hover font-semibold text-xs sm:text-sm min-h-[44px] flex-1 sm:flex-initial">

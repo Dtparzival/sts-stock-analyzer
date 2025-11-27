@@ -2,12 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AIChatBox, Message } from "@/components/AIChatBox";
-import { Sparkles, X, Minimize2 } from "lucide-react";
+import { Sparkles, X, Minimize2, MessageCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-export default function FloatingAIChat() {
+interface FloatingAIChatProps {
+  inline?: boolean;
+}
+
+export default function FloatingAIChat({ inline = false }: FloatingAIChatProps) {
   const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -131,6 +135,19 @@ export default function FloatingAIChat() {
     setLastClickedQuestion(question);
     handleSend(question, question); // 傳遞快速問題以追蹤使用頻率
   };
+
+  // Inline 模式：直接顯示打開按鈕
+  if (inline) {
+    return (
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="w-full bg-gradient-gold hover:bg-gradient-gold-hover text-white font-semibold py-3 rounded-lg shadow-gold transition-all hover:shadow-gold-lg hover:-translate-y-0.5"
+      >
+        <MessageCircle className="h-5 w-5 mr-2" />
+        開始對話
+      </Button>
+    );
+  }
 
   if (!isOpen) {
     return (
