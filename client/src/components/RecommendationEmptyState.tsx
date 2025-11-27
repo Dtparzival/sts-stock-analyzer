@@ -31,9 +31,12 @@ export default function RecommendationEmptyState({ market, onSearchClick }: Reco
             尚無{marketName}推薦
           </h3>
           
-          {/* 描述文字 */}
-          <p className="text-sm text-muted-foreground text-center mb-5 max-w-md">
+          {/* 描述文字 - 添加具體操作引導 */}
+          <p className="text-sm text-muted-foreground text-center mb-2 max-w-md">
             開始搜尋{marketName}以獲得個人化推薦
+          </p>
+          <p className="text-xs text-muted-foreground/80 text-center mb-5 max-w-md">
+            {market === 'US' ? '試試搜尋 AAPL、TSLA 或 GOOGL 開始探索' : '試試搜尋 2330、0050 或台積電開始探索'}
           </p>
           
           {/* 操作按鈕 */}

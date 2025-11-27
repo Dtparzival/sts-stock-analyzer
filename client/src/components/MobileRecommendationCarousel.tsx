@@ -141,9 +141,11 @@ export default function MobileRecommendationCarousel({
                       
                       if (isLoading) {
                         return (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>載入中...</span>
+                          <div className="flex flex-col items-center gap-1 w-full animate-pulse">
+                            {/* 骨架屏 - 當前股價 */}
+                            <div className="h-5 w-20 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded"></div>
+                            {/* 骨架屏 - 漲跌幅 */}
+                            <div className="h-4 w-28 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded"></div>
                           </div>
                         );
                       }

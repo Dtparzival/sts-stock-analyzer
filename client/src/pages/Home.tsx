@@ -439,16 +439,16 @@ export default function Home() {
             </div>
 
             {/* 搜尋框 - 優化設計 */}
-            <form onSubmit={handleSearch} className="max-w-3xl mx-auto">
+            <form onSubmit={handleSearch} className="max-w-3xl mx-auto px-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-xl rounded-2xl"></div>
-                <div className="relative bg-card border-2 border-border rounded-2xl shadow-xl overflow-hidden">
-                  <div className="flex items-center gap-3 p-2">
+                <div className="relative bg-card border-2 border-border rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2">
                     <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+                      <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       <Input
                         type="text"
-                        placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL, TSLA, GOOGL）" : "輸入股票代碼或中文名稱（例如：2330, 台積電）"}
+                        placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL）" : "輸入股票代碼（例如：2330）"}
                         value={searchQuery}
                         onChange={handleSearchInputChange}
                         onFocus={() => {
@@ -460,7 +460,7 @@ export default function Home() {
                           // 延遲隱藏，讓點擊建議有時間觸發
                           setTimeout(() => setShowSuggestions(false), 200);
                         }}
-                        className="pl-14 pr-4 h-14 text-lg border-0 focus-visible:ring-0 bg-transparent"
+                        className="pl-11 sm:pl-14 pr-3 sm:pr-4 h-12 sm:h-14 text-base sm:text-lg border-0 focus-visible:ring-0 bg-transparent"
                       />
                       {/* 自動完成建議 */}
                       {showSuggestions && suggestions.length > 0 && (
@@ -482,10 +482,10 @@ export default function Home() {
                     <Button 
                       type="submit" 
                       size="lg" 
-                      className="h-14 px-8 text-base font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover"
+                      className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover w-full sm:w-auto"
                     >
                       搜尋
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
                   </div>
                 </div>
@@ -575,22 +575,22 @@ export default function Home() {
                         {/* 漸層背景裝飾 */}
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
-                        <CardContent className="relative p-4 sm:p-5 lg:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[180px] lg:min-h-[200px]">
+                        <CardContent className="relative p-3 sm:p-4 lg:p-5 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] lg:min-h-[220px]">
                           {/* 股票圖標 */}
-                          <div className="mb-2 sm:mb-3 p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                          <div className="mb-2 sm:mb-3 p-1.5 sm:p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
                             <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           
                           {/* 股票代碼 */}
-                          <div className="text-center mb-1 sm:mb-2">
-                            <h4 className="font-bold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors">
+                          <div className="text-center mb-1">
+                            <h4 className="font-bold text-sm sm:text-base lg:text-lg text-foreground group-hover:text-primary transition-colors">
                               {displaySymbol}
                             </h4>
                           </div>
                           
                           {/* 股票名稱 */}
                           {displayName && (
-                            <p className="text-xs sm:text-sm text-muted-foreground text-center line-clamp-2 mb-1 sm:mb-2 min-h-[2rem] px-1">
+                            <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground text-center line-clamp-2 mb-1 sm:mb-2 min-h-[1.5rem] sm:min-h-[2rem] px-1">
                               {displayName}
                             </p>
                           )}
@@ -602,9 +602,11 @@ export default function Home() {
                             
                             if (isLoading) {
                               return (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>載入中...</span>
+                                <div className="flex flex-col items-center gap-1 w-full animate-pulse">
+                                  {/* 骨架屏 - 當前股價 */}
+                                  <div className="h-5 w-20 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded"></div>
+                                  {/* 骨架屏 - 漲跌幅 */}
+                                  <div className="h-4 w-28 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/60 rounded"></div>
                                 </div>
                               );
                             }
