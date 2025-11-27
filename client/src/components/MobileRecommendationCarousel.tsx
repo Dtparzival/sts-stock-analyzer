@@ -27,7 +27,6 @@ interface MobileRecommendationCarouselProps {
     shortName: string | null;
     companyName: string | null;
     searchedAt: Date;
-    score?: number;
   }>;
   stockPriceMap: Map<string, any>;
   stockDataQueries: Array<any>;
@@ -91,34 +90,17 @@ export default function MobileRecommendationCarousel({
               }
             }
             
-            // 判斷是否為高評分股票（評分 >= 8.0）
-            const isHighScore = (item.score ?? 0) >= 8.0;
-            
             return (
               <div 
                 key={item.id} 
                 className="flex-[0_0_75%] min-w-0"
               >
                 <Card
-                  className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl active:scale-95 rounded-xl shadow-md touch-manipulation h-full ${
-                    isHighScore 
-                      ? 'bg-gradient-to-br from-card via-card to-accent/10 border-2 border-accent hover:border-accent shadow-gold-lg hover:shadow-gold-xl' 
-                      : 'bg-gradient-to-br from-card via-card to-primary/5 hover:border-primary/50'
-                  }`}
+                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95 rounded-xl shadow-md touch-manipulation h-full"
                   onClick={() => setLocation(`/stock/${item.symbol}`)}
                 >
-                  {/* 高評分徽章 */}
-                  {isHighScore && (
-                    <div className="absolute top-2 right-2 z-20">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-gold text-white shadow-gold-lg animate-pulse">
-                        <Star className="h-3.5 w-3.5 fill-white" />
-                        優質推薦
-                      </span>
-                    </div>
-                  )}
-                  
                   {/* 市場標籤 */}
-                  <div className={`absolute ${isHighScore ? 'top-10' : 'top-2'} right-2 z-10`}>
+                  <div className="absolute top-2 right-2 z-10">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                       market === 'US' 
                         ? 'bg-primary/20 text-primary' 
@@ -130,11 +112,7 @@ export default function MobileRecommendationCarousel({
                   </div>
                   
                   {/* 漸層背景裝飾 */}
-                  <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-                    isHighScore 
-                      ? 'from-accent/0 via-accent/5 to-accent/20' 
-                      : 'from-primary/0 via-primary/0 to-primary/10'
-                  }`}></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
                   <CardContent className="relative p-4 flex flex-col items-center justify-center min-h-[160px]">
                     {/* 股票圖標 */}
