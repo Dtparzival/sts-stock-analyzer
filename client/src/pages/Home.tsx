@@ -14,6 +14,7 @@ import FloatingAIChat from "@/components/FloatingAIChat";
 import { useDebounce } from "@shared/hooks/useDebounce";
 import RecommendationEmptyState from "@/components/RecommendationEmptyState";
 import RecommendationSkeleton from "@/components/RecommendationSkeleton";
+import MobileRecommendationCarousel from "@/components/MobileRecommendationCarousel";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -520,8 +521,23 @@ export default function Home() {
                   </Button>
                 </div>
                 
-                {/* 推薦卡片網格 - 優化觸控體驗 */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
+                {/* 推薦卡片 - 手機版橫向滑動，平板/桌面版網格 */}
+                {/* 手機版：橫向滑動輪播 */}
+                <div className="block sm:hidden">
+                  <MobileRecommendationCarousel 
+                    recommendations={filteredRecommendations.slice(0, 6)}
+                    stockPriceMap={stockPriceMap}
+                    stockDataQueries={stockDataQueries}
+                    watchlistMap={watchlistMap}
+                    toggleWatchlist={toggleWatchlist}
+                    addToWatchlistMutation={addToWatchlistMutation}
+                    removeFromWatchlistMutation={removeFromWatchlistMutation}
+                    setLocation={setLocation}
+                  />
+                </div>
+                
+                {/* 平板/桌面版：網格佈局 */}
+                <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
                   {filteredRecommendations.slice(0, 6).map((item) => {
                     // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
                     let displaySymbol = item.symbol;
