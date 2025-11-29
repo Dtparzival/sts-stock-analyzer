@@ -15,6 +15,7 @@ import { useDebounce } from "@shared/hooks/useDebounce";
 import RecommendationEmptyState from "@/components/RecommendationEmptyState";
 import RecommendationSkeleton from "@/components/RecommendationSkeleton";
 import MobileRecommendationCarousel from "@/components/MobileRecommendationCarousel";
+import MobileHotStocksCarousel from "@/components/MobileHotStocksCarousel";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -717,7 +718,7 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
-            <Card className="card-hover border-2 hover:border-blue-500/50 active:border-blue-600 active:scale-[0.98] cursor-pointer group animate-fade-in animate-delay-100 transition-all duration-300 hover:shadow-xl" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <Card className="card-hover border-2 hover:border-blue-500/50 active:border-blue-600 active:scale-[0.98] cursor-pointer group animate-slide-up transition-all duration-300 hover:shadow-xl" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 sm:mb-5 p-5 sm:p-6 rounded-2xl w-fit shadow-lg group-hover:shadow-2xl group-hover:scale-110 group-active:scale-105 transition-all duration-500 relative" style={{ background: 'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)' }}>
                   {/* 光暈效果 */}
@@ -731,7 +732,7 @@ export default function Home() {
               </CardHeader>
             </Card>
 
-            <Card className="card-hover border-2 border-gold/30 hover:border-gold/60 active:border-gold active:scale-[0.98] cursor-pointer group animate-fade-in animate-delay-200 shadow-lg hover:shadow-gold-lg transition-all duration-300" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <Card className="card-hover border-2 border-gold/30 hover:border-gold/60 active:border-gold active:scale-[0.98] cursor-pointer group animate-slide-up animate-delay-100 shadow-lg hover:shadow-gold-lg transition-all duration-300" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 sm:mb-5 p-5 sm:p-6 rounded-2xl w-fit shadow-xl group-hover:shadow-2xl group-hover:scale-110 group-active:scale-105 transition-all duration-500 relative" style={{ background: 'linear-gradient(135deg, #d4af37 0%, #f4e5a1 50%, #d4af37 100%)' }}>
                   {/* 金色光暈效果 */}
@@ -745,7 +746,7 @@ export default function Home() {
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-blue-500/50 active:border-blue-600 active:scale-[0.98] cursor-pointer group animate-fade-in animate-delay-300 transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/portfolio")}>
+            <Card className="card-hover border-2 hover:border-blue-500/50 active:border-blue-600 active:scale-[0.98] cursor-pointer group animate-slide-up animate-delay-200 transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/portfolio")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 sm:mb-5 p-5 sm:p-6 rounded-2xl w-fit shadow-lg group-hover:shadow-2xl group-hover:scale-110 group-active:scale-105 transition-all duration-500 relative" style={{ background: 'linear-gradient(135deg, #00509e 0%, #0077cc 100%)' }}>
                   {/* 光暈效果 */}
@@ -769,7 +770,7 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
-            <Card className="card-hover border-2 hover:border-green-500/50 active:border-green-600 active:scale-[0.98] cursor-pointer group transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/analysis-accuracy")}>
+            <Card className="card-hover border-2 hover:border-green-500/50 active:border-green-600 active:scale-[0.98] cursor-pointer group animate-slide-up transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/analysis-accuracy")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 sm:mb-5 p-5 sm:p-6 rounded-2xl w-fit shadow-lg group-hover:shadow-2xl group-hover:scale-110 group-active:scale-105 transition-all duration-500 relative" style={{ background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)' }}>
                   {/* 綠色光暈效果 */}
@@ -783,7 +784,7 @@ export default function Home() {
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-orange-500/50 active:border-orange-600 active:scale-[0.98] cursor-pointer group transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/watchlist")}>
+            <Card className="card-hover border-2 hover:border-orange-500/50 active:border-orange-600 active:scale-[0.98] cursor-pointer group animate-slide-up animate-delay-100 transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/watchlist")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 sm:mb-5 p-5 sm:p-6 rounded-2xl w-fit shadow-lg group-hover:shadow-2xl group-hover:scale-110 group-active:scale-105 transition-all duration-500 relative" style={{ background: 'linear-gradient(135deg, #f57c00 0%, #ff9800 100%)' }}>
                   {/* 橙色光暈效果 */}
@@ -797,7 +798,7 @@ export default function Home() {
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-blue-500/50 active:border-blue-600 active:scale-[0.98] cursor-pointer group transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/history")}>
+            <Card className="card-hover border-2 hover:border-blue-500/50 active:border-blue-600 active:scale-[0.98] cursor-pointer group animate-slide-up animate-delay-200 transition-all duration-300 hover:shadow-xl" onClick={() => setLocation("/history")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 sm:mb-5 p-5 sm:p-6 rounded-2xl w-fit shadow-lg group-hover:shadow-2xl group-hover:scale-110 group-active:scale-105 transition-all duration-500 relative" style={{ background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' }}>
                   {/* 藍色光暈效果 */}
@@ -821,7 +822,27 @@ export default function Home() {
               <p className="text-body text-muted-foreground px-4 sm:px-0 animate-fade-in animate-delay-100">市場關注度最高的股票</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* 手機版：橫向滑動輪播 */}
+          <div className="block md:hidden">
+            <MobileHotStocksCarousel 
+              stocks={HOT_STOCKS[selectedMarket].map(stock => ({
+                symbol: selectedMarket === 'TW' ? cleanTWSymbol(stock.symbol) : stock.symbol,
+                name: stock.name
+              }))}
+              onStockClick={(symbol) => {
+                // 需要使用原始 symbol（包含 .TW）來導航
+                const originalStock = HOT_STOCKS[selectedMarket].find(s => 
+                  selectedMarket === 'TW' ? cleanTWSymbol(s.symbol) === symbol : s.symbol === symbol
+                );
+                if (originalStock) {
+                  setLocation(`/stock/${originalStock.symbol}`);
+                }
+              }}
+            />
+          </div>
+          
+          {/* 平板/桌面版：網格佈局 */}
+          <div className="hidden md:grid md:grid-cols-4 gap-4 px-4">
             {HOT_STOCKS[selectedMarket].map((stock, index) => {
               // 移除台股代碼中的 .TW 後綴
               const displaySymbol = selectedMarket === 'TW' 
