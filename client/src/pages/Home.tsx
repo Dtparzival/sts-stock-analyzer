@@ -829,6 +829,7 @@ export default function Home() {
                 symbol: selectedMarket === 'TW' ? cleanTWSymbol(stock.symbol) : stock.symbol,
                 name: stock.name
               }))}
+              market={selectedMarket}
               onStockClick={(symbol) => {
                 // 需要使用原始 symbol（包含 .TW）來導航
                 const originalStock = HOT_STOCKS[selectedMarket].find(s => 
