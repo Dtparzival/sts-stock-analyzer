@@ -712,7 +712,7 @@ export default function Home() {
         {/* 核心功能特色 - 全新設計 */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h3 className="text-heading-2 font-bold mb-4 px-4 animate-fade-in">強大的分析功能</h3>
+            <h3 className="text-heading-2 font-bold mb-4 px-4 animate-fade-in">強大分析功能</h3>
             <p className="text-body-large text-muted-foreground px-4 animate-fade-in animate-delay-100">一站式投資分析平台，助您輕鬆管理投資組合</p>
           </div>
           
