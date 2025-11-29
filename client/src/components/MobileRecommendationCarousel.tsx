@@ -22,19 +22,11 @@ function formatRelativeTime(date: Date): string {
 
 interface MobileRecommendationCarouselProps {
   recommendations: Array<{
+    id: number;
     symbol: string;
-    score?: number;
-    reason?: string;
-    viewCount?: number;
-    searchCount?: number;
-    totalViewTime?: number;
-    isFavorite?: boolean;
-    lastViewedAt?: Date;
-    // 舊格式相容性欄位
-    id?: number;
-    shortName?: string | null;
-    companyName?: string | null;
-    searchedAt?: Date;
+    shortName: string | null;
+    companyName: string | null;
+    searchedAt: Date;
   }>;
   stockPriceMap: Map<string, any>;
   stockDataQueries: Array<any>;
@@ -100,7 +92,7 @@ export default function MobileRecommendationCarousel({
             
             return (
               <div 
-                key={item.symbol} 
+                key={item.id} 
                 className="flex-[0_0_75%] min-w-0"
               >
                 <Card
@@ -192,7 +184,7 @@ export default function MobileRecommendationCarousel({
                         return (
                           <div className="text-xs text-muted-foreground/70 flex items-center gap-1">
                             <History className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">{item.searchedAt ? formatRelativeTime(item.searchedAt) : item.lastViewedAt ? formatRelativeTime(item.lastViewedAt) : '最近查看'}</span>
+                            <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
                           </div>
                         );
                       }
@@ -207,7 +199,7 @@ export default function MobileRecommendationCarousel({
                         return (
                           <div className="text-xs text-muted-foreground/70 flex items-center gap-1">
                             <History className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">{item.searchedAt ? formatRelativeTime(item.searchedAt) : item.lastViewedAt ? formatRelativeTime(item.lastViewedAt) : '最近查看'}</span>
+                            <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
                           </div>
                         );
                       }

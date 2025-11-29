@@ -43,40 +43,30 @@ export default function Home() {
   // 使用防抖機制，延遲 300ms 更新建議
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
-  // 獲取智能推薦（使用新的推薦演算法）
-  const { data: smartRecommendationsData, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getSmartRecommendations.useQuery(
-    undefined,
+  // 獲取智能推薦（整合行為數據進行排序）
+  // 獲取更多數據以確保過濾後仍有足夠的推薦
+  const { data: recentHistory, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getRecommendations.useQuery(
+    { limit: 20 },
     { 
       enabled: !!user,
-      refetchInterval: 60000, // 每 60 秒自動刷新（因為有快取機制）
+      refetchInterval: 30000, // 每 30 秒自動刷新
     }
   );
   
-  // 提取推薦結果
-  const recentHistory = useMemo(() => {
-    if (!smartRecommendationsData?.recommendations) return [];
-    return smartRecommendationsData.recommendations;
-  }, [smartRecommendationsData]);
-  
   // 手動刷新狀態
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-  
-  // 手動刷新推薦的 mutation
-  const refreshRecommendationsMutation = (trpc as any).history.refreshRecommendations.useMutation();
   
   // 手動刷新函數
   const handleManualRefresh = async () => {
     setIsManualRefreshing(true);
     try {
-      // 使用 mutation 刷新推薦（會清除快取）
-      await refreshRecommendationsMutation.mutateAsync();
-      // 刷新推薦列表
-      await refetchRecommendations();
-      // 刷新收藏狀態
-      await (utils as any).watchlist.list.invalidate();
+      // 同時刷新推薦列表和收藏狀態
+      await Promise.all([
+        refetchRecommendations(),
+        (utils as any).watchlist.list.invalidate(),
+      ]);
       toast.success('已刷新推薦內容');
     } catch (error) {
-      console.error('Manual refresh failed:', error);
       toast.error('刷新失敗');
     } finally {
       setIsManualRefreshing(false);
@@ -99,10 +89,7 @@ export default function Home() {
     [filteredRecommendations]
   );
   
-  // 漸進式載入狀態：先載入前3個，後3個延遲載入
-  const [shouldLoadMore, setShouldLoadMore] = useState(false);
-  
-  // 前3個推薦股票（立即載入）
+  // 獲取第一個股票的數據
   const stock0 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[0] || '' },
     { enabled: !!user && !!recommendedSymbols[0], staleTime: 30000, retry: 1 }
@@ -115,36 +102,18 @@ export default function Home() {
     { symbol: recommendedSymbols[2] || '' },
     { enabled: !!user && !!recommendedSymbols[2], staleTime: 30000, retry: 1 }
   );
-  
-  // 後3個推薦股票（延遲載入）
   const stock3 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[3] || '' },
-    { enabled: !!user && !!recommendedSymbols[3] && shouldLoadMore, staleTime: 30000, retry: 1 }
+    { enabled: !!user && !!recommendedSymbols[3], staleTime: 30000, retry: 1 }
   );
   const stock4 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[4] || '' },
-    { enabled: !!user && !!recommendedSymbols[4] && shouldLoadMore, staleTime: 30000, retry: 1 }
+    { enabled: !!user && !!recommendedSymbols[4], staleTime: 30000, retry: 1 }
   );
   const stock5 = (trpc as any).stock.getStockData.useQuery(
     { symbol: recommendedSymbols[5] || '' },
-    { enabled: !!user && !!recommendedSymbols[5] && shouldLoadMore, staleTime: 30000, retry: 1 }
+    { enabled: !!user && !!recommendedSymbols[5], staleTime: 30000, retry: 1 }
   );
-  
-  // 當前3個股票載入完成後，自動載入後3個
-  useEffect(() => {
-    const firstThreeLoaded = 
-      (!stock0.isLoading || !recommendedSymbols[0]) &&
-      (!stock1.isLoading || !recommendedSymbols[1]) &&
-      (!stock2.isLoading || !recommendedSymbols[2]);
-    
-    if (firstThreeLoaded && !shouldLoadMore && recommendedSymbols.length > 3) {
-      // 延遲 300ms 再載入後3個，避免同時請求過多
-      const timer = setTimeout(() => {
-        setShouldLoadMore(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [stock0.isLoading, stock1.isLoading, stock2.isLoading, shouldLoadMore, recommendedSymbols.length]);
   
   const stockDataQueries = [stock0, stock1, stock2, stock3, stock4, stock5];
   
@@ -594,7 +563,7 @@ export default function Home() {
                     
                     return (
                       <Card
-                        key={item.symbol}
+                        key={item.id}
                         className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95 rounded-xl sm:rounded-2xl shadow-md touch-manipulation"
                         onClick={() => setLocation(`/stock/${item.symbol}`)}
                       >
@@ -663,18 +632,6 @@ export default function Home() {
                             </p>
                           )}
                           
-                          {/* 推薦理由 - 僅當有 reason 欄位時顯示 */}
-                          {item.reason && (
-                            <div className="w-full px-2 mb-2">
-                              <div className="flex items-start gap-1.5 p-2 bg-primary/5 rounded-lg">
-                                <Target className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                                <p className="text-[10px] sm:text-xs text-foreground/80 leading-relaxed line-clamp-2">
-                                  {item.reason}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                          
                           {/* 即時股價資訊 */}
                           {(() => {
                             const stockData = stockPriceMap.get(item.symbol);
@@ -695,7 +652,7 @@ export default function Home() {
                               return (
                                 <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
                                   <History className="h-3 w-3 flex-shrink-0" />
-                                  <span className="truncate">{item.searchedAt ? formatRelativeTime(item.searchedAt) : item.lastViewedAt ? formatRelativeTime(item.lastViewedAt) : '最近查看'}</span>
+                                  <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
                                 </div>
                               );
                             }
@@ -710,7 +667,7 @@ export default function Home() {
                               return (
                                 <div className="text-[10px] sm:text-xs text-muted-foreground/70 flex items-center gap-1">
                                   <History className="h-3 w-3 flex-shrink-0" />
-                                  <span className="truncate">{item.searchedAt ? formatRelativeTime(item.searchedAt) : item.lastViewedAt ? formatRelativeTime(item.lastViewedAt) : '最近查看'}</span>
+                                  <span className="truncate">{formatRelativeTime(item.searchedAt)}</span>
                                 </div>
                               );
                             }

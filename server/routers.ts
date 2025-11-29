@@ -14,12 +14,6 @@ import * as dbCache from './dbStockDataCache';
 // import { convertAlphaVantageToYahooFormat } from './alphaVantage'; // 不再使用 Alpha Vantage API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
 import { calculateAccuracyStats, calculateAccuracyTrend, generateStockAnalysisReport, checkLowAccuracyStocks } from './analysisAccuracy';
-import { 
-  getPersonalizedRecommendations, 
-  getCachedRecommendations, 
-  setCachedRecommendations,
-  clearRecommendationCache 
-} from './recommendation';
 
 /**
  * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
@@ -1104,55 +1098,7 @@ ${stocksInfo}
         return suggestions.slice(0, input.limit);
       }),
     
-    // 獲取智能推薦（使用新的推薦演算法）
-    getSmartRecommendations: protectedProcedure
-      .query(async ({ ctx }) => {
-        try {
-          // 先檢查快取
-          const cached = await getCachedRecommendations(ctx.user.id);
-          if (cached) {
-            return {
-              recommendations: cached,
-              fromCache: true,
-            };
-          }
-          
-          // 生成新的推薦
-          const recommendations = await getPersonalizedRecommendations(ctx.user.id);
-          
-          // 設定快取
-          if (recommendations.length > 0) {
-            setCachedRecommendations(ctx.user.id, recommendations);
-          }
-          
-          return {
-            recommendations,
-            fromCache: false,
-          };
-        } catch (error) {
-          console.error('[Router] Failed to get smart recommendations:', error);
-          return {
-            recommendations: [],
-            fromCache: false,
-          };
-        }
-      }),
-    
-    // 手動刷新推薦（清除快取）
-    refreshRecommendations: protectedProcedure
-      .mutation(async ({ ctx }) => {
-        clearRecommendationCache(ctx.user.id);
-        const recommendations = await getPersonalizedRecommendations(ctx.user.id);
-        if (recommendations.length > 0) {
-          setCachedRecommendations(ctx.user.id, recommendations);
-        }
-        return {
-          recommendations,
-          refreshed: true,
-        };
-      }),
-    
-    // 獲取智能推薦（整合行為數據進行排序 - 舊版）
+    // 獲取智能推薦（整合行為數據進行排序）
     getRecommendations: protectedProcedure
       .input(z.object({
         limit: z.number().optional().default(6),
