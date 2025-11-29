@@ -717,9 +717,9 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group animate-fade-in animate-delay-100 transition-all duration-300" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+            <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group animate-fade-in animate-delay-100 transition-all duration-300" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary to-primary/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300" style={{ background: 'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)' }}>
                   <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">即時股票數據</CardTitle>
@@ -731,7 +731,7 @@ export default function Home() {
 
             <Card className="card-hover border-2 border-gold/30 hover:border-blue-500/50 cursor-pointer group animate-fade-in animate-delay-200 shadow-lg hover:shadow-gold-lg transition-all duration-300" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-gold via-gold/90 to-gold/80 w-fit shadow-xl group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300">
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl w-fit shadow-xl group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300" style={{ background: 'linear-gradient(135deg, #d4af37 0%, #f4e5a1 50%, #d4af37 100%)' }}>
                   <Brain className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-md" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold text-gold">AI 投資分析</CardTitle>
@@ -743,7 +743,7 @@ export default function Home() {
             
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group animate-fade-in animate-delay-300 transition-all duration-300" onClick={() => setLocation("/portfolio")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-secondary to-secondary/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300" style={{ background: 'linear-gradient(135deg, #00509e 0%, #0077cc 100%)' }}>
                   <Wallet className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-md" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">投資組合管理</CardTitle>
@@ -765,7 +765,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/analysis-accuracy")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-success to-success/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300" style={{ background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)' }}>
                   <Target className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">AI 分析準確度追蹤</CardTitle>
@@ -777,7 +777,7 @@ export default function Home() {
             
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/watchlist")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-warning to-warning/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300" style={{ background: 'linear-gradient(135deg, #f57c00 0%, #ff9800 100%)' }}>
                   <Star className="h-10 w-10 sm:h-12 sm:w-12 text-white fill-white" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">我的收藏</CardTitle>
@@ -789,7 +789,7 @@ export default function Home() {
             
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/history")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary/90 to-primary/70 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300" style={{ background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' }}>
                   <History className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">搜尋歷史</CardTitle>
