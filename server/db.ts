@@ -963,3 +963,179 @@ export async function getAllUserBehavior(userId: number): Promise<UserBehavior[]
     return [];
   }
 }
+
+/**
+ * 智能推薦演算法：基於用戶行為數據計算推薦評分
+ * 
+ * 評分邏輯：
+ * - 查看頻率權重：30%
+ * - 搜尋頻率權重：20%
+ * - 停留時間權重：25%
+ * - 收藏偏好權重：25%
+ * 
+ * @param userId 用戶 ID
+ * @param limit 返回推薦股票數量（預設 6）
+ * @returns 推薦股票列表（按評分降序排序）
+ */
+export async function getPersonalizedRecommendations(
+  userId: number,
+  limit: number = 6
+): Promise<Array<{
+  symbol: string;
+  score: number;
+  viewCount: number;
+  searchCount: number;
+  totalViewTime: number;
+  isFavorited: boolean;
+  lastViewedAt: Date;
+}>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get personalized recommendations: database not available");
+    return [];
+  }
+
+  try {
+    // 1. 獲取用戶所有行為數據
+    const behaviorData = await db
+      .select()
+      .from(userBehavior)
+      .where(eq(userBehavior.userId, userId))
+      .orderBy(desc(userBehavior.lastViewedAt));
+
+    if (behaviorData.length === 0) {
+      return [];
+    }
+
+    // 2. 獲取用戶收藏列表
+    const favorites = await db
+      .select()
+      .from(watchlist)
+      .where(eq(watchlist.userId, userId));
+
+    const favoriteSymbols = new Set(favorites.map(f => f.symbol));
+
+    // 3. 計算每個股票的推薦評分
+    const recommendations = behaviorData.map(behavior => {
+      // 正規化各項指標（避免某項指標過大影響評分）
+      const maxViewCount = Math.max(...behaviorData.map(b => b.viewCount));
+      const maxSearchCount = Math.max(...behaviorData.map(b => b.searchCount));
+      const maxViewTime = Math.max(...behaviorData.map(b => b.totalViewTime));
+
+      const normalizedViewCount = maxViewCount > 0 ? behavior.viewCount / maxViewCount : 0;
+      const normalizedSearchCount = maxSearchCount > 0 ? behavior.searchCount / maxSearchCount : 0;
+      const normalizedViewTime = maxViewTime > 0 ? behavior.totalViewTime / maxViewTime : 0;
+
+      // 收藏偏好：已收藏的股票得分為 1，未收藏為 0
+      const isFavorited = favoriteSymbols.has(behavior.symbol);
+      const favoriteScore = isFavorited ? 1 : 0;
+
+      // 計算綜合評分（加權平均）
+      const score = 
+        normalizedViewCount * 0.30 +      // 查看頻率權重 30%
+        normalizedSearchCount * 0.20 +    // 搜尋頻率權重 20%
+        normalizedViewTime * 0.25 +       // 停留時間權重 25%
+        favoriteScore * 0.25;             // 收藏偏好權重 25%
+
+      return {
+        symbol: behavior.symbol,
+        score,
+        viewCount: behavior.viewCount,
+        searchCount: behavior.searchCount,
+        totalViewTime: behavior.totalViewTime,
+        isFavorited,
+        lastViewedAt: behavior.lastViewedAt,
+      };
+    });
+
+    // 4. 按評分降序排序，返回前 N 個推薦
+    return recommendations
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+
+  } catch (error) {
+    console.error("[Database] Failed to get personalized recommendations:", error);
+    return [];
+  }
+}
+
+/**
+ * 獲取用戶的熱門股票（基於查看次數）
+ * 用於冷啟動場景（用戶沒有足夠行為數據時）
+ * 
+ * @param userId 用戶 ID
+ * @param limit 返回股票數量（預設 6）
+ * @returns 熱門股票列表（按查看次數降序排序）
+ */
+export async function getPopularStocksForUser(
+  userId: number,
+  limit: number = 6
+): Promise<Array<{
+  symbol: string;
+  viewCount: number;
+  lastViewedAt: Date;
+}>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get popular stocks: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select({
+        symbol: userBehavior.symbol,
+        viewCount: userBehavior.viewCount,
+        lastViewedAt: userBehavior.lastViewedAt,
+      })
+      .from(userBehavior)
+      .where(eq(userBehavior.userId, userId))
+      .orderBy(desc(userBehavior.viewCount))
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get popular stocks:", error);
+    return [];
+  }
+}
+
+/**
+ * 獲取全站熱門股票（所有用戶的行為數據聚合）
+ * 用於新用戶冷啟動場景
+ * 
+ * @param limit 返回股票數量（預設 6）
+ * @returns 全站熱門股票列表
+ */
+export async function getGlobalPopularStocks(
+  limit: number = 6
+): Promise<Array<{
+  symbol: string;
+  totalViews: number;
+  uniqueUsers: number;
+}>> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get global popular stocks: database not available");
+    return [];
+  }
+
+  try {
+    // 使用 SQL 聚合查詢獲取全站熱門股票
+    const results = await db
+      .select({
+        symbol: userBehavior.symbol,
+        totalViews: sql<number>`SUM(${userBehavior.viewCount})`,
+        uniqueUsers: sql<number>`COUNT(DISTINCT ${userBehavior.userId})`,
+      })
+      .from(userBehavior)
+      .groupBy(userBehavior.symbol)
+      .orderBy(desc(sql`SUM(${userBehavior.viewCount})`))
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error("[Database] Failed to get global popular stocks:", error);
+    return [];
+  }
+}

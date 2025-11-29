@@ -1098,65 +1098,53 @@ ${stocksInfo}
         return suggestions.slice(0, input.limit);
       }),
     
-    // 獲取智能推薦（整合行為數據進行排序）
+    // 獲取智能推薦（基於多維度行為數據的個人化推薦）
     getRecommendations: protectedProcedure
       .input(z.object({
         limit: z.number().optional().default(6),
       }))
       .query(async ({ input, ctx }) => {
-        // 獲取搜尋歷史
-        const searchHistory = await db.getUserSearchHistory(ctx.user.id, 20);
-        
-        // 獲取收藏列表
-        const watchlist = await db.getUserWatchlist(ctx.user.id);
-        
-        // 獲取用戶行為數據
-        const behaviorData = await db.getAllUserBehavior(ctx.user.id);
-        
-        // 創建行為數據映射表
-        const behaviorMap = new Map(
-          behaviorData.map(b => [b.symbol, b])
+        // 使用新的智能推薦演算法
+        const recommendations = await db.getPersonalizedRecommendations(
+          ctx.user.id,
+          input.limit
         );
         
-        // 創建收藏映射表
-        const watchlistMap = new Set(
-          watchlist.map(w => w.symbol)
-        );
+        // 如果沒有足夠的推薦結果（冷啟動場景），使用熱門股票補充
+        if (recommendations.length < input.limit) {
+          const popularStocks = await db.getPopularStocksForUser(
+            ctx.user.id,
+            input.limit - recommendations.length
+          );
+          
+          // 將熱門股票轉換為推薦格式
+          const popularRecommendations = popularStocks.map(stock => ({
+            symbol: stock.symbol,
+            score: 0.5, // 熱門股票給予基礎評分
+            viewCount: stock.viewCount,
+            searchCount: 0,
+            totalViewTime: 0,
+            isFavorited: false,
+            lastViewedAt: stock.lastViewedAt,
+          }));
+          
+          recommendations.push(...popularRecommendations);
+        }
         
-        // 計算每個股票的推薦評分
-        const scoredStocks = searchHistory.map(item => {
-          const behavior = behaviorMap.get(item.symbol);
-          const isInWatchlist = watchlistMap.has(item.symbol);
+        // 如果仍然沒有推薦結果（新用戶），使用全站熱門股票
+        if (recommendations.length === 0) {
+          const globalPopular = await db.getGlobalPopularStocks(input.limit);
           
-          // 加權評分機制：
-          // - 收藏權重：5 分
-          // - 查看頻率權重：viewCount × 0.5 分
-          // - 搜尋頻率權重：searchCount × 0.3 分
-          // - 停留時間權重：totalViewTime / 60 × 0.2 分（分鐘）
-          // - 點擊頻率權重：clickCount × 0.4 分
-          let score = 0;
-          
-          if (isInWatchlist) {
-            score += 5;
-          }
-          
-          if (behavior) {
-            score += behavior.viewCount * 0.5;
-            score += behavior.searchCount * 0.3;
-            score += (behavior.totalViewTime / 60) * 0.2;
-            score += behavior.clickCount * 0.4;
-          }
-          
-          return {
-            ...item,
-            score,
-          };
-        });
-        
-        // 按評分排序，返回前 N 個
-        const recommendations = scoredStocks
-          .sort((a, b) => b.score - a.score)
-          .slice(0, input.limit);
+          return globalPopular.map(stock => ({
+            symbol: stock.symbol,
+            score: 0.3, // 全站熱門股票給予較低評分
+            viewCount: 0,
+            searchCount: 0,
+            totalViewTime: 0,
+            isFavorited: false,
+            lastViewedAt: new Date(),
+          }));
+        }
         
         return recommendations;
       }),

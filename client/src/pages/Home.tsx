@@ -83,36 +83,64 @@ export default function Home() {
     });
   }, [recentHistory, selectedMarket]);
   
-  // 獲取推薦股票的即時股價資訊（使用 useMemo 穩定引用）
-  const recommendedSymbols = useMemo(
-    () => filteredRecommendations.slice(0, 6).map((item: any) => item.symbol) || [],
+  // 漸進式載入：分離前 3 個和後 3 個推薦股票
+  const [showDelayedStocks, setShowDelayedStocks] = useState(false);
+  
+  // 獲取前 3 個推薦股票（優先載入）
+  const prioritySymbols = useMemo(
+    () => filteredRecommendations.slice(0, 3).map((item: any) => item.symbol) || [],
     [filteredRecommendations]
   );
   
-  // 獲取第一個股票的數據
+  // 獲取後 3 個推薦股票（延遲載入）
+  const delayedSymbols = useMemo(
+    () => filteredRecommendations.slice(3, 6).map((item: any) => item.symbol) || [],
+    [filteredRecommendations]
+  );
+  
+  // 合併所有推薦股票符號（用於向下相容）
+  const recommendedSymbols = useMemo(
+    () => [...prioritySymbols, ...delayedSymbols],
+    [prioritySymbols, delayedSymbols]
+  );
+  
+  // 延遲載入後 3 個股票（500ms 後開始載入）
+  useEffect(() => {
+    if (prioritySymbols.length > 0 && delayedSymbols.length > 0) {
+      const timer = setTimeout(() => {
+        setShowDelayedStocks(true);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [prioritySymbols, delayedSymbols]);
+  
+  // 漸進式載入：前 3 個股票優先載入
   const stock0 = (trpc as any).stock.getStockData.useQuery(
-    { symbol: recommendedSymbols[0] || '' },
-    { enabled: !!user && !!recommendedSymbols[0], staleTime: 30000, retry: 1 }
+    { symbol: prioritySymbols[0] || '' },
+    { enabled: !!user && !!prioritySymbols[0], staleTime: 30000, retry: 1 }
   );
   const stock1 = (trpc as any).stock.getStockData.useQuery(
-    { symbol: recommendedSymbols[1] || '' },
-    { enabled: !!user && !!recommendedSymbols[1], staleTime: 30000, retry: 1 }
+    { symbol: prioritySymbols[1] || '' },
+    { enabled: !!user && !!prioritySymbols[1], staleTime: 30000, retry: 1 }
   );
   const stock2 = (trpc as any).stock.getStockData.useQuery(
-    { symbol: recommendedSymbols[2] || '' },
-    { enabled: !!user && !!recommendedSymbols[2], staleTime: 30000, retry: 1 }
+    { symbol: prioritySymbols[2] || '' },
+    { enabled: !!user && !!prioritySymbols[2], staleTime: 30000, retry: 1 }
   );
+  
+  // 漸進式載入：後 3 個股票延遲載入（僅當 showDelayedStocks 為 true 時才開始查詢）
   const stock3 = (trpc as any).stock.getStockData.useQuery(
-    { symbol: recommendedSymbols[3] || '' },
-    { enabled: !!user && !!recommendedSymbols[3], staleTime: 30000, retry: 1 }
+    { symbol: delayedSymbols[0] || '' },
+    { enabled: !!user && !!delayedSymbols[0] && showDelayedStocks, staleTime: 30000, retry: 1 }
   );
   const stock4 = (trpc as any).stock.getStockData.useQuery(
-    { symbol: recommendedSymbols[4] || '' },
-    { enabled: !!user && !!recommendedSymbols[4], staleTime: 30000, retry: 1 }
+    { symbol: delayedSymbols[1] || '' },
+    { enabled: !!user && !!delayedSymbols[1] && showDelayedStocks, staleTime: 30000, retry: 1 }
   );
   const stock5 = (trpc as any).stock.getStockData.useQuery(
-    { symbol: recommendedSymbols[5] || '' },
-    { enabled: !!user && !!recommendedSymbols[5], staleTime: 30000, retry: 1 }
+    { symbol: delayedSymbols[2] || '' },
+    { enabled: !!user && !!delayedSymbols[2] && showDelayedStocks, staleTime: 30000, retry: 1 }
   );
   
   const stockDataQueries = [stock0, stock1, stock2, stock3, stock4, stock5];
