@@ -732,7 +732,7 @@ export default function Home() {
             <Card className="card-hover border-2 border-gold/30 hover:border-blue-500/50 cursor-pointer group animate-fade-in animate-delay-200 shadow-lg hover:shadow-gold-lg transition-all duration-300" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-gold via-gold/90 to-gold/80 w-fit shadow-xl group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300">
-                  <Brain className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-md" strokeWidth={1.5} />
+                  <Brain className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-md" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold text-gold">AI 投資分析</CardTitle>
                 <CardDescription className="text-sm sm:text-base text-muted-foreground">
@@ -744,7 +744,7 @@ export default function Home() {
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group animate-fade-in animate-delay-300 transition-all duration-300" onClick={() => setLocation("/portfolio")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-secondary to-secondary/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
-                  <Wallet className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} />
+                  <Wallet className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">投資組合管理</CardTitle>
                 <CardDescription className="text-sm sm:text-base text-muted-foreground">
@@ -766,7 +766,7 @@ export default function Home() {
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/analysis-accuracy")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-success to-success/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
-                  <Target className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} />
+                  <Target className="h-10 w-10 sm:h-12 sm:w-12 text-white" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">AI 分析準確度追蹤</CardTitle>
                 <CardDescription className="text-sm sm:text-base text-muted-foreground">
@@ -778,7 +778,7 @@ export default function Home() {
             <Card className="card-hover border-2 hover:border-blue-500/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/watchlist")}>
               <CardHeader className="text-center">
                 <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-warning to-warning/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
-                  <Star className="h-10 w-10 sm:h-12 sm:w-12 text-white fill-white" strokeWidth={1.5} />
+                  <Star className="h-10 w-10 sm:h-12 sm:w-12 text-white fill-white" strokeWidth={1.5} aria-hidden="true" />
                 </div>
                 <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">我的收藏</CardTitle>
                 <CardDescription className="text-sm sm:text-base text-muted-foreground">
