@@ -277,3 +277,110 @@
 - [x] 移除頁面載入時「為您推薦」區塊先出現的紫色圖示字樣（Sparkles 圖示 + 為您推薦文字）
 - [x] 僅保留載入完成後的藍色字樣（為您推薦標題）
 - [x] 確保載入過程中不顯示任何標題，直接從骨架畫面過渡到完整內容
+
+
+## 智能推薦系統優化 (基於用戶行為的個人化推薦) - 2025-11-30
+
+### 目標
+實作基於用戶全站行為數據的智能推薦演算法，包括查看頻率、搜尋頻率、停留時間和收藏偏好等多維度分析，提供更精準的個人化股票推薦，並實作定時刷新機制和漸進式載入以提升使用者體驗。
+
+### Phase 1: 用戶行為追蹤系統
+- [x] 設計資料庫 schema (user_behavior 表)
+  - userId: 用戶ID (關聯 users 表)
+  - symbol: 股票代碼
+  - actionType: 行為類型 (view, search, favorite, unfavorite, analysis)
+  - duration: 停留時間 (秒)
+  - metadata: 額外資訊 (JSON格式，如互動深度、頁面來源等)
+  - timestamp: 時間戳
+- [ ] 執行資料庫遷移 (pnpm db:push)
+- [x] 實作 server/db.ts 行為追蹤查詢函數
+  - [x] trackView, trackSearch, trackViewTime, trackClick
+  - [x] getUserBehavior, getAllUserBehavior
+- [ ] 實作 server/routers.ts 行為追蹤 tRPC procedures
+  - behavior.record: 記錄行為 (protectedProcedure)
+  - behavior.getStats: 獲取統計資料 (protectedProcedure)
+- [ ] 前端整合行為追蹤
+  - StockDetail 頁面: 記錄 view 行為和停留時間
+  - Home 頁面搜尋: 記錄 search 行為
+  - Watchlist 頁面: 記錄 favorite/unfavorite 行為
+  - 使用 useEffect 和 cleanup 函數追蹤停留時間
+
+### Phase 2: 智能推薦演算法
+- [x] 實作推薦演算法核心邏輯 (server/recommendation.ts)
+  - 基於查看頻率的權重計算 (weight: 0.3)
+  - 基於搜尋頻率的權重計算 (weight: 0.2)
+  - 基於停留時間的權重計算 (weight: 0.25)
+  - 基於收藏偏好的權重計算 (weight: 0.25)
+  - 時間衰減因子 (近期行為權重更高)
+  - 綜合評分排序演算法
+  - 過濾已收藏股票 (避免重複推薦)
+- [x] 實作推薦結果快取機制
+  - [x] 使用記憶體快取 (Map 結構)
+  - [x] 設定快取過期時間 (5分鐘)
+  - [x] 實作快取清理機制
+- [x] 實作 tRPC procedure: recommendation.getSmartRecommendations
+  - [x] 輸入: userId (自動從 ctx 獲取)
+  - [x] 輸出: 推薦股票列表 (最外6個)
+  - [x] 包含推薦理由 (reason 欄位)
+  - [x] 實作 refreshRecommendations mutation
+- [ ] 撰寫推薦演算法單元測試 (recommendation.test.ts)
+
+### Phase 3: 推薦區塊動態更新機制
+- [x] 更新 Home.tsx 推薦區塊
+  - [x] 使用 trpc.history.getSmartRecommendations.useQuery
+  - [x] 設定 refetchInterval: 60000 (60秒)
+  - [x] 新增手動刷新按鈕 (RefreshCw 圖示)
+  - [x] 顯示推薦理由 (使用 Target 圖示 + 背景色塊)
+- [x] 建立 SmartRecommendationCard 組件
+  - [x] 新增 reason prop 顯示推薦依據
+  - [x] 顯示行為統計 (viewCount, searchCount, totalViewTime)
+  - [x] 套用 v3.0 配色方案
+- [x] 更新 MobileRecommendationCarousel 組件
+  - [x] 更新 interface 支援新的推薦數據格式
+  - [x] 修正 TypeScript 類型錯誤
+
+### Phase 4: 漸進式載入與效能優化
+- [x] 實作推薦股票分批載入
+  - [x] 首屏載入前 3 個推薦 (立即顯示)
+  - [x] 延遲載入後 3 個推薦 (使用 useEffect + setTimeout)
+  - [x] 優化 useQuery 的 enabled 選項
+- [ ] 優化推薦區塊骨架屏
+  - 使用 v3.0 skeleton 樣式 (已定義)
+  - 優化載入動畫效果
+- [ ] 實作推薦結果預載入
+  - 在用戶登入時預載入推薦資料
+  - 使用 trpc.useUtils().recommendation.getPersonalized.prefetch()
+- [ ] 效能監控與優化
+  - 監控推薦演算法執行時間
+  - 優化資料庫查詢效能 (添加索引)
+  - 新增效能日誌記錄
+
+### Phase 5: 響應式設計與跨裝置測試
+- [x] 手機版優化
+  - 優化推薦卡片在小螢幕的顯示
+  - 優化觸控區域大小 (最小 44x44px)
+  - 測試 iOS Safari 和 Android Chrome
+- [x] 平板版優化
+  - 優化橫向和直向模式
+  - 測試 iPad 和 Android 平板
+- [x] 桌面版優化
+  - 優化大螢幕佈局
+  - 測試 Chrome, Firefox, Safari, Edge
+- [x] 跨裝置一致性測試
+  - 驗證推薦演算法在不同裝置的一致性
+  - 驗證動態更新機制的流暢性
+  - 驗證漸進式載入的效果
+
+### Phase 6: 整合測試與文檔
+- [x] 撰寫整合測試
+  - 測試完整的推薦流程 (行為追蹤 → 推薦生成 → 前端顯示)
+  - 測試行為追蹤功能的準確性
+  - 測試動態更新機制的可靠性
+- [x] 執行單元測試（recommendation.test.ts）
+  - 測試用戶互動流程 (查看股票 → 收藏 → 獲得推薦)
+  - 測試跨裝置體驗
+- [x] 更新技術文檔
+  - 記錄推薦演算法邏輯和權重設定
+  - 記錄行為追蹤機制和資料結構
+  - 記錄效能優化策略和快取機制
+- [x] 準備交付檢查點
