@@ -131,7 +131,7 @@ export default function MobileRecommendationCarousel({
                             : 'bg-red-500/10 group-hover:bg-red-500/20'
                         }`}>
                           <TrendingUp className={`h-4 w-4 ${
-                            isPositive ? 'text-green-600' : 'text-red-600 rotate-90'
+                            isPositive ? 'text-green-600' : 'text-red-600 rotate-[60deg]'
                           }`} />
                         </div>
                       );
