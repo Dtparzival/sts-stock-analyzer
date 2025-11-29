@@ -49,7 +49,7 @@ export default function MobileHotStocksCarousel({
           {stocks.map((stock, index) => (
             <div 
               key={stock.symbol} 
-              className="flex-[0_0_75%] min-w-0"
+              className="flex-[0_0_45%] min-w-0"
             >
               <Card
                 className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95 rounded-xl shadow-md touch-manipulation h-full"
@@ -70,31 +70,18 @@ export default function MobileHotStocksCarousel({
                 {/* 漸層背景裝飾 */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
-                <CardContent className="relative p-4 flex flex-col items-center justify-center min-h-[160px]">
-                  {/* 股票圖標 */}
-                  <div className="mb-2 p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                  </div>
-                  
+                <CardContent className="relative p-3 flex flex-col items-center justify-center min-h-[100px]">
                   {/* 股票代碼 */}
-                  <div className="text-center mb-1">
-                    <h4 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                  <div className="text-center mb-2">
+                    <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors number-display">
                       {stock.symbol}
                     </h4>
                   </div>
                   
                   {/* 股票名稱 */}
-                  <p className="text-xs text-muted-foreground text-center line-clamp-2 mb-1 min-h-[2rem] px-1">
+                  <p className="text-xs text-muted-foreground text-center line-clamp-2 px-1">
                     {stock.name}
                   </p>
-                  
-                  {/* 熱門標籤 */}
-                  <div className="mt-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-700">
-                      <TrendingUp className="h-3 w-3" />
-                      熱門
-                    </span>
-                  </div>
                 </CardContent>
               </Card>
             </div>
