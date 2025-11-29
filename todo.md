@@ -255,3 +255,17 @@
 - 修改 MobileRecommendationCarousel.tsx 中的手機版推薦卡片漲跌圖示顯示邏輯，確保與桌面版一致
 - 使用條件渲染：當 isLoading 或 !stockData 或 !currentPrice 或 !previousClose 時，返回 null 不顯示圖示
 - 確保漲跌圖示與股價資訊同時顯示，無預設綠色圖示
+
+
+## 「為您推薦」區塊載入閃爍問題修正 - 2025-11-29 (第八次)
+
+### 修正需求
+- [x] 修正「為您推薦」區塊在頁面載入時的閃爍問題（避免先顯示紫色圖示字樣再顯示骨架畫面）
+- [x] 確保載入過程中顯示一致的骨架畫面，不顯示任何圖示或文字
+- [x] 優化載入狀態邏輯，確保從骨架畫面直接過渡到完整內容
+
+### 實作說明
+- 新增 areAllStockDataLoaded 狀態檢查，確保所有股價資料都已載入完成
+- 修改條件渲染邏輯：(isLoadingHistory || !areAllStockDataLoaded) ? RecommendationSkeleton : ...
+- 確保在所有股價資料載入完成前，整個推薦區塊顯示骨架畫面
+- 修正後效果：載入過程從骨架畫面直接過渡到完整內容，無閃爍問題

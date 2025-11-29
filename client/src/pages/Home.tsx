@@ -117,6 +117,12 @@ export default function Home() {
   
   const stockDataQueries = [stock0, stock1, stock2, stock3, stock4, stock5];
   
+  // 檢查是否所有股價資料都已載入完成（至少有一個查詢已啟用且所有已啟用的查詢都已完成）
+  const hasEnabledQueries = stockDataQueries.some((query: any) => query.isFetching || query.isLoading || query.data);
+  const areAllStockDataLoaded = hasEnabledQueries && stockDataQueries.every((query: any) => 
+    !query.isFetching && (!query.isLoading || !recommendedSymbols[stockDataQueries.indexOf(query)])
+  );
+  
   // 創建股價數據映射表
   const stockPriceMap = new Map<string, any>(
     stockDataQueries
@@ -497,7 +503,7 @@ export default function Home() {
             {/* 為您推薦區塊 - 全新優化設計 */}
             {/* 推薦區塊 - 僅登入用戶顯示 */}
             {user && (
-              isLoadingHistory ? (
+              (isLoadingHistory || !areAllStockDataLoaded) ? (
                 <RecommendationSkeleton />
               ) : filteredRecommendations && filteredRecommendations.length > 0 ? (
                 <div className="mt-12 max-w-6xl mx-auto px-4">
