@@ -501,12 +501,17 @@ export default function Home() {
                 <RecommendationSkeleton />
               ) : filteredRecommendations && filteredRecommendations.length > 0 ? (
                 <div className="mt-12 max-w-6xl mx-auto px-4">
-                {/* 區塊標題 */}
-                <div className="text-center mb-8 relative flex flex-col items-center">
-                  <div className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
-                    <span className="text-base font-bold text-primary">為您推薦</span>
+                {/* 區塊標題 - 優化視覺層級 */}
+                <div className="text-center mb-8 sm:mb-10 relative flex flex-col items-center animate-slide-up">
+                  {/* 金色點綴標題背景 */}
+                  <div className="inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-accent/20 via-primary/15 to-accent/20 rounded-2xl mb-4 shadow-md border border-accent/30">
+                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                      為您推薦
+                    </h2>
+                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
                   </div>
-                  <p className="text-sm text-muted-foreground">根據您的瀏覽記錄精選推薦</p>
+                  <p className="text-sm sm:text-base text-muted-foreground animate-fade-in animate-delay-100">根據您的瀏覽記錄精選推薦</p>
                   
                   {/* 手動刷新按鈕 */}
                   <Button
