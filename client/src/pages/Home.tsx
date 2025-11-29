@@ -44,8 +44,9 @@ export default function Home() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   // 獲取智能推薦（整合行為數據進行排序）
+  // 獲取更多數據以確保過濾後仍有足夠的推薦
   const { data: recentHistory, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getRecommendations.useQuery(
-    { limit: 6 },
+    { limit: 20 },
     { 
       enabled: !!user,
       refetchInterval: 30000, // 每 30 秒自動刷新
