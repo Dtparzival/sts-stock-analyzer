@@ -577,7 +577,7 @@ export default function Home() {
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
                         <CardContent className="relative p-3 sm:p-4 lg:p-5 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] lg:min-h-[220px]">
-                          {/* 股票圖標 - 根據漲跌顯示不同顏色 */}
+                          {/* 股票圖標 - 根據漲跌顯示不同顏色 - 始終顯示 */}
                           {(() => {
                             const stockData = stockPriceMap.get(item.symbol);
                             const meta = stockData?.chart?.result?.[0]?.meta;
@@ -593,7 +593,7 @@ export default function Home() {
                                   : 'bg-red-500/10 group-hover:bg-red-500/20'
                               }`}>
                                 <TrendingUp className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                                  isPositive ? 'text-green-600' : 'text-red-600 rotate-45'
+                                  isPositive ? 'text-green-600' : 'text-red-600 rotate-[60deg]'
                                 }`} />
                               </div>
                             );
