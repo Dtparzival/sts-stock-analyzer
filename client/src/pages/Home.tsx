@@ -502,7 +502,7 @@ export default function Home() {
               ) : filteredRecommendations && filteredRecommendations.length > 0 ? (
                 <div className="mt-12 max-w-6xl mx-auto px-4">
                 {/* 區塊標題 */}
-                <div className="text-center mb-8 relative">
+                <div className="text-center mb-8 relative flex flex-col items-center">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
                     <Sparkles className="h-5 w-5 text-accent animate-pulse" />
                     <span className="text-base font-bold text-primary">為您推薦</span>
@@ -578,10 +578,27 @@ export default function Home() {
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
                         <CardContent className="relative p-3 sm:p-4 lg:p-5 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] lg:min-h-[220px]">
-                          {/* 股票圖標 */}
-                          <div className="mb-2 sm:mb-3 p-1.5 sm:p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                          </div>
+                          {/* 股票圖標 - 根據漲跌顯示不同顏色 */}
+                          {(() => {
+                            const stockData = stockPriceMap.get(item.symbol);
+                            const meta = stockData?.chart?.result?.[0]?.meta;
+                            const currentPrice = meta?.regularMarketPrice;
+                            const previousClose = meta?.previousClose || meta?.chartPreviousClose;
+                            const change = currentPrice && previousClose ? currentPrice - previousClose : 0;
+                            const isPositive = change >= 0;
+                            
+                            return (
+                              <div className={`mb-2 sm:mb-3 p-1.5 sm:p-2 rounded-full transition-colors ${
+                                isPositive 
+                                  ? 'bg-green-500/10 group-hover:bg-green-500/20' 
+                                  : 'bg-red-500/10 group-hover:bg-red-500/20'
+                              }`}>
+                                <TrendingUp className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                                  isPositive ? 'text-green-600' : 'text-red-600 rotate-180'
+                                }`} />
+                              </div>
+                            );
+                          })()}
                           
                           {/* 股票代碼 */}
                           <div className="text-center mb-1">

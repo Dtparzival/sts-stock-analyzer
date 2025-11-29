@@ -10,7 +10,7 @@ export default function RecommendationSkeleton() {
   return (
     <div className="mt-12 max-w-6xl mx-auto px-4">
       {/* 區塊標題 */}
-      <div className="text-center mb-8 relative">
+      <div className="text-center mb-8 relative flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
           <Sparkles className="h-5 w-5 text-purple-600 animate-pulse" />
           <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
