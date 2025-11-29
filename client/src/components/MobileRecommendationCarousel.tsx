@@ -115,13 +115,26 @@ export default function MobileRecommendationCarousel({
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
                   <CardContent className="relative p-4 flex flex-col items-center justify-center min-h-[160px]">
-                    {/* 股票圖標 - 根據漲跌顯示不同顏色 */}
+                    {/* 股票圖標 - 根據漲跌顯示不同顏色 - 僅在數據載入完成後顯示 */}
                     {(() => {
                       const stockData = stockPriceMap.get(item.symbol);
+                      const isLoading = stockDataQueries[index]?.isLoading;
+                      
+                      // 如果正在載入或沒有數據，不顯示圖示
+                      if (isLoading || !stockData) {
+                        return null;
+                      }
+                      
                       const meta = stockData?.chart?.result?.[0]?.meta;
                       const currentPrice = meta?.regularMarketPrice;
                       const previousClose = meta?.previousClose || meta?.chartPreviousClose;
-                      const change = currentPrice && previousClose ? currentPrice - previousClose : 0;
+                      
+                      // 如果價格數據不完整，不顯示圖示
+                      if (!currentPrice || !previousClose) {
+                        return null;
+                      }
+                      
+                      const change = currentPrice - previousClose;
                       const isPositive = change >= 0;
                       
                       return (
