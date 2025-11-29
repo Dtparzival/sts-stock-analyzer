@@ -503,7 +503,7 @@ export default function Home() {
                 <div className="mt-12 max-w-6xl mx-auto px-4">
                 {/* 區塊標題 */}
                 <div className="text-center mb-8 relative flex flex-col items-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
+                  <div className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 rounded-full mb-3">
                     <Sparkles className="h-5 w-5 text-accent animate-pulse" />
                     <span className="text-base font-bold text-primary">為您推薦</span>
                   </div>
@@ -594,7 +594,7 @@ export default function Home() {
                                   : 'bg-red-500/10 group-hover:bg-red-500/20'
                               }`}>
                                 <TrendingUp className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                                  isPositive ? 'text-green-600' : 'text-red-600 rotate-180'
+                                  isPositive ? 'text-green-600' : 'text-red-600 scale-x-[-1]'
                                 }`} />
                               </div>
                             );
