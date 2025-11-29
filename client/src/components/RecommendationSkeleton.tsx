@@ -1,6 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 
 /**
  * 推薦區塊骨架屏組件
@@ -9,26 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function RecommendationSkeleton() {
   return (
     <div className="mt-12 max-w-6xl mx-auto px-4">
-      {/* 區塊標題 */}
-      <div className="text-center mb-8 relative flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-purple-500/10 rounded-full mb-3">
-          <Sparkles className="h-5 w-5 text-purple-600 animate-pulse" />
-          <span className="text-base font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-            為您推薦
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground">正在載入推薦內容...</p>
-        
-        {/* 刷新按鈕（載入中禁用） */}
-        <Button
-          size="icon"
-          variant="ghost"
-          disabled
-          className="absolute top-0 right-0 h-10 w-10 rounded-full opacity-50"
-        >
-          <RefreshCw className="h-5 w-5 text-primary" />
-        </Button>
-      </div>
+      {/* 載入中不顯示標題，僅顯示骨架屏卡片 */}
       
       {/* 骨架屏卡片網格 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
