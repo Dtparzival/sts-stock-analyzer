@@ -716,38 +716,38 @@ export default function Home() {
             <p className="text-body-large text-muted-foreground px-4 animate-fade-in animate-delay-100">一站式投資分析平台，助您輕鬆管理投資組合</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-100" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-100 transition-all duration-300" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-secondary w-fit shadow-blue">
-                  <BarChart3 className="h-10 w-10 text-white" />
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary to-primary/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                  <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
                 </div>
-                <CardTitle className="text-xl mb-2">即時股票數據</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">即時股票數據</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
                   獲取最新的股票價格、歷史走勢和技術指標，掌握市場動態
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="card-hover border-2 hover:border-gold cursor-pointer group animate-fade-in animate-delay-200 shadow-gold" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <Card className="card-hover border-2 border-gold/30 hover:border-gold cursor-pointer group animate-fade-in animate-delay-200 shadow-lg hover:shadow-gold-lg transition-all duration-300" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-gold w-fit shadow-gold-lg">
-                  <Brain className="h-10 w-10 text-white" />
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-gold via-gold/90 to-gold/80 w-fit shadow-xl group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300">
+                  <Brain className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-md" />
                 </div>
-                <CardTitle className="text-xl mb-2">AI 投資分析</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-lg sm:text-xl mb-2 font-semibold text-gold">AI 投資分析</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
                   運用人工智慧分析公司基本面、技術面，提供專業的投資建議
                 </CardDescription>
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-300" onClick={() => setLocation("/portfolio")}>
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group animate-fade-in animate-delay-300 transition-all duration-300" onClick={() => setLocation("/portfolio")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-gradient-accent w-fit">
-                  <Wallet className="h-10 w-10 text-white" />
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-secondary to-secondary/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                  <Wallet className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
                 </div>
-                <CardTitle className="text-xl mb-2">投資組合管理</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">投資組合管理</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
                   追蹤您的持股表現，計算投資回報，優化資產配置
                 </CardDescription>
               </CardHeader>
@@ -762,38 +762,38 @@ export default function Home() {
             <p className="text-body-large text-muted-foreground px-4">深入了解投資表現，做出更精準的決策</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/analysis-accuracy")}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <Card className="card-hover border-2 hover:border-success/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/analysis-accuracy")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-green-500/10 w-fit">
-                  <Target className="h-10 w-10 text-green-600" />
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-success to-success/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                  <Target className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
                 </div>
-                <CardTitle className="text-xl mb-2">AI 分析準確度追蹤</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">AI 分析準確度追蹤</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
                   自動比對歷史分析建議與實際股價走勢，評估 AI 分析的可靠性
                 </CardDescription>
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/watchlist")}>
+            <Card className="card-hover border-2 hover:border-warning/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/watchlist")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-yellow-500/10 w-fit">
-                  <Star className="h-10 w-10 text-yellow-600 fill-yellow-600" />
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-warning to-warning/80 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                  <Star className="h-10 w-10 sm:h-12 sm:w-12 text-white fill-white" />
                 </div>
-                <CardTitle className="text-xl mb-2">我的收藏</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">我的收藏</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
                   收藏關注的股票，一鍵批量 AI 分析，快速掌握投資機會
                 </CardDescription>
               </CardHeader>
             </Card>
             
-            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer" onClick={() => setLocation("/history")}>
+            <Card className="card-hover border-2 hover:border-primary/50 cursor-pointer group transition-all duration-300" onClick={() => setLocation("/history")}>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-4 rounded-2xl bg-primary/10 w-fit">
-                  <History className="h-10 w-10 text-primary" />
+                <div className="mx-auto mb-3 sm:mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary/90 to-primary/70 w-fit shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                  <History className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
                 </div>
-                <CardTitle className="text-xl mb-2">搜尋歷史</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-lg sm:text-xl mb-2 font-semibold">搜尋歷史</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground">
                   查看最近搜尋的股票，快速返回關注的標的
                 </CardDescription>
               </CardHeader>
