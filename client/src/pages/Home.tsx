@@ -817,12 +817,12 @@ export default function Home() {
         <div className="mb-20">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-heading-2 font-bold mb-2 px-4 sm:px-0">熱門{selectedMarket === 'US' ? '美股' : '台股'}</h3>
-              <p className="text-body text-muted-foreground px-4 sm:px-0">市場關注度最高的股票</p>
+              <h3 className="text-heading-2 font-bold mb-2 px-4 sm:px-0 animate-fade-in">熱門{selectedMarket === 'US' ? '美股' : '台股'}</h3>
+              <p className="text-body text-muted-foreground px-4 sm:px-0 animate-fade-in animate-delay-100">市場關注度最高的股票</p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {HOT_STOCKS[selectedMarket].map((stock) => {
+            {HOT_STOCKS[selectedMarket].map((stock, index) => {
               // 移除台股代碼中的 .TW 後綴
               const displaySymbol = selectedMarket === 'TW' 
                 ? cleanTWSymbol(stock.symbol) 
@@ -832,7 +832,11 @@ export default function Home() {
                 <Button
                   key={stock.symbol}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center hover:bg-primary/10 hover:border-primary/50 hover:shadow-md transition-all card-hover border-2"
+                  className="h-20 flex flex-col items-center justify-center hover:bg-primary/10 hover:border-primary/50 hover:shadow-md transition-all card-hover border-2 animate-fade-in"
+                  style={{
+                    animationDelay: `${(index + 2) * 100}ms`,
+                    animationFillMode: 'backwards'
+                  }}
                   onClick={() => setLocation(`/stock/${stock.symbol}`)}
                 >
                   <span className="text-xl font-bold text-foreground">{displaySymbol}</span>
