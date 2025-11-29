@@ -593,7 +593,7 @@ export default function Home() {
                                   : 'bg-red-500/10 group-hover:bg-red-500/20'
                               }`}>
                                 <TrendingUp className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                                  isPositive ? 'text-green-600' : 'text-red-600 rotate-90'
+                                  isPositive ? 'text-green-600' : 'text-red-600 rotate-45'
                                 }`} />
                               </div>
                             );
