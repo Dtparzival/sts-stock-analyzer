@@ -1015,7 +1015,7 @@ export async function getPersonalizedRecommendations(
 
     const favoriteSymbols = new Set(favorites.map(f => f.symbol));
 
-    // 3. 計算每個股票的推薦評分
+    // 3. 計算每個股票的推薦評分（加入時間衰減因子）
     const recommendations = behaviorData.map(behavior => {
       // 正規化各項指標（避免某項指標過大影響評分）
       const maxViewCount = Math.max(...behaviorData.map(b => b.viewCount));
@@ -1030,12 +1030,30 @@ export async function getPersonalizedRecommendations(
       const isFavorited = favoriteSymbols.has(behavior.symbol);
       const favoriteScore = isFavorited ? 1 : 0;
 
-      // 計算綜合評分（加權平均）
-      const score = 
+      // 時間衰減因子：近期行為獲得更高權重
+      // 計算距離現在的天數
+      const now = new Date();
+      const daysSinceLastView = Math.floor(
+        (now.getTime() - behavior.lastViewedAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      
+      // 時間衰減函數：近 7 天內的行為權重最高
+      // 使用指數衰減：權重 = e^(-天數/7)
+      // 0 天：權重 = 1.0
+      // 7 天：權重 = 0.368
+      // 14 天：權重 = 0.135
+      // 30 天：權重 = 0.011
+      const timeDecayFactor = Math.exp(-daysSinceLastView / 7);
+
+      // 計算綜合評分（加權平均 × 時間衰減因子）
+      const baseScore = 
         normalizedViewCount * 0.30 +      // 查看頻率權重 30%
         normalizedSearchCount * 0.20 +    // 搜尋頻率權重 20%
         normalizedViewTime * 0.25 +       // 停留時間權重 25%
         favoriteScore * 0.25;             // 收藏偏好權重 25%
+      
+      // 應用時間衰減因子
+      const score = baseScore * timeDecayFactor;
 
       return {
         symbol: behavior.symbol,

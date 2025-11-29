@@ -58,6 +58,7 @@
     "framer-motion": "^12.23.22",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
+    "ioredis": "^5.8.2",
     "jose": "6.1.0",
     "jspdf": "^3.0.3",
     "lightweight-charts": "^5.0.9",

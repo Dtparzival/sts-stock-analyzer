@@ -1003,6 +1003,12 @@ ${stocksInfo}
       }))
       .mutation(async ({ input, ctx }) => {
         await db.trackUserClick(ctx.user.id, input.symbol);
+        
+        // 清除用戶推薦快取（行為更新時）
+        const { deleteCachedDataByPattern, getUserBehaviorCachePattern } = await import('./redis');
+        const cachePattern = getUserBehaviorCachePattern(ctx.user.id);
+        await deleteCachedDataByPattern(cachePattern);
+        
         return { success: true };
       }),
     
@@ -1098,13 +1104,35 @@ ${stocksInfo}
         return suggestions.slice(0, input.limit);
       }),
     
-    // 獲取智能推薦（基於多維度行為數據的個人化推薦）
+    // 獲取智能推薦（基於多維度行為數據的個人化推薦 + Redis 快取）
     getRecommendations: protectedProcedure
       .input(z.object({
         limit: z.number().optional().default(6),
       }))
       .query(async ({ input, ctx }) => {
-        // 使用新的智能推薦演算法
+        // 嘗試從 Redis 快取獲取推薦結果
+        const { getCachedData, setCachedData, getRecommendationCacheKey } = await import('./redis');
+        const cacheKey = getRecommendationCacheKey(ctx.user.id);
+        
+        // 嘗試從快取獲取
+        const cachedRecommendations = await getCachedData<Array<{
+          symbol: string;
+          score: number;
+          viewCount: number;
+          searchCount: number;
+          totalViewTime: number;
+          isFavorited: boolean;
+          lastViewedAt: Date;
+        }>>(cacheKey);
+        
+        if (cachedRecommendations && cachedRecommendations.length > 0) {
+          console.log(`[Recommendation] Cache hit for user ${ctx.user.id}`);
+          return cachedRecommendations.slice(0, input.limit);
+        }
+        
+        console.log(`[Recommendation] Cache miss for user ${ctx.user.id}, fetching from database`);
+        
+        // 快取未命中，從資料庫獲取
         const recommendations = await db.getPersonalizedRecommendations(
           ctx.user.id,
           input.limit
@@ -1135,7 +1163,7 @@ ${stocksInfo}
         if (recommendations.length === 0) {
           const globalPopular = await db.getGlobalPopularStocks(input.limit);
           
-          return globalPopular.map(stock => ({
+          const globalRecommendations = globalPopular.map(stock => ({
             symbol: stock.symbol,
             score: 0.3, // 全站熱門股票給予較低評分
             viewCount: 0,
@@ -1144,7 +1172,15 @@ ${stocksInfo}
             isFavorited: false,
             lastViewedAt: new Date(),
           }));
+          
+          // 快取全站熱門股票結果（TTL 10 分鐘）
+          await setCachedData(cacheKey, globalRecommendations, 600);
+          
+          return globalRecommendations;
         }
+        
+        // 快取個人化推薦結果（TTL 5 分鐘）
+        await setCachedData(cacheKey, recommendations, 300);
         
         return recommendations;
       }),
