@@ -13,7 +13,8 @@
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "preload:tw-stock": "tsx scripts/preload-tw-stock-data.ts",
     "preload:tw-stock:force": "tsx scripts/preload-tw-stock-data.ts --force",
-    "preload:tw-stock:light": "tsx scripts/preload-tw-stock-data.ts --light"
+    "preload:tw-stock:light": "tsx scripts/preload-tw-stock-data.ts --light",
+    "sync:tw-fundamentals": "tsx scripts/sync-tw-fundamentals.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

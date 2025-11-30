@@ -393,21 +393,178 @@ export default function TwStockDetail() {
 
           {/* 基本面頁籤 */}
           <TabsContent value="fundamentals" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>基本面資料</CardTitle>
-                <CardDescription>財務報表、股利、本益比等資訊</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <LineChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">基本面資料開發中...</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    即將推出 EPS、本益比、殖利率等財務指標
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {fundamentalsQuery.isLoading && (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground">載入基本面資料中...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {fundamentalsQuery.error && (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <p className="text-destructive">載入基本面資料失敗</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {fundamentalsQuery.error.message}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {fundamentalsQuery.data && fundamentalsQuery.data.length === 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>基本面資料</CardTitle>
+                  <CardDescription>財務報表、股利、本益比等資訊</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <LineChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">暫無基本面資料</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      此股票目前沒有可用的財務指標資料
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {fundamentalsQuery.data && fundamentalsQuery.data.length > 0 && (
+              <>
+                {/* 最新財務指標 */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>最新財務指標</CardTitle>
+                    <CardDescription>
+                      資料期間：{fundamentalsQuery.data[0].year} Q{fundamentalsQuery.data[0].quarter}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* EPS (每股盈餘) */}
+                      {fundamentalsQuery.data[0].eps !== null && (
+                        <div className="p-4 rounded-lg border bg-card">
+                          <div className="text-sm text-muted-foreground mb-1">每股盈餘 (EPS)</div>
+                          <div className="number-display-lg text-2xl font-semibold">
+                            {fundamentalsQuery.data[0].eps.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">元</div>
+                        </div>
+                      )}
+
+                      {/* PE Ratio (本益比) */}
+                      {fundamentalsQuery.data[0].pe !== null && (
+                        <div className="p-4 rounded-lg border bg-card">
+                          <div className="text-sm text-muted-foreground mb-1">本益比 (P/E)</div>
+                          <div className="number-display-lg text-2xl font-semibold">
+                            {fundamentalsQuery.data[0].pe.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">倍</div>
+                        </div>
+                      )}
+
+                      {/* PB Ratio (股價淨值比) */}
+                      {fundamentalsQuery.data[0].pb !== null && (
+                        <div className="p-4 rounded-lg border bg-card">
+                          <div className="text-sm text-muted-foreground mb-1">股價淨值比 (P/B)</div>
+                          <div className="number-display-lg text-2xl font-semibold">
+                            {fundamentalsQuery.data[0].pb.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">倍</div>
+                        </div>
+                      )}
+
+                      {/* Dividend Yield (殖利率) */}
+                      {fundamentalsQuery.data[0].yieldRate !== null && (
+                        <div className="p-4 rounded-lg border bg-card">
+                          <div className="text-sm text-muted-foreground mb-1">殖利率</div>
+                          <div className="number-display-lg text-2xl font-semibold">
+                            {fundamentalsQuery.data[0].yieldRate.toFixed(2)}%
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">年化</div>
+                        </div>
+                      )}
+
+                      {/* ROE (股東權益報酬率) */}
+                      {fundamentalsQuery.data[0].roe !== null && (
+                        <div className="p-4 rounded-lg border bg-card">
+                          <div className="text-sm text-muted-foreground mb-1">股東權益報酬率 (ROE)</div>
+                          <div className="number-display-lg text-2xl font-semibold">
+                            {fundamentalsQuery.data[0].roe.toFixed(2)}%
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">年化</div>
+                        </div>
+                      )}
+
+                      {/* Dividend (股利) */}
+                      {fundamentalsQuery.data[0].dividend !== null && (
+                        <div className="p-4 rounded-lg border bg-card">
+                          <div className="text-sm text-muted-foreground mb-1">股利</div>
+                          <div className="number-display-lg text-2xl font-semibold">
+                            {fundamentalsQuery.data[0].dividend.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">元</div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 歷史財務指標趨勢 */}
+                {fundamentalsQuery.data.length > 1 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>歷史財務指標</CardTitle>
+                      <CardDescription>
+                        顯示最近 {fundamentalsQuery.data.length} 期的財務指標變化
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 px-4">日期</th>
+                              <th className="text-right py-2 px-4">EPS</th>
+                              <th className="text-right py-2 px-4">本益比</th>
+                              <th className="text-right py-2 px-4">股價淨值比</th>
+                              <th className="text-right py-2 px-4">殖利率</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fundamentalsQuery.data.slice(0, 10).map((item, index) => (
+                              <tr key={index} className="border-b hover:bg-muted/50">
+                                <td className="py-2 px-4">
+                                  {item.year} Q{item.quarter}
+                                </td>
+                                <td className="text-right py-2 px-4 number-display-sm">
+                                  {item.eps !== null ? item.eps.toFixed(2) : '-'}
+                                </td>
+                                <td className="text-right py-2 px-4 number-display-sm">
+                                  {item.pe !== null ? item.pe.toFixed(2) : '-'}
+                                </td>
+                                <td className="text-right py-2 px-4 number-display-sm">
+                                  {item.pb !== null ? item.pb.toFixed(2) : '-'}
+                                </td>
+                                <td className="text-right py-2 px-4 number-display-sm">
+                                  {item.yieldRate !== null ? `${item.yieldRate.toFixed(2)}%` : '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </div>
