@@ -29,7 +29,22 @@ import {
   InsertQuestionStats,
   userBehavior,
   UserBehavior,
-  InsertUserBehavior
+  InsertUserBehavior,
+  twStocks,
+  TwStock,
+  InsertTwStock,
+  twStockPrices,
+  TwStockPrice,
+  InsertTwStockPrice,
+  twStockIndicators,
+  TwStockIndicator,
+  InsertTwStockIndicator,
+  twStockFundamentals,
+  TwStockFundamental,
+  InsertTwStockFundamental,
+  twDataSyncStatus,
+  TwDataSyncStatus,
+  InsertTwDataSyncStatus
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1160,5 +1175,323 @@ export async function getGlobalPopularStocks(
   } catch (error) {
     console.error("[Database] Failed to get global popular stocks:", error);
     return [];
+  }
+}
+
+// ==================== 台股資料查詢函數 ====================
+
+/**
+ * 根據股票代號查詢台股基本資料
+ */
+export async function getTwStockBySymbol(symbol: string): Promise<TwStock | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(twStocks)
+      .where(eq(twStocks.symbol, symbol))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock ${symbol}:`, error);
+    return undefined;
+  }
+}
+
+/**
+ * 搜尋台股（根據股票代號或名稱）
+ */
+export async function searchTwStocks(
+  keyword: string,
+  limit: number = 20
+): Promise<TwStock[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot search TW stocks: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select()
+      .from(twStocks)
+      .where(
+        sql`(${twStocks.symbol} LIKE ${`%${keyword}%`} OR ${twStocks.name} LIKE ${`%${keyword}%`} OR ${twStocks.shortName} LIKE ${`%${keyword}%`})`
+      )
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error(`[Database] Failed to search TW stocks with keyword "${keyword}":`, error);
+    return [];
+  }
+}
+
+/**
+ * 查詢台股歷史價格
+ */
+export async function getTwStockPrices(
+  symbol: string,
+  startDate: Date,
+  endDate: Date
+): Promise<TwStockPrice[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock prices: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select()
+      .from(twStockPrices)
+      .where(
+        and(
+          eq(twStockPrices.symbol, symbol),
+          gte(twStockPrices.date, startDate),
+          sql`${twStockPrices.date} <= ${endDate}`
+        )
+      )
+      .orderBy(twStockPrices.date);
+
+    return results;
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock prices for ${symbol}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 查詢台股技術指標
+ */
+export async function getTwStockIndicators(
+  symbol: string,
+  startDate: Date,
+  endDate: Date
+): Promise<TwStockIndicator[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock indicators: database not available");
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select()
+      .from(twStockIndicators)
+      .where(
+        and(
+          eq(twStockIndicators.symbol, symbol),
+          gte(twStockIndicators.date, startDate),
+          sql`${twStockIndicators.date} <= ${endDate}`
+        )
+      )
+      .orderBy(twStockIndicators.date);
+
+    return results;
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock indicators for ${symbol}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 查詢台股基本面資料
+ */
+export async function getTwStockFundamentals(
+  symbol: string,
+  year?: number,
+  quarter?: number
+): Promise<TwStockFundamental[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock fundamentals: database not available");
+    return [];
+  }
+
+  try {
+    let query = db
+      .select()
+      .from(twStockFundamentals)
+      .where(eq(twStockFundamentals.symbol, symbol));
+
+    if (year !== undefined) {
+      query = query.where(eq(twStockFundamentals.year, year));
+    }
+
+    if (quarter !== undefined) {
+      query = query.where(eq(twStockFundamentals.quarter, quarter));
+    }
+
+    const results = await query.orderBy(
+      desc(twStockFundamentals.year),
+      desc(twStockFundamentals.quarter)
+    );
+
+    return results;
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock fundamentals for ${symbol}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 新增或更新台股基本資料
+ */
+export async function upsertTwStock(stock: InsertTwStock): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot upsert TW stock: database not available");
+    return;
+  }
+
+  try {
+    await db
+      .insert(twStocks)
+      .values(stock)
+      .onDuplicateKeyUpdate({
+        set: {
+          name: stock.name,
+          shortName: stock.shortName,
+          market: stock.market,
+          industry: stock.industry,
+          type: stock.type,
+          isActive: stock.isActive,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (error) {
+    console.error(`[Database] Failed to upsert TW stock ${stock.symbol}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 批量新增台股歷史價格
+ */
+export async function insertTwStockPrices(prices: InsertTwStockPrice[]): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot insert TW stock prices: database not available");
+    return;
+  }
+
+  if (prices.length === 0) {
+    return;
+  }
+
+  try {
+    await db.insert(twStockPrices).values(prices);
+  } catch (error) {
+    console.error(`[Database] Failed to insert TW stock prices:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 批量新增台股技術指標
+ */
+export async function insertTwStockIndicators(
+  indicators: InsertTwStockIndicator[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot insert TW stock indicators: database not available");
+    return;
+  }
+
+  if (indicators.length === 0) {
+    return;
+  }
+
+  try {
+    await db.insert(twStockIndicators).values(indicators);
+  } catch (error) {
+    console.error(`[Database] Failed to insert TW stock indicators:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 批量新增台股基本面資料
+ */
+export async function insertTwStockFundamentals(
+  fundamentals: InsertTwStockFundamental[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot insert TW stock fundamentals: database not available");
+    return;
+  }
+
+  if (fundamentals.length === 0) {
+    return;
+  }
+
+  try {
+    await db.insert(twStockFundamentals).values(fundamentals);
+  } catch (error) {
+    console.error(`[Database] Failed to insert TW stock fundamentals:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 更新資料同步狀態
+ */
+export async function updateTwDataSyncStatus(
+  syncStatus: InsertTwDataSyncStatus
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update TW data sync status: database not available");
+    return;
+  }
+
+  try {
+    await db.insert(twDataSyncStatus).values(syncStatus);
+  } catch (error) {
+    console.error(`[Database] Failed to update TW data sync status:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 查詢最後同步時間
+ */
+export async function getLastSyncTime(
+  dataType: string,
+  source: 'TWSE' | 'TPEx' | 'FinMind'
+): Promise<Date | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get last sync time: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(twDataSyncStatus)
+      .where(
+        and(
+          eq(twDataSyncStatus.dataType, dataType),
+          eq(twDataSyncStatus.source, source),
+          eq(twDataSyncStatus.status, 'success')
+        )
+      )
+      .orderBy(desc(twDataSyncStatus.lastSyncAt))
+      .limit(1);
+
+    return result.length > 0 ? result[0].lastSyncAt : null;
+  } catch (error) {
+    console.error(`[Database] Failed to get last sync time:`, error);
+    return null;
   }
 }

@@ -14,6 +14,7 @@ import AnalysisAccuracy from "./pages/AnalysisAccuracy";
 import TransactionHistory from "./pages/TransactionHistory";
 import { ApiMonitor } from "./components/ApiMonitor";
 import EmptyStateTest from "./pages/EmptyStateTest";
+import TwStockTest from "./pages/TwStockTest";
 
 function Router() {
   return (
@@ -27,6 +28,7 @@ function Router() {
       <Route path={"/ai-advisor"} component={AIAdvisor} />
       <Route path={"/analysis-accuracy"} component={AnalysisAccuracy} />
       <Route path={"/test/empty-state"} component={EmptyStateTest} />
+      <Route path={"/test/tw-stock"} component={TwStockTest} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -1622,6 +1622,151 @@ ${portfolioData.map(h => `
       }),
   }),
 
+  // 台股資料整合 API
+  twStock: router({
+    // 搜尋台股
+    search: publicProcedure
+      .input(z.object({
+        keyword: z.string(),
+        limit: z.number().optional().default(20),
+      }))
+      .query(async ({ input }) => {
+        const { searchTwStocks } = await import('./db');
+        const results = await searchTwStocks(input.keyword, input.limit);
+        return results;
+      }),
+
+    // 獲取台股詳情
+    getDetail: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockBySymbol } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockInfo(input.symbol);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const stock = await getTwStockBySymbol(input.symbol);
+        
+        if (stock) {
+          // 寫入 Redis 快取
+          await setCache(cacheKey, stock, CacheTTL.STOCK_INFO);
+        }
+        
+        return stock;
+      }),
+
+    // 獲取台股歷史價格
+    getHistorical: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockPrices } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockPrices(input.symbol, input.startDate, input.endDate);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const prices = await getTwStockPrices(
+          input.symbol,
+          new Date(input.startDate),
+          new Date(input.endDate)
+        );
+        
+        if (prices.length > 0) {
+          // 寫入 Redis 快取
+          await setCache(cacheKey, prices, CacheTTL.STOCK_PRICES);
+        }
+        
+        return prices;
+      }),
+
+    // 獲取台股技術指標
+    getIndicators: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockIndicators } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockIndicators(input.symbol, input.startDate);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const indicators = await getTwStockIndicators(
+          input.symbol,
+          new Date(input.startDate),
+          new Date(input.endDate)
+        );
+        
+        if (indicators.length > 0) {
+          // 寫入 Redis 快取
+          await setCache(cacheKey, indicators, CacheTTL.STOCK_INDICATORS);
+        }
+        
+        return indicators;
+      }),
+
+    // 獲取台股基本面資料
+    getFundamentals: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        year: z.number().optional(),
+        quarter: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockFundamentals } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockFundamentals(
+          input.symbol,
+          input.year || 0,
+          input.quarter || 0
+        );
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const fundamentals = await getTwStockFundamentals(
+          input.symbol,
+          input.year,
+          input.quarter
+        );
+        
+        if (fundamentals.length > 0) {
+          // 寫入 Redis 快取
+          await setCache(cacheKey, fundamentals, CacheTTL.STOCK_FUNDAMENTALS);
+        }
+        
+        return fundamentals;
+      }),
+  }),
+
   // API 速率限制監控
   apiMonitor: router({
     // 獲取 TwelveData API 使用狀況

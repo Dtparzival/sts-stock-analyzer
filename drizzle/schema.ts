@@ -249,3 +249,134 @@ export const userBehavior = mysqlTable("userBehavior", {
 
 export type UserBehavior = typeof userBehavior.$inferSelect;
 export type InsertUserBehavior = typeof userBehavior.$inferInsert;
+
+/**
+ * 台股基本資料表
+ * 儲存台股的基本資訊，包含股票代號、名稱、市場類別、產業別等
+ */
+export const twStocks = mysqlTable("twStocks", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull().unique(), // 股票代號（例如：2330）
+  name: text("name").notNull(), // 公司全名（例如：台灣積體電路製造股份有限公司）
+  shortName: text("shortName"), // 公司簡稱（例如：台積電）
+  market: mysqlEnum("market", ["上市", "上櫃", "興櫃"]).notNull(), // 市場類別
+  industry: varchar("industry", { length: 100 }), // 產業別
+  type: mysqlEnum("type", ["股票", "ETF"]).default("股票").notNull(), // 股票類型
+  listedDate: timestamp("listedDate"), // 上市日期
+  isActive: boolean("isActive").default(true).notNull(), // 是否活躍（下市則為 false）
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  marketIdx: index("market_idx").on(table.market),
+  industryIdx: index("industry_idx").on(table.industry),
+}));
+
+export type TwStock = typeof twStocks.$inferSelect;
+export type InsertTwStock = typeof twStocks.$inferInsert;
+
+/**
+ * 台股歷史價格表
+ * 儲存台股的每日歷史價格資料
+ */
+export const twStockPrices = mysqlTable("twStockPrices", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
+  date: timestamp("date").notNull(), // 交易日期
+  open: int("open").notNull(), // 開盤價（以分為單位，例如 100.50 元存為 10050）
+  high: int("high").notNull(), // 最高價
+  low: int("low").notNull(), // 最低價
+  close: int("close").notNull(), // 收盤價
+  volume: int("volume").notNull(), // 成交量（張）
+  amount: int("amount").notNull(), // 成交金額（以分為單位）
+  change: int("change").notNull(), // 漲跌（以分為單位）
+  changePercent: int("changePercent").notNull(), // 漲跌幅（以萬分之一為單位，例如 1.5% 存為 150）
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  dateIdx: index("date_idx").on(table.date),
+  symbolDateIdx: index("symbol_date_idx").on(table.symbol, table.date),
+}));
+
+export type TwStockPrice = typeof twStockPrices.$inferSelect;
+export type InsertTwStockPrice = typeof twStockPrices.$inferInsert;
+
+/**
+ * 台股技術指標表
+ * 儲存台股的技術指標資料（MA、RSI、MACD、KD 等）
+ */
+export const twStockIndicators = mysqlTable("twStockIndicators", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
+  date: timestamp("date").notNull(), // 計算日期
+  ma5: int("ma5"), // 5 日均線（以分為單位）
+  ma10: int("ma10"), // 10 日均線
+  ma20: int("ma20"), // 20 日均線
+  ma60: int("ma60"), // 60 日均線
+  rsi14: int("rsi14"), // 14 日 RSI（以萬分之一為單位，例如 70.5 存為 705000）
+  macd: int("macd"), // MACD 值（以分為單位）
+  macdSignal: int("macdSignal"), // MACD 信號線
+  macdHistogram: int("macdHistogram"), // MACD 柱狀圖
+  kValue: int("kValue"), // KD 指標 K 值（以萬分之一為單位）
+  dValue: int("dValue"), // KD 指標 D 值
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  dateIdx: index("date_idx").on(table.date),
+  symbolDateIdx: index("symbol_date_idx").on(table.symbol, table.date),
+}));
+
+export type TwStockIndicator = typeof twStockIndicators.$inferSelect;
+export type InsertTwStockIndicator = typeof twStockIndicators.$inferInsert;
+
+/**
+ * 台股基本面資料表
+ * 儲存台股的基本面資料（EPS、本益比、殖利率等）
+ */
+export const twStockFundamentals = mysqlTable("twStockFundamentals", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
+  year: int("year").notNull(), // 年度
+  quarter: int("quarter").notNull(), // 季度（1-4）
+  eps: int("eps"), // 每股盈餘（以分為單位）
+  pe: int("pe"), // 本益比（以萬分之一為單位）
+  pb: int("pb"), // 股價淨值比（以萬分之一為單位）
+  roe: int("roe"), // 股東權益報酬率（以萬分之一為單位）
+  dividend: int("dividend"), // 股利（以分為單位）
+  yieldRate: int("yieldRate"), // 殖利率（以萬分之一為單位）
+  revenue: int("revenue"), // 營收（以千元為單位）
+  netIncome: int("netIncome"), // 淨利（以千元為單位）
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  yearQuarterIdx: index("year_quarter_idx").on(table.year, table.quarter),
+  symbolYearQuarterIdx: index("symbol_year_quarter_idx").on(table.symbol, table.year, table.quarter),
+}));
+
+export type TwStockFundamental = typeof twStockFundamentals.$inferSelect;
+export type InsertTwStockFundamental = typeof twStockFundamentals.$inferInsert;
+
+/**
+ * 資料同步狀態表
+ * 記錄台股資料的同步狀態，用於監控和除錯
+ */
+export const twDataSyncStatus = mysqlTable("twDataSyncStatus", {
+  id: int("id").autoincrement().primaryKey(),
+  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型（stocks/prices/indicators/fundamentals）
+  source: mysqlEnum("source", ["TWSE", "TPEx", "FinMind"]).notNull(), // 資料來源
+  lastSyncAt: timestamp("lastSyncAt").notNull(), // 最後同步時間
+  status: mysqlEnum("status", ["success", "failed", "in_progress"]).notNull(), // 同步狀態
+  recordCount: int("recordCount").default(0).notNull(), // 同步記錄數
+  errorMessage: text("errorMessage"), // 錯誤訊息
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  dataTypeIdx: index("dataType_idx").on(table.dataType),
+  sourceIdx: index("source_idx").on(table.source),
+  lastSyncAtIdx: index("lastSyncAt_idx").on(table.lastSyncAt),
+}));
+
+export type TwDataSyncStatus = typeof twDataSyncStatus.$inferSelect;
+export type InsertTwDataSyncStatus = typeof twDataSyncStatus.$inferInsert;
