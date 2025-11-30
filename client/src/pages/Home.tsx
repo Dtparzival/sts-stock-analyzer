@@ -582,17 +582,20 @@ export default function Home() {
                 {/* 平板/桌面版：網格佈局 */}
                 <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
                   {filteredRecommendations.slice(0, 6).map((item: any) => {
-                    // 處理顯示名稱：優先使用 shortName，其次是 companyName，最後從備用映射表獲取
+                    // 處理顯示名稱：從 stockPriceMap 獲取股票數據
+                    const stockData = stockPriceMap.get(item.symbol);
+                    const meta = stockData?.chart?.result?.[0]?.meta;
+                    
                     let displaySymbol = item.symbol;
-                    let displayName = item.shortName || item.companyName;
+                    let displayName = meta?.shortName || meta?.longName || null;
                     
                     const market = getMarketFromSymbol(item.symbol);
                     if (market === 'TW') {
                       const cleanSymbol = cleanTWSymbol(item.symbol);
                       displaySymbol = cleanSymbol;
                       
-                      // 如果沒有 shortName 且 companyName 是舊格式，則從備用映射表獲取
-                      if (!item.shortName && (!displayName || displayName === item.symbol || displayName.includes('.TW'))) {
+                      // 如果沒有從 API 獲取到名稱，則從備用映射表獲取
+                      if (!displayName || displayName === item.symbol || displayName.includes('.TW')) {
                         displayName = TW_STOCK_NAMES[cleanSymbol] || null;
                       }
                     }
@@ -735,7 +738,7 @@ export default function Home() {
                             size="icon"
                             variant="ghost"
                             className="absolute top-2 left-2 z-10 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-background/80 hover:bg-background hover:scale-110 transition-all duration-200 shadow-sm touch-manipulation"
-                            onClick={(e) => toggleWatchlist(e, item.symbol, displayName || item.companyName || '')}
+                            onClick={(e) => toggleWatchlist(e, item.symbol, displayName || '')}
                             disabled={addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending}
                           >
                             {addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending ? (
