@@ -1,6 +1,5 @@
 import { eq, desc, and, gt, gte, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { getUserTimeDecayFactor } from './abTestConfig';
 import { 
   InsertUser, 
   users, 
@@ -1038,10 +1037,13 @@ export async function getPersonalizedRecommendations(
         (now.getTime() - behavior.lastViewedAt.getTime()) / (1000 * 60 * 60 * 24)
       );
       
-      // A/B 測試：根據用戶 ID 動態選擇衰減週期
-      // Variant A (偶數 ID): 7 天衰減週期
-      // Variant B (奇數 ID): 14 天衰減週期
-      const timeDecayFactor = getUserTimeDecayFactor(userId, daysSinceLastView);
+      // 時間衰減函數：近 7 天內的行為權重最高
+      // 使用指數衰減：權重 = e^(-天數/7)
+      // 0 天：權重 = 1.0
+      // 7 天：權重 = 0.368
+      // 14 天：權重 = 0.135
+      // 30 天：權重 = 0.011
+      const timeDecayFactor = Math.exp(-daysSinceLastView / 7);
 
       // 計算綜合評分（加權平均 × 時間衰減因子）
       const baseScore = 
