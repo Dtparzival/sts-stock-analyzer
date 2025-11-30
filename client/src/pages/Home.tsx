@@ -665,11 +665,36 @@ export default function Home() {
                           </div>
                           
                           {/* 股票名稱 */}
-                          {displayName && (
-                            <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground text-center line-clamp-2 mb-1 sm:mb-2 min-h-[1.5rem] sm:min-h-[2rem] px-1">
-                              {displayName}
-                            </p>
-                          )}
+                          <div className="text-center mb-1 sm:mb-2 min-h-[1.5rem] sm:min-h-[2rem] px-1">
+                            {(() => {
+                              const isLoading = stockDataQueries[filteredRecommendations.indexOf(item)]?.isLoading;
+                              
+                              if (isLoading) {
+                                // 載入中：顯示骨架屏
+                                return (
+                                  <div className="flex justify-center items-center h-full">
+                                    <div className="h-3 w-24 bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 rounded animate-pulse"></div>
+                                  </div>
+                                );
+                              }
+                              
+                              if (displayName) {
+                                // 有名稱：顯示股票名稱
+                                return (
+                                  <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground text-center line-clamp-2">
+                                    {displayName}
+                                  </p>
+                                );
+                              }
+                              
+                              // 無名稱：顯示股票代碼作為後備
+                              return (
+                                <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground/70 text-center line-clamp-2">
+                                  {displaySymbol}
+                                </p>
+                              );
+                            })()}
+                          </div>
                           
                           {/* 即時股價資訊 */}
                           {(() => {
