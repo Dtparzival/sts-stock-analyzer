@@ -595,8 +595,9 @@ export default function Home() {
                       displaySymbol = cleanSymbol;
                       
                       // 如果沒有從 API 獲取到名稱，則從備用映射表獲取
+                      // 注意：TW_STOCK_NAMES 的 key 是完整格式（例如 2330.TW），所以要用原始 symbol
                       if (!displayName || displayName === item.symbol || displayName.includes('.TW')) {
-                        displayName = TW_STOCK_NAMES[cleanSymbol] || null;
+                        displayName = TW_STOCK_NAMES[item.symbol] || null;
                       }
                     }
                     
