@@ -33,9 +33,16 @@ export function getRedisClient(): Redis | null {
 
   try {
     // 建立 Redis 連線
+    // 禁用 enableReadyCheck 以避免 INFO 命令引起的認證問題
     redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
+      enableReadyCheck: false,
+      lazyConnect: false,
       retryStrategy: (times) => {
+        if (times > 3) {
+          console.error('[Redis] Max retries reached, giving up');
+          return null;
+        }
         const delay = Math.min(times * 50, 2000);
         return delay;
       },

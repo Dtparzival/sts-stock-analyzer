@@ -1104,7 +1104,7 @@ ${stocksInfo}
         return suggestions.slice(0, input.limit);
       }),
     
-    // 獲取智能推薦（基於多維度行為數據的個人化推薦 + Redis 快取）
+    // 獲取 AI 驅動的智能推薦（推薦未看過的優質股票）
     getRecommendations: protectedProcedure
       .input(z.object({
         limit: z.number().optional().default(6),
@@ -1112,77 +1112,32 @@ ${stocksInfo}
       .query(async ({ input, ctx }) => {
         // 嘗試從 Redis 快取獲取推薦結果
         const { getCachedData, setCachedData, getRecommendationCacheKey } = await import('./redis');
+        const { getAIRecommendations } = await import('./aiRecommendation');
         const cacheKey = getRecommendationCacheKey(ctx.user.id);
         
         // 嘗試從快取獲取
-        const cachedRecommendations = await getCachedData<Array<{
-          symbol: string;
-          score: number;
-          viewCount: number;
-          searchCount: number;
-          totalViewTime: number;
-          isFavorited: boolean;
-          lastViewedAt: Date;
-        }>>(cacheKey);
+        const cachedRecommendations = await getCachedData<{
+          recommendations: string[];
+          reason: string;
+        }>(cacheKey);
         
-        if (cachedRecommendations && cachedRecommendations.length > 0) {
+        if (cachedRecommendations && cachedRecommendations.recommendations.length > 0) {
           console.log(`[Recommendation] Cache hit for user ${ctx.user.id}`);
-          return cachedRecommendations.slice(0, input.limit);
+          return {
+            recommendations: cachedRecommendations.recommendations.slice(0, input.limit),
+            reason: cachedRecommendations.reason,
+          };
         }
         
-        console.log(`[Recommendation] Cache miss for user ${ctx.user.id}, fetching from database`);
+        console.log(`[Recommendation] Cache miss for user ${ctx.user.id}, calculating AI recommendations`);
         
-        // 快取未命中，從資料庫獲取
-        const recommendations = await db.getPersonalizedRecommendations(
-          ctx.user.id,
-          input.limit
-        );
+        // 快取未命中，使用 AI 推薦系統計算
+        const result = await getAIRecommendations(ctx.user.id, input.limit);
         
-        // 如果沒有足夠的推薦結果（冷啟動場景），使用熱門股票補充
-        if (recommendations.length < input.limit) {
-          const popularStocks = await db.getPopularStocksForUser(
-            ctx.user.id,
-            input.limit - recommendations.length
-          );
-          
-          // 將熱門股票轉換為推薦格式
-          const popularRecommendations = popularStocks.map(stock => ({
-            symbol: stock.symbol,
-            score: 0.5, // 熱門股票給予基礎評分
-            viewCount: stock.viewCount,
-            searchCount: 0,
-            totalViewTime: 0,
-            isFavorited: false,
-            lastViewedAt: stock.lastViewedAt,
-          }));
-          
-          recommendations.push(...popularRecommendations);
-        }
+        // 快取 AI 推薦結果（TTL 5 分鐘）
+        await setCachedData(cacheKey, result, 300);
         
-        // 如果仍然沒有推薦結果（新用戶），使用全站熱門股票
-        if (recommendations.length === 0) {
-          const globalPopular = await db.getGlobalPopularStocks(input.limit);
-          
-          const globalRecommendations = globalPopular.map(stock => ({
-            symbol: stock.symbol,
-            score: 0.3, // 全站熱門股票給予較低評分
-            viewCount: 0,
-            searchCount: 0,
-            totalViewTime: 0,
-            isFavorited: false,
-            lastViewedAt: new Date(),
-          }));
-          
-          // 快取全站熱門股票結果（TTL 10 分鐘）
-          await setCachedData(cacheKey, globalRecommendations, 600);
-          
-          return globalRecommendations;
-        }
-        
-        // 快取個人化推薦結果（TTL 5 分鐘）
-        await setCachedData(cacheKey, recommendations, 300);
-        
-        return recommendations;
+        return result;
       }),
   }),
 
@@ -1241,13 +1196,13 @@ ${stocksInfo}
         purchasePrice: z.number().positive().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const updateData: any = {};
         if (input.shares !== undefined) updateData.shares = input.shares;
         if (input.purchasePrice !== undefined) updateData.purchasePrice = Math.round(input.purchasePrice * 100);
         if (input.notes !== undefined) updateData.notes = input.notes;
         
-        await db.updatePortfolio(input.id, updateData);
+        await db.updatePortfolio(input.id, ctx.user.id, updateData);
         return { success: true };
       }),
 

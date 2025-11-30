@@ -43,15 +43,23 @@ export default function Home() {
   // 使用防抖機制，延遲 300ms 更新建議
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
-  // 獲取智能推薦（整合行為數據進行排序）
-  // 獲取更多數據以確保過濾後仍有足夠的推薦
-  const { data: recentHistory, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getRecommendations.useQuery(
+  // 獲取 AI 驅動的智能推薦（推薦未看過的優質股票）
+  const { data: recommendationData, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getRecommendations.useQuery(
     { limit: 20 },
     { 
       enabled: !!user,
       refetchInterval: 30000, // 每 30 秒自動刷新
     }
   );
+  
+  // 從推薦結果中提取股票代碼列表
+  const recentHistory = useMemo(() => {
+    if (!recommendationData?.recommendations) return [];
+    return recommendationData.recommendations.map((symbol: string) => ({ symbol }));
+  }, [recommendationData]);
+  
+  // 推薦理由（由 AI 生成）
+  const recommendationReason = recommendationData?.reason || '';
   
   // 手動刷新狀態
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);

@@ -337,11 +337,16 @@ export async function addToPortfolio(data: InsertPortfolio): Promise<void> {
   await db.insert(portfolio).values(data);
 }
 
-export async function updatePortfolio(id: number, data: Partial<InsertPortfolio>): Promise<void> {
+export async function updatePortfolio(id: number, userId: number, data: Partial<InsertPortfolio>): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  await db.update(portfolio).set(data).where(eq(portfolio.id, id));
+  await db.update(portfolio).set(data).where(
+    and(
+      eq(portfolio.id, id),
+      eq(portfolio.userId, userId)
+    )
+  );
 }
 
 export async function deleteFromPortfolio(id: number, userId: number): Promise<Portfolio | null> {
