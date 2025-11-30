@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startCacheCleanupScheduler } from "../cacheCleanup";
 import { startCacheWarmerScheduler } from "../cacheWarmer";
+import { initTwStockScheduler } from "../scheduler/twStockSync";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -67,6 +68,9 @@ async function startServer() {
     
     // 啟動緩存預熱排程器
     startCacheWarmerScheduler();
+    
+    // 啟動台股資料同步排程器
+    initTwStockScheduler();
   });
 }
 

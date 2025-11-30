@@ -21,15 +21,21 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, TrendingUp, Star, Briefcase, History, Bot, BarChart3, Globe } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "首頁", path: "/" },
+  { icon: Globe, label: "美股市場", path: "/stock" },
+  { icon: TrendingUp, label: "台股市場", path: "/tw-stocks" },
+  { icon: Star, label: "我的收藏", path: "/watchlist" },
+  { icon: Briefcase, label: "投資組合", path: "/portfolio" },
+  { icon: History, label: "搜尋歷史", path: "/history" },
+  { icon: Bot, label: "AI 顧問", path: "/ai-advisor" },
+  { icon: BarChart3, label: "分析準確度", path: "/analysis-accuracy" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

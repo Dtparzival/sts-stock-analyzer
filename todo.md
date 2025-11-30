@@ -1007,5 +1007,108 @@
 - [x] 撰寫 Vitest 測試（資料轉換層）
 - [x] 執行整合測試（前後端串接）
 - [x] 建立專案說明文件
-- [ ] 建立專案 checkpoint
-- [ ] 交付專案給使用者
+- [x] 建立專案 checkpoint
+- [x] 交付專案給使用者
+
+
+## 台股資料整合優化方案 - 2025-11-30 (新增)
+
+### 目標
+依循『台股資料整合優化方案_v2』執行第二階段（進階功能）和第三階段（完善功能）的台股資料整合優化，包含定期資料更新排程、技術指標計算、FinMind API 整合、資料預載入機制、資料庫索引優化、定期同步排程任務、完整的台股搜尋與詳情頁面、整合台股到現有功能、分頁與懶加載、API 監控、單元測試與維運手冊。
+
+### 第二階段（進階功能）
+
+#### 資料庫 Schema 與索引
+- [x] 建立 twStocks 台股基本資料表
+- [x] 建立 twStockPrices 台股歷史價格表
+- [x] 建立 twStockIndicators 台股技術指標表
+- [x] 建立 twStockFundamentals 台股基本面資料表
+- [x] 建立 twDataSyncStatus 資料同步狀態表
+- [x] 優化資料庫查詢索引（symbol, market, industry, date 等）
+
+#### 資料來源整合層
+- [x] 實作 TWSE API 整合模組（server/integrations/twse.ts）
+- [x] 實作 TPEx API 整合模組（server/integrations/tpex.ts）
+- [x] 實作 FinMind API 整合模組（server/integrations/finmind.ts）
+- [x] 實作統一資料轉換層（server/integrations/dataTransformer.ts）
+- [x] 實作錯誤處理與重試機制
+
+#### 技術指標計算
+- [x] 實作 MA（移動平均線）計算模組
+- [x] 實作 RSI（相對強弱指標）計算模組
+- [x] 實作 MACD（指數平滑異同移動平均線）計算模組
+- [x] 實作 KD（隨機指標）計算模組
+- [x] 實作技術指標批次計算與儲存
+
+#### 定期資料更新排程
+- [x] 安裝並設定 node-cron 套件
+- [x] 建立每日收盤後更新歷史價格排程（14:30）
+- [x] 建立每日收盤後更新技術指標排程（15:00）
+- [x] 建立每週日凌晨更新基本面資料排程
+- [x] 實作增量更新策略（僅更新有變動的資料）
+- [x] 實作同步狀態記錄與錯誤處理
+
+#### 資料預載入機制
+- [x] 實作首次啟動時的資料預載入腳本
+- [x] 實作股票列表預載入（TWSE + TPEx）
+- [x] 實作歷史價格預載入（最近一年）
+- [x] 實作技術指標預載入
+- [x] 實作基本面資料預載入
+- [x] 實作 Redis 快取預熱機制
+
+#### tRPC API 層
+- [x] 實作 twStock.search 搜尋股票 API
+- [x] 實作 twStock.getDetail 取得股票詳情 API
+- [x] 實作 twStock.getHistorical 取得歷史價格 API
+- [x] 實作 twStock.getIndicators 取得技術指標 API
+- [x] 實作 twStock.getFundamentals 取得基本面資料 API
+- [x] 實作 Redis 快取層（TTL 策略）
+
+#### 台股搜尋與詳情頁面
+- [x] 建立台股測試頁面（TwStockTest.tsx）
+- [x] 建立正式的台股搜尋頁面（/tw-stocks）
+- [x] 建立正式的台股詳情頁面（/tw-stocks/:symbol）
+- [x] 實作股票搜尋功能（支援代號、名稱搜尋）
+- [x] 實作股票詳情展示（基本資料、即時報價）
+- [x] 實作歷史價格圖表（使用 Recharts）
+- [x] 實作技術指標圖表（MA 移動平均線）
+- [x] 實作基本面資料展示（預留位置）
+- [x] 整合到主導航選單（DashboardLayout）
+
+#### 整合台股到現有功能
+- [x] 整合台股到「我的收藏」功能
+- [x] 整合台股到「投資組合管理」功能
+- [x] 整合台股到「搜尋歷史」功能（已支援）
+- [x] 整合台股到「AI 投資顧問」功能（已支援）
+- [x] 更新 watchlist 支援台股
+- [x] 更新 portfolio 支援台股
+- [x] 更新 searchHistory 支援台股
+
+### 第三階段（完善功能）
+#### 分頁與懶加載
+- [x] 實作股票列表分頁功能（使用 tRPC 的 limit/offset）
+- [x] 實作歷史價格懶加載（使用日期範圍篩選）
+- [x] 實作搜尋結果分頁（API 已支援）
+- [x] 優化大量資料載入效能（Redis 快取）
+- [ ] 優化前端載入效能
+
+#### API 回應時間監控
+- [x] 實作 API 回應時間記錄（已有 ApiMonitor 組件）
+- [x] 建立效能監控儀表板（已有 ApiMonitor 組件）
+- [x] 實作慢查詢警告機制（已有 ApiMonitor 組件）
+- [x] 實作 API 錯誤率監控（已有 ApiMonitor 組件）
+
+#### 單元測試與整合測試
+- [ ] 撰寫 TWSE API 整合測試
+- [ ] 撰寫 TPEx API 整合測試
+- [ ] 撰寫 FinMind API 整合測試
+- [x] 撰寫資料轉換層單元測試（已有 dataTransformer.test.ts）
+- [x] 撰寫技術指標計算單元測試
+- [ ] 撰寫 tRPC API 整合測試
+- [ ] 撰寫定期排程任務測試
+#### 維運手冊
+- [x] 撰寫資料同步流程說明
+- [x] 撰寫錯誤處理與除錯指南
+- [x] 撰寫 API 使用文件
+- [x] 撰寫效能優化建議
+- [x] 撰寫常見問題 FAQ

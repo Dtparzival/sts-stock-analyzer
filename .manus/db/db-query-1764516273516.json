@@ -1,0 +1,28 @@
+{
+  "query": "SHOW TABLES LIKE 'tw%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SHOW TABLES LIKE 'tw%';",
+  "rows": [
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)": "twDataSyncStatus"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)": "twStockFundamentals"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)": "twStockIndicators"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)": "twStockPrices"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)": "twStocks"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)": "twseStockList"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_KzRzifpe7R9Hr8c3sVfR6n (tw%)\ntwDataSyncStatus\ntwStockFundamentals\ntwStockIndicators\ntwStockPrices\ntwStocks\ntwseStockList\n",
+  "stderr": "",
+  "execution_time_ms": 1630
+}

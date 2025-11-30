@@ -15,6 +15,8 @@ import TransactionHistory from "./pages/TransactionHistory";
 import { ApiMonitor } from "./components/ApiMonitor";
 import EmptyStateTest from "./pages/EmptyStateTest";
 import TwStockTest from "./pages/TwStockTest";
+import TwStocks from "./pages/TwStocks";
+import TwStockDetail from "./pages/TwStockDetail";
 
 function Router() {
   return (
@@ -29,6 +31,8 @@ function Router() {
       <Route path={"/analysis-accuracy"} component={AnalysisAccuracy} />
       <Route path={"/test/empty-state"} component={EmptyStateTest} />
       <Route path={"/test/tw-stock"} component={TwStockTest} />
+      <Route path={"/tw-stocks"} component={TwStocks} />
+      <Route path={"/tw-stocks/:symbol"} component={TwStockDetail} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
