@@ -1320,4 +1320,149 @@
 - [x] 驗證效能指標達標（API 回應時間 < 500ms）- 快取命中 50-100ms
 - [x] 建立第三階段成果報告
 - [x] 更新專案文件（新增 3 份維運手冊）
-- [ ] 建立專案檢查點（準備發佈新版本）
+- [x] 建立專案檢查點（準備發佈新版本）- 版本 5ed5a5c2
+
+
+## 台股資料整合專案 - 2025-12-01
+
+### 目標
+整合 TWSE（台灣證券交易所）、TPEx（櫃買中心）和 FinMind API，建立完整的台股資料載入、快取、更新機制，並確保資料已載入相關 tables。
+
+### Phase 1: 建立資料庫 Schema 與資料轉換層
+- [ ] 更新 drizzle/schema.ts - 新增台股相關資料表
+  - [ ] twStocks (台股基本資料表)
+  - [ ] twStockPrices (台股歷史價格表, 使用 DECIMAL 型別)
+  - [ ] twStockIndicators (台股技術指標表, 使用 DECIMAL 型別)
+  - [ ] twStockFundamentals (台股基本面資料表, 使用 DECIMAL 型別)
+  - [ ] twDataSyncStatus (資料同步狀態表)
+  - [ ] twDataSyncErrors (資料同步錯誤記錄表)
+- [ ] 執行 pnpm db:push 推送 schema 變更
+- [ ] 建立統一資料轉換層 server/integrations/dataTransformer.ts
+- [ ] 更新 server/db.ts - 新增台股資料查詢 helper functions
+
+### Phase 2: 實作 API 整合模組與錯誤處理機制
+- [ ] 建立 TWSE API 整合模組 server/integrations/twse.ts
+  - [ ] 實作股票列表查詢
+  - [ ] 實作即時報價查詢
+  - [ ] 實作歷史價格查詢
+  - [ ] 實作指數退避重試機制
+- [ ] 建立 TPEx API 整合模組 server/integrations/tpex.ts
+  - [ ] 實作股票列表查詢
+  - [ ] 實作即時報價查詢
+  - [ ] 實作歷史價格查詢
+  - [ ] 實作指數退避重試機制
+- [ ] 建立 FinMind API 整合模組 server/integrations/finmind.ts
+  - [ ] 實作財務報表查詢
+  - [ ] 實作股利資訊查詢
+  - [ ] 實作技術指標查詢
+  - [ ] 實作基本面指標查詢
+- [ ] 建立統一錯誤處理中介層 server/middleware/errorHandler.ts
+- [ ] 實作錯誤通知機制 (整合 notifyOwner)
+
+### Phase 3: 建立 Redis 快取層與資料同步排程
+- [ ] 實作台股資料快取策略與 TTL 設定
+- [ ] 建立資料同步排程 server/jobs/syncTwStockData.ts
+  - [ ] 實作定期更新排程 (使用 node-cron)
+  - [ ] 實作增量更新策略
+  - [ ] 實作部分失敗處理邏輯
+- [ ] 整合排程到 server/_core/index.ts
+
+### Phase 4: 實作 tRPC API 路由與前端整合
+- [ ] 更新 server/routers.ts - 新增 twStock router
+  - [ ] search - 搜尋台股
+  - [ ] getDetail - 取得股票詳細資料
+  - [ ] getHistoricalPrices - 取得歷史價格
+  - [ ] getIndicators - 取得技術指標
+  - [ ] getFundamentals - 取得基本面資料
+  - [ ] syncData - 手動觸發資料同步
+- [ ] 實作輸入驗證 (使用 Zod schema)
+
+### Phase 5: 執行資料載入與驗證測試
+- [ ] 執行初始資料載入
+  - [ ] 載入 TWSE 股票列表
+  - [ ] 載入 TPEx 股票列表
+  - [ ] 載入歷史價格資料 (近 3 個月)
+- [ ] 撰寫 vitest 測試驗證資料完整性
+  - [ ] 測試資料庫連線與查詢
+  - [ ] 測試 API 整合模組
+  - [ ] 測試資料轉換層
+  - [ ] 測試快取機制
+  - [ ] 測試錯誤處理與重試機制
+- [ ] 驗證資料已正確載入 tables
+
+### Phase 6: 建立前端頁面與使用者介面
+- [ ] 設計整體 UI/UX 風格與配色
+- [ ] 建立台股搜尋頁面 client/src/pages/TwStockSearch.tsx
+- [ ] 建立台股詳情頁面 client/src/pages/TwStockDetail.tsx
+- [ ] 建立技術指標圖表元件
+- [ ] 建立基本面資料展示元件
+- [ ] 更新 client/src/App.tsx - 註冊路由
+
+### Phase 7: 最終測試與專案交付
+- [ ] 完整功能測試
+- [ ] 效能測試與優化
+- [ ] 錯誤處理測試
+- [ ] 建立專案文件
+- [ ] 建立 checkpoint 並交付
+
+
+## 台股資料整合專案 - 2025-12-01
+
+### Phase 1: 資料庫 Schema 與資料轉換層
+- [x] 建立資料庫 Schema（twStocks, twStockPrices, twStockIndicators, twStockFundamentals, twDataSyncStatus, twDataSyncErrors）
+- [x] 使用 DECIMAL 型別儲存價格和百分比
+- [x] 實作統一資料轉換層（dataTransformer.ts）
+- [x] 實作民國年日期轉換函數
+
+### Phase 2: API 整合模組與錯誤處理
+- [x] 實作 TWSE API 整合模組（fetchTwseStockList, fetchTwseHistoricalPrices）
+- [x] 實作 TPEx API 整合模組（fetchTpexStockList, fetchTpexHistoricalPrices）
+- [x] 實作 FinMind API 整合模組（fetchFinancialStatement, fetchDividend）
+- [x] 實作指數退避重試機制（exponential backoff）
+- [x] 實作錯誤記錄機制
+
+### Phase 3: Redis 快取層與資料同步排程
+- [x] 整合 Redis 快取到 tRPC API
+- [x] 建立資料同步排程（twStockScheduler.ts）
+- [x] 實作每日股價同步排程（交易日 14:30）
+- [x] 實作每日技術指標計算排程（交易日 15:00）
+- [x] 實作增量更新策略
+- [x] 實作部分失敗處理邏輯
+
+### Phase 4: tRPC API 路由與前端整合
+- [x] 建立 twStock tRPC router
+- [x] 實作股票搜尋 API（search）
+- [x] 實作股票詳細資料 API（getDetail）
+- [x] 實作歷史價格 API（getHistorical）
+- [x] 實作技術指標 API（getIndicators）
+- [x] 實作基本面資料 API（getFundamentals）
+- [x] 實作輸入驗證（Zod schema）
+
+### Phase 5: 資料載入與驗證
+- [x] 載入台股基本資料 - 1,326 筆（TWSE + TPEx）
+- [x] 載入當日股價資料 - 1,308 筆（2025-11-28）
+- [ ] 計算並載入技術指標 - 進行中
+- [ ] 載入基本面資料（FinMind API）
+- [x] 建立資料載入測試腳本
+- [x] 驗證資料完整性
+
+### Phase 6: 排程系統整合
+- [x] 建立新的排程模組（twStockScheduler.ts）
+- [x] 整合排程到伺服器啟動流程
+- [x] 實作每日自動更新機制
+- [x] 實作錯誤通知機制（notifyOwner）
+- [x] 測試排程系統運作
+- [x] 伺服器已成功啟動並載入排程
+
+### 關鍵問題與解決方案
+- [x] TWSE API 超時問題 - 調整超時設定為 60 秒
+- [x] 無法取得歷史價格 - 改用每日累積方式建立歷史資料
+- [x] 民國年日期格式 - 實作 parseROCDate 函數正確轉換
+- [x] 資料載入效能 - 實作批次插入和進度顯示
+
+### 待完成項目
+- [ ] 完成技術指標計算（MA、RSI、MACD、KD）
+- [ ] 整合 FinMind API 載入基本面資料
+- [ ] 建立前端台股查詢頁面
+- [ ] 撰寫 Vitest 單元測試
+- [ ] 建立專案檢查點
