@@ -53,6 +53,24 @@ export const CacheKey = {
    * 股票列表快取鍵
    */
   stockList: (market: 'TWSE' | 'TPEx') => `${CACHE_PREFIX}:list:${market}`,
+
+  /**
+   * 歷史價格分頁快取鍵
+   */
+  stockPricesPaginated: (symbol: string, page: number, pageSize: number) =>
+    `${CACHE_PREFIX}:prices:paginated:${symbol}:${page}:${pageSize}`,
+
+  /**
+   * 技術指標分頁快取鍵
+   */
+  stockIndicatorsPaginated: (symbol: string, page: number, pageSize: number) =>
+    `${CACHE_PREFIX}:indicators:paginated:${symbol}:${page}:${pageSize}`,
+
+  /**
+   * 基本面資料分頁快取鍵
+   */
+  stockFundamentalsPaginated: (symbol: string, page: number, pageSize: number) =>
+    `${CACHE_PREFIX}:fundamentals:paginated:${symbol}:${page}:${pageSize}`,
 } as const;
 
 /**

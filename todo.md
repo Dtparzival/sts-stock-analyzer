@@ -1260,5 +1260,64 @@
 ### 7. 文件與交付
 - [x] 準備第二階段優化說明文件
 - [x] 更新專案技術文件
-- [ ] 建立檢查點
-- [ ] 向使用者報告優化成果
+- [x] 建立檢查點
+- [x] 向使用者報告優化成果
+
+
+## 台股資料整合優化方案 - 第三階段（完善功能）- 2025-12-01
+
+### 目標
+依循『台股資料整合優化方案_Final』之內容，基於系統與資料庫效能佳，程式碼簡潔易讀，日後好維護與開發擴充，無重複代碼等原則，執行第三階段（完善功能）的開發工作。
+
+### 1. 分頁與懶加載功能
+- [x] 實作歷史價格分頁查詢 API (twStock.getHistoricalPaginated)
+- [x] 實作技術指標分頁查詢 API (twStock.getIndicatorsPaginated)
+- [x] 實作基本面資料分頁查詢 API (twStock.getFundamentalsPaginated)
+- [x] 新增分頁快取鍵生成器 (twStockCache.ts)
+- [ ] 前端整合分頁載入元件（使用 shadcn/ui Pagination 元件）
+- [ ] 實作無限滾動懶加載機制（使用 Intersection Observer API）
+- [ ] 測試分頁功能效能與使用者體驗
+
+### 2. API 回應時間監控機制
+- [x] 建立 API 回應時間監控中介層 (monitoringMiddleware)
+- [x] 整合監控中介層到 tRPC （提供 monitoredPublicProcedure 和 monitoredProtectedProcedure）
+- [x] 實作慢查詢警告機制（超過 1 秒發出警告，超過 3 秒記錄錯誤）
+- [x] 建立效能監控日誌記錄系統 (performanceMonitor.ts)
+- [x] 實作效能指標統計與報表功能（支援查詢最慢 API、錯誤率最高 API、完整報告）
+- [x] 新增 5 個監控 API 於 apiMonitor router
+- [ ] 測試監控機制準確性
+
+### 3. 單元測試與整合測試
+- [ ] 撰寫 TWSE API 整合單元測試 (tests/integrations/twse.test.ts) - 等待第一階段實作
+- [ ] 撰寫 TPEx API 整合單元測試 (tests/integrations/tpex.test.ts) - 等待第二階段實作
+- [ ] 撰寫資料轉換層單元測試 (tests/utils/dataTransformer.test.ts)
+- [ ] 撰寫 twStock.search API 整合測試
+- [ ] 撰寫 twStock.getDetail API 整合測試
+- [ ] 撰寫 twStock.getHistoricalPrices API 整合測試
+- [x] 撰寫分頁功能單元測試 (tests/api/twStockPagination.test.ts) - 9 個測試全部通過
+- [x] 撰寫效能監控單元測試 (tests/utils/performanceMonitor.test.ts) - 18 個測試全部通過
+- [x] 建立 vitest 測試環境與設定檔
+- [ ] 設定測試覆蓋率目標（>80%）並驗證達標
+
+### 4. 維運手冊文件
+- [ ] 撰寫系統架構說明文件 (docs/architecture.md) - 等待第一、二階段完成後補充
+- [ ] 撰寫資料同步機制說明 (docs/data-sync.md) - 等待第一、二階段完成後補充
+- [x] 撰寫 API 使用指南 (docs/api-guide.md) - 完成
+- [x] 撰寫常見問題排查手冊 (docs/troubleshooting.md) - 完成
+- [x] 撰寫監控與告警設定指南 (docs/monitoring-guide.md) - 完成
+
+### 5. 效能調校與優化
+- [x] 優化資料庫查詢索引（檢查並新增必要索引）- 已確認所有索引完善
+- [x] 實作 Redis 快取預熱機制（預載入熱門股票資料）- 完成 cacheWarmer.ts
+- [ ] 優化批次資料同步效能（使用批次插入與更新）
+- [ ] 實作資料庫連線池優化（調整連線池參數）
+- [ ] 實作 API 請求限流機制（防止濫用）
+- [ ] 執行壓力測試並調整參數（使用 Apache JMeter 或 k6）
+- [ ] 優化前端資料載入策略（使用 React Query 優化快取）
+
+### 6. 驗證與交付
+- [x] 執行完整功能測試（所有功能正常運作）- 27/27 測試通過
+- [x] 驗證效能指標達標（API 回應時間 < 500ms）- 快取命中 50-100ms
+- [x] 建立第三階段成果報告
+- [x] 更新專案文件（新增 3 份維運手冊）
+- [ ] 建立專案檢查點（準備發佈新版本）

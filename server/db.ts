@@ -1497,3 +1497,197 @@ export async function getLastSyncTime(
   }
 }
 
+/**
+ * 分頁查詢台股歷史價格
+ */
+export async function getTwStockPricesPaginated(
+  symbol: string,
+  page: number,
+  pageSize: number
+): Promise<{
+  data: TwStockPrice[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock prices: database not available");
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+
+  try {
+    const offset = (page - 1) * pageSize;
+
+    // 查詢總筆數
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(twStockPrices)
+      .where(eq(twStockPrices.symbol, symbol));
+
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // 查詢分頁資料
+    const results = await db
+      .select()
+      .from(twStockPrices)
+      .where(eq(twStockPrices.symbol, symbol))
+      .orderBy(desc(twStockPrices.date))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      data: results,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock prices for ${symbol}:`, error);
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+/**
+ * 分頁查詢台股技術指標
+ */
+export async function getTwStockIndicatorsPaginated(
+  symbol: string,
+  page: number,
+  pageSize: number
+): Promise<{
+  data: TwStockIndicator[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock indicators: database not available");
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+
+  try {
+    const offset = (page - 1) * pageSize;
+
+    // 查詢總筆數
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(twStockIndicators)
+      .where(eq(twStockIndicators.symbol, symbol));
+
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // 查詢分頁資料
+    const results = await db
+      .select()
+      .from(twStockIndicators)
+      .where(eq(twStockIndicators.symbol, symbol))
+      .orderBy(desc(twStockIndicators.date))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      data: results,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock indicators for ${symbol}:`, error);
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+/**
+ * 分頁查詢台股基本面資料
+ */
+export async function getTwStockFundamentalsPaginated(
+  symbol: string,
+  page: number,
+  pageSize: number
+): Promise<{
+  data: TwStockFundamental[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock fundamentals: database not available");
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+
+  try {
+    const offset = (page - 1) * pageSize;
+
+    // 查詢總筆數
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(twStockFundamentals)
+      .where(eq(twStockFundamentals.symbol, symbol));
+
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // 查詢分頁資料
+    const results = await db
+      .select()
+      .from(twStockFundamentals)
+      .where(eq(twStockFundamentals.symbol, symbol))
+      .orderBy(
+        desc(twStockFundamentals.year),
+        desc(twStockFundamentals.quarter)
+      )
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      data: results,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock fundamentals for ${symbol}:`, error);
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+}

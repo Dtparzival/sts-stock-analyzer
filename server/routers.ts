@@ -1765,6 +1765,105 @@ ${portfolioData.map(h => `
         
         return fundamentals;
       }),
+
+    // 分頁查詢歷史價格
+    getHistoricalPaginated: publicProcedure
+      .input(z.object({
+        symbol: z.string().min(1),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(30),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockPricesPaginated } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockPricesPaginated(input.symbol, input.page, input.pageSize);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockPricesPaginated(
+          input.symbol,
+          input.page,
+          input.pageSize
+        );
+        
+        if (result.data.length > 0) {
+          // 寫入 Redis 快取（TTL 6 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_PRICES);
+        }
+        
+        return result;
+      }),
+
+    // 分頁查詢技術指標
+    getIndicatorsPaginated: publicProcedure
+      .input(z.object({
+        symbol: z.string().min(1),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(30),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockIndicatorsPaginated } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockIndicatorsPaginated(input.symbol, input.page, input.pageSize);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockIndicatorsPaginated(
+          input.symbol,
+          input.page,
+          input.pageSize
+        );
+        
+        if (result.data.length > 0) {
+          // 寫入 Redis 快取（TTL 6 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_INDICATORS);
+        }
+        
+        return result;
+      }),
+
+    // 分頁查詢基本面資料
+    getFundamentalsPaginated: publicProcedure
+      .input(z.object({
+        symbol: z.string().min(1),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockFundamentalsPaginated } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockFundamentalsPaginated(input.symbol, input.page, input.pageSize);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockFundamentalsPaginated(
+          input.symbol,
+          input.page,
+          input.pageSize
+        );
+        
+        if (result.data.length > 0) {
+          // 寫入 Redis 快取（TTL 24 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
+        }
+        
+        return result;
+      }),
   }),
 
   // API 速率限制監控
@@ -1784,12 +1883,72 @@ ${portfolioData.map(h => `
         };
       }),
     
-    // 手動觸發緩存預熱（僅供測試）
+    // 手動觸發緩存預熱
     triggerCacheWarmup: publicProcedure
       .mutation(async () => {
-        const { manualWarmup } = await import('./cacheWarmer');
-        const stats = await manualWarmup();
-        return stats;
+        const { warmupAllStocks } = await import('./utils/cacheWarmer');
+        const result = await warmupAllStocks();
+        return result;
+      }),
+    
+    // 預熱指定股票快取
+    warmupStocks: publicProcedure
+      .input(z.object({
+        symbols: z.array(z.string()).min(1).max(50),
+      }))
+      .mutation(async ({ input }) => {
+        const { warmupStocks } = await import('./utils/cacheWarmer');
+        const result = await warmupStocks(input.symbols);
+        return result;
+      }),
+    
+    // 獲取熱門股票列表
+    getPopularStocks: publicProcedure
+      .query(async () => {
+        const { getPopularStocks } = await import('./utils/cacheWarmer');
+        return getPopularStocks();
+      }),
+    
+    // 獲取 API 效能統計資料
+    getPerformanceStats: publicProcedure
+      .query(async () => {
+        const { getPerformanceStats } = await import('./utils/performanceMonitor');
+        return getPerformanceStats();
+      }),
+    
+    // 獲取效能報告
+    getPerformanceReport: publicProcedure
+      .query(async () => {
+        const { generatePerformanceReport } = await import('./utils/performanceMonitor');
+        return generatePerformanceReport();
+      }),
+    
+    // 獲取最慢的 API
+    getSlowestAPIs: publicProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(50).default(10),
+      }))
+      .query(async ({ input }) => {
+        const { getSlowestAPIs } = await import('./utils/performanceMonitor');
+        return getSlowestAPIs(input.limit);
+      }),
+    
+    // 獲取錯誤率最高的 API
+    getHighestErrorAPIs: publicProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(50).default(10),
+      }))
+      .query(async ({ input }) => {
+        const { getHighestErrorAPIs } = await import('./utils/performanceMonitor');
+        return getHighestErrorAPIs(input.limit);
+      }),
+    
+    // 清除效能指標（僅供測試）
+    clearPerformanceMetrics: publicProcedure
+      .mutation(async () => {
+        const { clearMetrics } = await import('./utils/performanceMonitor');
+        clearMetrics();
+        return { success: true };
       }),
   }),
 });
