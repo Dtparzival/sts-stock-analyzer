@@ -240,3 +240,90 @@ export function getRecommendationCacheKey(userId: number): string {
 export function getUserBehaviorCachePattern(userId: number): string {
   return `recommendation:user:${userId}*`;
 }
+
+/**
+ * ==================== 台股資料快取相關函數 ====================
+ */
+
+/**
+ * 快取鍵生成器：台股基本資料快取鍵
+ * TTL: 24 小時
+ * 
+ * @param symbol 股票代號
+ * @returns 快取鍵
+ */
+export function getTwStockInfoCacheKey(symbol: string): string {
+  return `twstock:info:${symbol}`;
+}
+
+/**
+ * 快取鍵生成器：台股即時報價快取鍵
+ * TTL: 1 分鐘
+ * 
+ * @param symbol 股票代號
+ * @returns 快取鍵
+ */
+export function getTwStockQuoteCacheKey(symbol: string): string {
+  return `twstock:quote:${symbol}`;
+}
+
+/**
+ * 快取鍵生成器：台股歷史價格快取鍵
+ * TTL: 6 小時
+ * 
+ * @param symbol 股票代號
+ * @param startDate 開始日期（YYYY-MM-DD）
+ * @param endDate 結束日期（YYYY-MM-DD）
+ * @returns 快取鍵
+ */
+export function getTwStockPricesCacheKey(symbol: string, startDate: string, endDate: string): string {
+  return `twstock:prices:${symbol}:${startDate}:${endDate}`;
+}
+
+/**
+ * 快取鍵生成器：台股技術指標快取鍵
+ * TTL: 6 小時
+ * 
+ * @param symbol 股票代號
+ * @param date 日期（YYYY-MM-DD）
+ * @returns 快取鍵
+ */
+export function getTwStockIndicatorsCacheKey(symbol: string, date: string): string {
+  return `twstock:indicators:${symbol}:${date}`;
+}
+
+/**
+ * 快取鍵生成器：台股基本面資料快取鍵
+ * TTL: 24 小時
+ * 
+ * @param symbol 股票代號
+ * @param year 年度
+ * @param quarter 季度
+ * @returns 快取鍵
+ */
+export function getTwStockFundamentalsCacheKey(symbol: string, year: number, quarter: number): string {
+  return `twstock:fundamentals:${symbol}:${year}:Q${quarter}`;
+}
+
+/**
+ * 快取鍵生成器：台股列表快取鍵
+ * TTL: 24 小時
+ * 
+ * @param market 市場類別（上市/上櫃/興櫃）
+ * @returns 快取鍵
+ */
+export function getTwStockListCacheKey(market?: string): string {
+  return market ? `twstock:list:${market}` : 'twstock:list:all';
+}
+
+/**
+ * 快取 TTL 常數（秒）
+ */
+export const TW_STOCK_CACHE_TTL = {
+  INFO: 24 * 60 * 60,        // 24 小時
+  QUOTE: 60,                  // 1 分鐘
+  PRICES: 6 * 60 * 60,        // 6 小時
+  INDICATORS: 6 * 60 * 60,    // 6 小時
+  FUNDAMENTALS: 24 * 60 * 60, // 24 小時
+  LIST: 24 * 60 * 60,         // 24 小時
+};

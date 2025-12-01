@@ -4,27 +4,27 @@
  */
 
 /**
- * 輔助函數：解析價格（轉換為以分為單位的整數）
- * 例如：100.50 元 → 10050
+ * 輔助函數：解析價格（直接傳回實際數值，使用 DECIMAL 型別）
+ * 例如：100.50 元 → 100.50
  */
 export function parsePrice(price: string | number): number {
   if (price === null || price === undefined || price === '') {
     return 0;
   }
   const numPrice = typeof price === 'string' ? parseFloat(price.replace(/,/g, '')) : price;
-  return Math.round(numPrice * 100);
+  return Math.round(numPrice * 100) / 100; // 保留兩位小數
 }
 
 /**
- * 輔助函數：解析百分比（轉換為以萬分之一為單位的整數）
- * 例如：1.5% → 150
+ * 輔助函數：解析百分比（直接傳回百分比數值，使用 DECIMAL 型別）
+ * 例如：1.5% → 1.50
  */
 export function parsePercent(percent: string | number): number {
   if (percent === null || percent === undefined || percent === '') {
     return 0;
   }
   const numPercent = typeof percent === 'string' ? parseFloat(percent.replace(/%/g, '')) : percent;
-  return Math.round(numPercent * 10000);
+  return Math.round(numPercent * 100) / 100; // 保留兩位小數
 }
 
 /**
@@ -122,14 +122,15 @@ export function transformHistoricalPrice(rawData: any, source: 'TWSE' | 'TPEx') 
 
 /**
  * 轉換 FinMind 財務報表格式
+ * 使用 DECIMAL 型別直接儲存實際數值
  */
 export function transformFinancialStatement(rawData: any) {
   return {
     symbol: rawData.stock_id || '',
     year: parseInt(rawData.year || '0'),
     quarter: parseInt(rawData.quarter || '0'),
-    revenue: Math.round((parseFloat(rawData.revenue || '0') || 0) / 1000), // 轉換為千元
-    netIncome: Math.round((parseFloat(rawData.net_income || '0') || 0) / 1000), // 轉換為千元
+    revenue: Math.round((parseFloat(rawData.revenue || '0') || 0) / 10) / 100, // 轉換為千元，保留兩位小數
+    netIncome: Math.round((parseFloat(rawData.net_income || '0') || 0) / 10) / 100, // 轉換為千元，保留兩位小數
   };
 }
 
@@ -147,21 +148,29 @@ export function transformDividend(rawData: any) {
 
 /**
  * 轉換 FinMind 基本面指標格式
+ * 使用 DECIMAL 型別直接儲存實際數值
  */
 export function transformFundamentals(rawData: any) {
+  const parseDecimal = (value: string | number): number => {
+    if (value === null || value === undefined || value === '') return 0;
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return Math.round(num * 100) / 100; // 保留兩位小數
+  };
+  
   return {
     symbol: rawData.stock_id || '',
     year: parseInt(rawData.date?.split('-')[0] || '0'),
     quarter: Math.ceil(parseInt(rawData.date?.split('-')[1] || '1') / 3),
-    eps: parsePrice(rawData.EPS || '0'),
-    pe: parsePercent(rawData.PER || '0'),
-    pb: parsePercent(rawData.PBR || '0'),
-    roe: parsePercent(rawData.ROE || '0'),
+    eps: parseDecimal(rawData.EPS || '0'),
+    pe: parseDecimal(rawData.PER || '0'),
+    pb: parseDecimal(rawData.PBR || '0'),
+    roe: parseDecimal(rawData.ROE || '0'),
   };
 }
 
 /**
  * 計算技術指標：移動平均線 (MA)
+ * 傳回 DECIMAL 格式的實際數值
  */
 export function calculateMA(prices: number[], period: number): number | null {
   if (prices.length < period) {
@@ -169,11 +178,12 @@ export function calculateMA(prices: number[], period: number): number | null {
   }
   
   const sum = prices.slice(-period).reduce((acc, price) => acc + price, 0);
-  return Math.round(sum / period);
+  return Math.round((sum / period) * 100) / 100; // 保留兩位小數
 }
 
 /**
  * 計算技術指標：RSI (相對強弱指標)
+ * 傳回 0-100 的 DECIMAL 數值
  */
 export function calculateRSI(prices: number[], period: number = 14): number | null {
   if (prices.length < period + 1) {
@@ -196,13 +206,13 @@ export function calculateRSI(prices: number[], period: number = 14): number | nu
   const avgLoss = losses / period;
   
   if (avgLoss === 0) {
-    return 1000000; // RSI = 100 (以萬分之一為單位)
+    return 100; // RSI = 100
   }
   
   const rs = avgGain / avgLoss;
   const rsi = 100 - (100 / (1 + rs));
   
-  return Math.round(rsi * 10000); // 轉換為萬分之一為單位
+  return Math.round(rsi * 100) / 100; // 保留兩位小數
 }
 
 /**

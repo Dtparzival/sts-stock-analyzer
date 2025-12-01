@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, index } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, index, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * 核心用戶表
@@ -283,14 +283,14 @@ export const twStockPrices = mysqlTable("twStockPrices", {
   id: int("id").autoincrement().primaryKey(),
   symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
   date: timestamp("date").notNull(), // 交易日期
-  open: int("open").notNull(), // 開盤價（以分為單位，例如 100.50 元存為 10050）
-  high: int("high").notNull(), // 最高價
-  low: int("low").notNull(), // 最低價
-  close: int("close").notNull(), // 收盤價
+  open: decimal("open", { precision: 10, scale: 2 }).notNull(), // 開盤價（例如 100.50 元）
+  high: decimal("high", { precision: 10, scale: 2 }).notNull(), // 最高價
+  low: decimal("low", { precision: 10, scale: 2 }).notNull(), // 最低價
+  close: decimal("close", { precision: 10, scale: 2 }).notNull(), // 收盤價
   volume: int("volume").notNull(), // 成交量（張）
-  amount: int("amount").notNull(), // 成交金額（以分為單位）
-  change: int("change").notNull(), // 漲跌（以分為單位）
-  changePercent: int("changePercent").notNull(), // 漲跌幅（以萬分之一為單位，例如 1.5% 存為 150）
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(), // 成交金額（元）
+  change: decimal("change", { precision: 10, scale: 2 }).notNull(), // 漲跌（元）
+  changePercent: decimal("changePercent", { precision: 5, scale: 2 }).notNull(), // 漲跌幅（%，例如 1.50）
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   symbolIdx: index("symbol_idx").on(table.symbol),
@@ -309,16 +309,16 @@ export const twStockIndicators = mysqlTable("twStockIndicators", {
   id: int("id").autoincrement().primaryKey(),
   symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
   date: timestamp("date").notNull(), // 計算日期
-  ma5: int("ma5"), // 5 日均線（以分為單位）
-  ma10: int("ma10"), // 10 日均線
-  ma20: int("ma20"), // 20 日均線
-  ma60: int("ma60"), // 60 日均線
-  rsi14: int("rsi14"), // 14 日 RSI（以萬分之一為單位，例如 70.5 存為 705000）
-  macd: int("macd"), // MACD 值（以分為單位）
-  macdSignal: int("macdSignal"), // MACD 信號線
-  macdHistogram: int("macdHistogram"), // MACD 柱狀圖
-  kValue: int("kValue"), // KD 指標 K 值（以萬分之一為單位）
-  dValue: int("dValue"), // KD 指標 D 值
+  ma5: decimal("ma5", { precision: 10, scale: 2 }), // 5 日均線
+  ma10: decimal("ma10", { precision: 10, scale: 2 }), // 10 日均線
+  ma20: decimal("ma20", { precision: 10, scale: 2 }), // 20 日均線
+  ma60: decimal("ma60", { precision: 10, scale: 2 }), // 60 日均線
+  rsi14: decimal("rsi14", { precision: 5, scale: 2 }), // 14 日 RSI（0-100）
+  macd: decimal("macd", { precision: 10, scale: 4 }), // MACD 值
+  macdSignal: decimal("macdSignal", { precision: 10, scale: 4 }), // MACD 信號線
+  macdHistogram: decimal("macdHistogram", { precision: 10, scale: 4 }), // MACD 柱狀圖
+  kValue: decimal("kValue", { precision: 5, scale: 2 }), // KD 指標 K 值（0-100）
+  dValue: decimal("dValue", { precision: 5, scale: 2 }), // KD 指標 D 值（0-100）
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -339,14 +339,14 @@ export const twStockFundamentals = mysqlTable("twStockFundamentals", {
   symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
   year: int("year").notNull(), // 年度
   quarter: int("quarter").notNull(), // 季度（1-4）
-  eps: int("eps"), // 每股盈餘（以分為單位）
-  pe: int("pe"), // 本益比（以萬分之一為單位）
-  pb: int("pb"), // 股價淨值比（以萬分之一為單位）
-  roe: int("roe"), // 股東權益報酬率（以萬分之一為單位）
-  dividend: int("dividend"), // 股利（以分為單位）
-  yieldRate: int("yieldRate"), // 殖利率（以萬分之一為單位）
-  revenue: int("revenue"), // 營收（以千元為單位）
-  netIncome: int("netIncome"), // 淨利（以千元為單位）
+  eps: decimal("eps", { precision: 10, scale: 2 }), // 每股盈餘（元）
+  pe: decimal("pe", { precision: 8, scale: 2 }), // 本益比
+  pb: decimal("pb", { precision: 8, scale: 2 }), // 股價淨值比
+  roe: decimal("roe", { precision: 5, scale: 2 }), // 股東權益報酬率（%）
+  dividend: decimal("dividend", { precision: 10, scale: 2 }), // 股利（元）
+  yieldRate: decimal("yieldRate", { precision: 5, scale: 2 }), // 殖利率（%）
+  revenue: decimal("revenue", { precision: 15, scale: 2 }), // 營收（千元）
+  netIncome: decimal("netIncome", { precision: 15, scale: 2 }), // 淨利（千元）
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -380,3 +380,27 @@ export const twDataSyncStatus = mysqlTable("twDataSyncStatus", {
 
 export type TwDataSyncStatus = typeof twDataSyncStatus.$inferSelect;
 export type InsertTwDataSyncStatus = typeof twDataSyncStatus.$inferInsert;
+
+/**
+ * 資料同步錯誤記錄表
+ * 記錄台股資料同步過程中的錯誤詳情，用於除錯與分析
+ */
+export const twDataSyncErrors = mysqlTable("twDataSyncErrors", {
+  id: int("id").autoincrement().primaryKey(),
+  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型（stocks/prices/indicators/fundamentals）
+  source: mysqlEnum("source", ["TWSE", "TPEx", "FinMind"]).notNull(), // 資料來源
+  symbol: varchar("symbol", { length: 10 }), // 失敗的股票代號（如果適用）
+  errorType: varchar("errorType", { length: 50 }).notNull(), // 錯誤類型（network/api/validation/database/unknown）
+  errorMessage: text("errorMessage").notNull(), // 錯誤訊息
+  errorStack: text("errorStack"), // 錯誤堆疊
+  retryCount: int("retryCount").default(0).notNull(), // 重試次數
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  dataTypeIdx: index("dataType_idx").on(table.dataType),
+  sourceIdx: index("source_idx").on(table.source),
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+}));
+
+export type TwDataSyncError = typeof twDataSyncErrors.$inferSelect;
+export type InsertTwDataSyncError = typeof twDataSyncErrors.$inferInsert;

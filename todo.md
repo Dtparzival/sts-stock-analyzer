@@ -1141,5 +1141,56 @@
 ### 第四階段：文件與交付
 - [x] 準備優化說明文件
 - [x] 更新專案文件
-- [ ] 建立檢查點
-- [ ] 向使用者報告優化成果
+- [x] 建立檢查點
+- [x] 向使用者報告優化成果
+
+
+## 台股資料整合功能開發 - 2025-12-01
+
+### 目標
+依循『台股資料整合優化方案_Final』之內容，基於系統與資料庫效能佳，程式碼簡潔易讀，日後好維護與開發擴充，無重複代碼等原則，執行第一階段核心功能開發。
+
+### 第一階段：資料庫 Schema 建立
+- [x] 建立 twStocks 表（台股基本資料，使用 DECIMAL 型別）
+- [x] 建立 twStockPrices 表（台股歷史價格，使用 DECIMAL 型別）
+- [x] 建立 twStockIndicators 表（台股技術指標，使用 DECIMAL 型別）
+- [x] 建立 twStockFundamentals 表（台股基本面資料，使用 DECIMAL 型別）
+- [x] 建立 twDataSyncStatus 表（資料同步狀態）
+- [x] 建立 twDataSyncErrors 表（資料同步錯誤記錄）
+- [x] 執行資料庫遷移（pnpm db:push）
+
+### 第二階段：API 整合模組實作
+- [x] 實作 TWSE API 整合模組（server/integrations/twse.ts）
+- [x] 實作 TPEx API 整合模組（server/integrations/tpex.ts）
+- [x] 實作 FinMind API 整合模組（server/integrations/finmind.ts）
+- [x] 實作統一資料轉換層（server/integrations/dataTransformer.ts）
+- [x] 實作錯誤處理與重試機制（指數退避）
+- [x] 實作部分失敗處理邏輯
+
+### 第三階段：Redis 快取機制實作
+- [x] 建立 Redis 連線模組（已存在 server/redis.ts，需擴展）
+- [x] 實作台股基本資料快取（TTL 24小時）
+- [x] 實作台股即時報價快取（TTL 1分鐘）
+- [x] 實作台股歷史價格快取（TTL 6小時）
+- [x] 實作台股技術指標快取（TTL 6小時）
+
+### 第四階段：tRPC API 層實作
+- [x] 實作 twStock.search API（搜尋台股）
+- [x] 實作 twStock.getDetail API（取得台股詳細資料）
+- [x] 實作 twStock.getHistoricalPrices API（取得歷史價格）
+- [x] 實作統一錯誤處理中介層
+- [x] 實作輸入參數驗證（Zod schema）
+
+### 第五階段：資料庫查詢輔助函數
+- [x] 實作 getTwStockBySymbol 查詢函數（server/db.ts）
+- [x] 實作 searchTwStocks 查詢函數（server/db.ts）
+- [x] 實作 getTwStockPrices 查詢函數（server/db.ts）
+- [x] 實作 upsertTwStock 寫入函數（server/db.ts）
+- [x] 實作 upsertTwStockPrices 寫入函數（server/db.ts）
+
+### 第六階段：整合測試與交付
+- [x] 撰寫 Vitest 單元測試（API 整合、資料轉換、快取機制）
+- [x] 測試台股搜尋功能
+- [x] 測試台股詳情頁顯示
+- [x] 測試歷史價格查詢
+- [x] 建立檢查點並準備交付

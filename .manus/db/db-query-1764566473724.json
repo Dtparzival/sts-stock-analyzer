@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `twDataSyncErrors` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `dataType` varchar(50) NOT NULL,\n  `source` enum('TWSE', 'TPEx', 'FinMind') NOT NULL,\n  `symbol` varchar(10),\n  `errorType` varchar(50) NOT NULL,\n  `errorMessage` text NOT NULL,\n  `errorStack` text,\n  `retryCount` int NOT NULL DEFAULT 0,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  INDEX `dataType_idx` (`dataType`),\n  INDEX `source_idx` (`source`),\n  INDEX `symbol_idx` (`symbol`),\n  INDEX `createdAt_idx` (`createdAt`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute CREATE TABLE IF NOT EXISTS `twDataSyncErrors` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `dataType` varchar(50) NOT NULL,\n  `source` enum('TWSE', 'TPEx', 'FinMind') NOT NULL,\n  `symbol` varchar(10),\n  `errorType` varchar(50) NOT NULL,\n  `errorMessage` text NOT NULL,\n  `errorStack` text,\n  `retryCount` int NOT NULL DEFAULT 0,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  INDEX `dataType_idx` (`dataType`),\n  INDEX `source_idx` (`source`),\n  INDEX `symbol_idx` (`symbol`),\n  INDEX `createdAt_idx` (`createdAt`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1691
+}

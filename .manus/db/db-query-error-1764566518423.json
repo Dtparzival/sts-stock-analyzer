@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE `twStockFundamentals`\n  MODIFY COLUMN `eps` decimal(10, 2),\n  MODIFY COLUMN `pe` decimal(8, 2),\n  MODIFY COLUMN `pb` decimal(8, 2),\n  MODIFY COLUMN `roe` decimal(5, 2),\n  MODIFY COLUMN `dividend` decimal(10, 2),\n  MODIFY COLUMN `yieldRate` decimal(5, 2),\n  MODIFY COLUMN `revenue` decimal(15, 2),\n  MODIFY COLUMN `netIncome` decimal(15, 2);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute ALTER TABLE `twStockFundamentals`\n  MODIFY COLUMN `eps` decimal(10, 2),\n  MODIFY COLUMN `pe` decimal(8, 2),\n  MODIFY COLUMN `pb` decimal(8, 2),\n  MODIFY COLUMN `roe` decimal(5, 2),\n  MODIFY COLUMN `dividend` decimal(10, 2),\n  MODIFY COLUMN `yieldRate` decimal(5, 2),\n  MODIFY COLUMN `revenue` decimal(15, 2),\n  MODIFY COLUMN `netIncome` decimal(15, 2);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1690 (22003) at line 1: DECIMAL value is out of range in '?'"
+  ]
+}

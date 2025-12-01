@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MAX(revenue) as max_revenue, MAX(netIncome) as max_netIncome FROM twStockFundamentals;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT MAX(revenue) as max_revenue, MAX(netIncome) as max_netIncome FROM twStockFundamentals;",
+  "rows": [
+    {
+      "max_revenue": "7500000",
+      "max_netIncome": "2500000"
+    }
+  ],
+  "messages": [],
+  "stdout": "max_revenue\tmax_netIncome\n7500000\t2500000\n",
+  "stderr": "",
+  "execution_time_ms": 1624
+}

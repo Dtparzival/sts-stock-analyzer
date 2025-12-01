@@ -1334,26 +1334,8 @@ export async function getTwStockFundamentals(
       desc(twStockFundamentals.quarter)
     );
 
-    // 轉換資料庫的特殊單位回正常數值
-    return results.map(item => ({
-      ...item,
-      // eps: 分 → 元
-      eps: item.eps !== null ? item.eps / 100 : null,
-      // pe: 萬分之一 → 倍
-      pe: item.pe !== null ? item.pe / 10000 : null,
-      // pb: 萬分之一 → 倍
-      pb: item.pb !== null ? item.pb / 10000 : null,
-      // roe: 萬分之一 → %
-      roe: item.roe !== null ? item.roe / 10000 : null,
-      // dividend: 分 → 元
-      dividend: item.dividend !== null ? item.dividend / 100 : null,
-      // yieldRate: 萬分之一 → %
-      yieldRate: item.yieldRate !== null ? item.yieldRate / 10000 : null,
-      // revenue: 千元 → 元
-      revenue: item.revenue !== null ? item.revenue * 1000 : null,
-      // netIncome: 千元 → 元
-      netIncome: item.netIncome !== null ? item.netIncome * 1000 : null,
-    }));
+    // 資料庫已使用 DECIMAL 型別直接儲存實際數值，不需要轉換
+    return results;
   } catch (error) {
     console.error(`[Database] Failed to get TW stock fundamentals for ${symbol}:`, error);
     return [];
@@ -1514,3 +1496,4 @@ export async function getLastSyncTime(
     return null;
   }
 }
+

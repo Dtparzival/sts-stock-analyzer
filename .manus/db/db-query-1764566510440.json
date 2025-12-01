@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `twStockIndicators`\n  MODIFY COLUMN `ma5` decimal(10, 2),\n  MODIFY COLUMN `ma10` decimal(10, 2),\n  MODIFY COLUMN `ma20` decimal(10, 2),\n  MODIFY COLUMN `ma60` decimal(10, 2),\n  MODIFY COLUMN `rsi14` decimal(5, 2),\n  MODIFY COLUMN `macd` decimal(10, 4),\n  MODIFY COLUMN `macdSignal` decimal(10, 4),\n  MODIFY COLUMN `macdHistogram` decimal(10, 4),\n  MODIFY COLUMN `kValue` decimal(5, 2),\n  MODIFY COLUMN `dValue` decimal(5, 2);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute ALTER TABLE `twStockIndicators`\n  MODIFY COLUMN `ma5` decimal(10, 2),\n  MODIFY COLUMN `ma10` decimal(10, 2),\n  MODIFY COLUMN `ma20` decimal(10, 2),\n  MODIFY COLUMN `ma60` decimal(10, 2),\n  MODIFY COLUMN `rsi14` decimal(5, 2),\n  MODIFY COLUMN `macd` decimal(10, 4),\n  MODIFY COLUMN `macdSignal` decimal(10, 4),\n  MODIFY COLUMN `macdHistogram` decimal(10, 4),\n  MODIFY COLUMN `kValue` decimal(5, 2),\n  MODIFY COLUMN `dValue` decimal(5, 2);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 4864
+}
