@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { startCacheCleanupScheduler } from "../cacheCleanup";
 import { startCacheWarmerScheduler } from "../cacheWarmer";
 import { initTwStockScheduler } from "../scheduler/twStockSync";
+import { runFullPreload } from "../scripts/preloadTwStockData";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -71,6 +72,13 @@ async function startServer() {
     
     // 啟動台股資料同步排程器
     initTwStockScheduler();
+    
+    // 執行台股資料預載入（延遲 5 秒執行，避免阻塞伺服器啟動）
+    setTimeout(() => {
+      runFullPreload().catch(error => {
+        console.error('[Preload] 預載入失敗:', error);
+      });
+    }, 5000);
   });
 }
 

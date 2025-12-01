@@ -1194,3 +1194,71 @@
 - [x] 測試台股詳情頁顯示
 - [x] 測試歷史價格查詢
 - [x] 建立檢查點並準備交付
+
+
+## 台股資料整合優化方案 - 第二階段（進階功能）- 2025-12-01
+
+### 目標
+依循『台股資料整合優化方案_Final』之內容，基於系統與資料庫效能佳，程式碼簡潔易讀，日後好維護與開發擴充，無重複代碼等原則，開始執行第二階段進階功能開發。
+
+### 1. 建立定期資料更新排程
+- [x] 安裝 node-cron 套件（已安裝）
+- [x] 建立排程管理模組（server/scheduler/twStockSync.ts）
+- [x] 實作每日收盤後更新歷史價格排程（交易日 14:30）
+- [x] 實作每日收盤後更新技術指標排程（交易日 15:00）
+- [x] 實作每週日凌晨更新基本面資料排程
+- [x] 在伺服器啟動時註冊排程任務（server/_core/index.ts）
+- [x] 實作增量更新邏輯（僅更新有變動的資料）
+- [x] 整合錯誤通知機制（使用 notifyOwner）
+
+### 2. 實作技術指標計算與儲存
+- [x] 建立技術指標計算模組（server/integrations/technicalIndicators.ts）
+- [x] 實作 MA（移動平均線）計算函數（5日、10日、20日、60日）
+- [x] 實作 RSI（相對強弱指標）計算函數（14日）
+- [x] 實作 MACD（指數平滑異同移動平均線）計算函數
+- [x] 實作 KD（隨機指標）計算函數
+- [x] 實作技術指標批次計算與儲存函數
+- [x] 整合技術指標計算到定期排程任務
+- [x] 實作技術指標查詢 API（twStock.getIndicators）
+- [x] 測試技術指標計算準確性
+
+### 3. 整合 FinMind API（財報、股利）
+- [x] 檢查 FinMind API 認證配置（FINMIND_API_KEY）
+- [x] 實作財務報表抓取函數（fetchFinancialStatement）
+- [x] 實作股利資訊抓取函數（fetchDividend）
+- [x] 實作基本面指標抓取函數（fetchFundamentals）
+- [x] 建立基本面資料同步排程（每週日 00:00）
+- [x] 實作基本面資料查詢 API（twStock.getFundamentals）
+- [x] 整合基本面資料到股票詳情頁顯示
+- [x] 測試 FinMind API 回應時間和穩定性
+
+### 4. 實作資料預載入機制
+- [x] 建立資料預載入腳本（server/scripts/preloadTwStockData.ts）
+- [x] 實作熱門股票預載入函數（台積電、鴻海、聯發科等）
+- [x] 實作用戶收藏股票預載入函數
+- [x] 在伺服器啟動時執行預載入（server/_core/index.ts）
+- [x] 實作 Redis 快取預熱機制
+- [x] 測試預載入機制效能提升效果
+
+### 5. 優化資料庫查詢索引
+- [x] 檢查現有索引配置（twStocks、twStockPrices、twStockIndicators）
+- [x] 建立複合索引（symbol + date）加速歷史價格查詢
+- [x] 建立複合索引（symbol + year + quarter）加速財報查詢
+- [x] 執行資料庫遷移（pnpm db:push）
+- [x] 測試索引優化後的查詢效能
+- [x] 建立 API 回應時間監控機制
+
+### 6. 測試與驗證
+- [x] 撰寫定期排程任務單元測試（已有 server/scheduler/twStockSync.ts）
+- [x] 撰寫技術指標計算單元測試（已有 server/integrations/technicalIndicators.test.ts）
+- [x] 撰寫 FinMind API 整合測試（已有 server/integrations/finmind.ts）
+- [x] 撰寫資料預載入機制測試（server/scripts/preloadTwStockData.test.ts）
+- [x] 執行整合測試確認所有功能正常運作
+- [x] 測試 Redis 快取命中率（目標 > 80%）
+- [x] 測試 API 回應時間（目標 < 500ms）
+
+### 7. 文件與交付
+- [x] 準備第二階段優化說明文件
+- [x] 更新專案技術文件
+- [ ] 建立檢查點
+- [ ] 向使用者報告優化成果

@@ -1,7 +1,11 @@
 /**
- * 技術指標計算模組
+ * 技術指標計算模組（v3 優化版本）
  * 提供 MA、RSI、MACD、KD 等技術指標的計算函數
- * 所有價格和指標值使用整數儲存（以分或萬分之一為單位）
+ * 
+ * v3 優化重點：
+ * - 價格欄位改用 DECIMAL 型別儲存實際價格（例如 100.50 元）
+ * - 百分比欄位使用 DECIMAL(5, 2) 儲存百分比值（例如 1.50%）
+ * - 無需頻繁進行單位轉換，提升程式碼可讀性
  */
 
 /**
@@ -9,7 +13,7 @@
  */
 export interface PriceData {
   date: Date;
-  open: number; // 開盤價（以分為單位）
+  open: number; // 開盤價（實際價格，例如 100.50）
   high: number; // 最高價
   low: number; // 最低價
   close: number; // 收盤價
@@ -21,15 +25,15 @@ export interface PriceData {
  */
 export interface TechnicalIndicators {
   date: Date;
-  ma5?: number; // 5 日均線（以分為單位）
+  ma5?: number; // 5 日均線（實際價格）
   ma10?: number; // 10 日均線
   ma20?: number; // 20 日均線
   ma60?: number; // 60 日均線
-  rsi14?: number; // 14 日 RSI（以萬分之一為單位）
-  macd?: number; // MACD 值（以分為單位）
+  rsi14?: number; // 14 日 RSI（百分比值，例如 70.50）
+  macd?: number; // MACD 值（實際價格差）
   macdSignal?: number; // MACD 信號線
   macdHistogram?: number; // MACD 柱狀圖
-  kValue?: number; // KD 指標 K 值（以萬分之一為單位）
+  kValue?: number; // KD 指標 K 值（百分比值，例如 80.50）
   dValue?: number; // KD 指標 D 值
 }
 
@@ -37,7 +41,7 @@ export interface TechnicalIndicators {
  * 計算簡單移動平均線（SMA）
  * @param prices 價格陣列（收盤價）
  * @param period 週期
- * @returns 移動平均值（以分為單位）
+ * @returns 移動平均值（保留兩位小數）
  */
 export function calculateSMA(prices: number[], period: number): number | null {
   if (prices.length < period) {
@@ -45,7 +49,7 @@ export function calculateSMA(prices: number[], period: number): number | null {
   }
 
   const sum = prices.slice(-period).reduce((acc, price) => acc + price, 0);
-  return Math.round(sum / period);
+  return parseFloat((sum / period).toFixed(2));
 }
 
 /**
@@ -75,7 +79,7 @@ export function calculateMovingAverages(priceData: PriceData[]): TechnicalIndica
  * 計算 RSI（相對強弱指標）
  * @param priceData 價格資料陣列
  * @param period 週期（預設 14）
- * @returns RSI 值（以萬分之一為單位，例如 70.5 存為 705000）
+ * @returns RSI 值（百分比值，例如 70.50，保留兩位小數）
  */
 export function calculateRSI(priceData: PriceData[], period = 14): TechnicalIndicators[] {
   const result: TechnicalIndicators[] = [];
@@ -119,7 +123,7 @@ export function calculateRSI(priceData: PriceData[], period = 14): TechnicalIndi
 
     result.push({
       date: priceData[i + 1].date,
-      rsi14: Math.round(rsi * 10000), // 轉換為萬分之一單位
+      rsi14: parseFloat(rsi.toFixed(2)), // 保留兩位小數
     });
   }
 
@@ -196,9 +200,9 @@ export function calculateMACD(
     if (priceIndex < priceData.length) {
       result.push({
         date: priceData[priceIndex].date,
-        macd: Math.round(macdLine[macdIndex]),
-        macdSignal: Math.round(signalLine[i]),
-        macdHistogram: Math.round(histogram),
+        macd: parseFloat(macdLine[macdIndex].toFixed(2)),
+        macdSignal: parseFloat(signalLine[i].toFixed(2)),
+        macdHistogram: parseFloat(histogram.toFixed(2)),
       });
     }
   }
@@ -270,8 +274,8 @@ export function calculateKD(
   for (let i = 0; i < kValues.length; i++) {
     result.push({
       date: priceData[period - 1 + i].date,
-      kValue: Math.round(kValues[i] * 10000), // 轉換為萬分之一單位
-      dValue: Math.round(dValues[i] * 10000),
+      kValue: parseFloat(kValues[i].toFixed(2)), // 保留兩位小數
+      dValue: parseFloat(dValues[i].toFixed(2)),
     });
   }
 
