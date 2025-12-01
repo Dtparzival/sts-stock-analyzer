@@ -1864,6 +1864,143 @@ ${portfolioData.map(h => `
         
         return result;
       }),
+
+    // 獲取台股財務報表
+    getFinancials: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        year: z.number().optional(),
+        quarter: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockFinancials } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockFinancials(
+          input.symbol,
+          input.year || 0,
+          input.quarter || 0
+        );
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockFinancials(
+          input.symbol,
+          input.year,
+          input.quarter
+        );
+        
+        if (result.length > 0) {
+          // 寫入 Redis 快取（TTL 24 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
+        }
+        
+        return result;
+      }),
+
+    // 獲取台股股利資訊
+    getDividends: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        year: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockDividends } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockDividends(
+          input.symbol,
+          input.year || 0
+        );
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockDividends(
+          input.symbol,
+          input.year
+        );
+        
+        if (result.length > 0) {
+          // 寫入 Redis 快取（TTL 24 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
+        }
+        
+        return result;
+      }),
+
+    // 分頁查詢台股財務報表
+    getFinancialsPaginated: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        page: z.number().min(1),
+        pageSize: z.number().min(1).max(100),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockFinancialsPaginated } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockFinancialsPaginated(input.symbol, input.page, input.pageSize);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockFinancialsPaginated(
+          input.symbol,
+          input.page,
+          input.pageSize
+        );
+        
+        if (result.data.length > 0) {
+          // 寫入 Redis 快取（TTL 24 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
+        }
+        
+        return result;
+      }),
+
+    // 分頁查詢台股股利資訊
+    getDividendsPaginated: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+        page: z.number().min(1),
+        pageSize: z.number().min(1).max(100),
+      }))
+      .query(async ({ input }) => {
+        const { getTwStockDividendsPaginated } = await import('./db');
+        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
+        
+        // 嘗試從 Redis 快取獲取
+        const cacheKey = CacheKey.stockDividendsPaginated(input.symbol, input.page, input.pageSize);
+        const cached = await getCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
+        
+        // 從資料庫查詢
+        const result = await getTwStockDividendsPaginated(
+          input.symbol,
+          input.page,
+          input.pageSize
+        );
+        
+        if (result.data.length > 0) {
+          // 寫入 Redis 快取（TTL 24 小時）
+          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
+        }
+        
+        return result;
+      }),
   }),
 
   // API 速率限制監控

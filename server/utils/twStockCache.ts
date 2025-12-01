@@ -71,6 +71,30 @@ export const CacheKey = {
    */
   stockFundamentalsPaginated: (symbol: string, page: number, pageSize: number) =>
     `${CACHE_PREFIX}:fundamentals:paginated:${symbol}:${page}:${pageSize}`,
+
+  /**
+   * 財務報表快取鍵
+   */
+  stockFinancials: (symbol: string, year: number, quarter: number) =>
+    `${CACHE_PREFIX}:financials:${symbol}:${year}:${quarter}`,
+
+  /**
+   * 股利資訊快取鍵
+   */
+  stockDividends: (symbol: string, year: number) =>
+    `${CACHE_PREFIX}:dividends:${symbol}:${year}`,
+
+  /**
+   * 財務報表分頁快取鍵
+   */
+  stockFinancialsPaginated: (symbol: string, page: number, pageSize: number) =>
+    `${CACHE_PREFIX}:financials:paginated:${symbol}:${page}:${pageSize}`,
+
+  /**
+   * 股利資訊分頁快取鍵
+   */
+  stockDividendsPaginated: (symbol: string, page: number, pageSize: number) =>
+    `${CACHE_PREFIX}:dividends:paginated:${symbol}:${page}:${pageSize}`,
 } as const;
 
 /**

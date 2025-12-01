@@ -44,7 +44,13 @@ import {
   InsertTwStockFundamental,
   twDataSyncStatus,
   TwDataSyncStatus,
-  InsertTwDataSyncStatus
+  InsertTwDataSyncStatus,
+  twStockFinancials,
+  TwStockFinancial,
+  InsertTwStockFinancial,
+  twStockDividends,
+  TwStockDividend,
+  InsertTwStockDividend
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1685,6 +1691,257 @@ export async function getTwStockFundamentalsPaginated(
     };
   } catch (error) {
     console.error(`[Database] Failed to get TW stock fundamentals for ${symbol}:`, error);
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+/**
+ * 查詢台股財務報表
+ */
+export async function getTwStockFinancials(
+  symbol: string,
+  year?: number,
+  quarter?: number
+): Promise<TwStockFinancial[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock financials: database not available");
+    return [];
+  }
+
+  try {
+    let query = db
+      .select()
+      .from(twStockFinancials)
+      .where(eq(twStockFinancials.symbol, symbol));
+
+    if (year !== undefined) {
+      query = query.where(eq(twStockFinancials.year, year));
+    }
+
+    if (quarter !== undefined) {
+      query = query.where(eq(twStockFinancials.quarter, quarter));
+    }
+
+    const results = await query.orderBy(
+      desc(twStockFinancials.year),
+      desc(twStockFinancials.quarter)
+    );
+
+    return results;
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock financials for ${symbol}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 查詢台股股利資訊
+ */
+export async function getTwStockDividends(
+  symbol: string,
+  year?: number
+): Promise<TwStockDividend[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock dividends: database not available");
+    return [];
+  }
+
+  try {
+    let query = db
+      .select()
+      .from(twStockDividends)
+      .where(eq(twStockDividends.symbol, symbol));
+
+    if (year !== undefined) {
+      query = query.where(eq(twStockDividends.year, year));
+    }
+
+    const results = await query.orderBy(desc(twStockDividends.year));
+
+    return results;
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock dividends for ${symbol}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 批量新增台股財務報表
+ */
+export async function insertTwStockFinancials(
+  financials: InsertTwStockFinancial[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot insert TW stock financials: database not available");
+    return;
+  }
+
+  if (financials.length === 0) {
+    return;
+  }
+
+  try {
+    await db.insert(twStockFinancials).values(financials);
+  } catch (error) {
+    console.error(`[Database] Failed to insert TW stock financials:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 批量新增台股股利資訊
+ */
+export async function insertTwStockDividends(
+  dividends: InsertTwStockDividend[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot insert TW stock dividends: database not available");
+    return;
+  }
+
+  if (dividends.length === 0) {
+    return;
+  }
+
+  try {
+    await db.insert(twStockDividends).values(dividends);
+  } catch (error) {
+    console.error(`[Database] Failed to insert TW stock dividends:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 分頁查詢台股財務報表
+ */
+export async function getTwStockFinancialsPaginated(
+  symbol: string,
+  page: number,
+  pageSize: number
+): Promise<{
+  data: TwStockFinancial[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock financials: database not available");
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+
+  try {
+    const offset = (page - 1) * pageSize;
+
+    // 查詢總數
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(twStockFinancials)
+      .where(eq(twStockFinancials.symbol, symbol));
+
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // 查詢分頁資料
+    const results = await db
+      .select()
+      .from(twStockFinancials)
+      .where(eq(twStockFinancials.symbol, symbol))
+      .orderBy(
+        desc(twStockFinancials.year),
+        desc(twStockFinancials.quarter)
+      )
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      data: results,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock financials for ${symbol}:`, error);
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+/**
+ * 分頁查詢台股股利資訊
+ */
+export async function getTwStockDividendsPaginated(
+  symbol: string,
+  page: number,
+  pageSize: number
+): Promise<{
+  data: TwStockDividend[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get TW stock dividends: database not available");
+    return {
+      data: [],
+      pagination: { page, pageSize, total: 0, totalPages: 0 },
+    };
+  }
+
+  try {
+    const offset = (page - 1) * pageSize;
+
+    // 查詢總數
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(twStockDividends)
+      .where(eq(twStockDividends.symbol, symbol));
+
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // 查詢分頁資料
+    const results = await db
+      .select()
+      .from(twStockDividends)
+      .where(eq(twStockDividends.symbol, symbol))
+      .orderBy(desc(twStockDividends.year))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      data: results,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error(`[Database] Failed to get TW stock dividends for ${symbol}:`, error);
     return {
       data: [],
       pagination: { page, pageSize, total: 0, totalPages: 0 },

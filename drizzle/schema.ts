@@ -404,3 +404,67 @@ export const twDataSyncErrors = mysqlTable("twDataSyncErrors", {
 
 export type TwDataSyncError = typeof twDataSyncErrors.$inferSelect;
 export type InsertTwDataSyncError = typeof twDataSyncErrors.$inferInsert;
+
+/**
+ * 台股財務報表表
+ * 儲存台股的財務報表資料（資產負債表、損益表、現金流量表）
+ */
+export const twStockFinancials = mysqlTable("twStockFinancials", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
+  year: int("year").notNull(), // 年度
+  quarter: int("quarter").notNull(), // 季度（1-4）
+  // 資產負債表
+  totalAssets: decimal("totalAssets", { precision: 18, scale: 2 }), // 總資產（千元）
+  totalLiabilities: decimal("totalLiabilities", { precision: 18, scale: 2 }), // 總負債（千元）
+  totalEquity: decimal("totalEquity", { precision: 18, scale: 2 }), // 股東權益（千元）
+  currentAssets: decimal("currentAssets", { precision: 18, scale: 2 }), // 流動資產（千元）
+  currentLiabilities: decimal("currentLiabilities", { precision: 18, scale: 2 }), // 流動負債（千元）
+  // 損益表
+  revenue: decimal("revenue", { precision: 18, scale: 2 }), // 營業收入（千元）
+  operatingIncome: decimal("operatingIncome", { precision: 18, scale: 2 }), // 營業利益（千元）
+  netIncome: decimal("netIncome", { precision: 18, scale: 2 }), // 本期淨利（千元）
+  grossProfit: decimal("grossProfit", { precision: 18, scale: 2 }), // 毛利（千元）
+  operatingExpenses: decimal("operatingExpenses", { precision: 18, scale: 2 }), // 營業費用（千元）
+  // 現金流量表
+  operatingCashFlow: decimal("operatingCashFlow", { precision: 18, scale: 2 }), // 營業活動現金流（千元）
+  investingCashFlow: decimal("investingCashFlow", { precision: 18, scale: 2 }), // 投資活動現金流（千元）
+  financingCashFlow: decimal("financingCashFlow", { precision: 18, scale: 2 }), // 融資活動現金流（千元）
+  freeCashFlow: decimal("freeCashFlow", { precision: 18, scale: 2 }), // 自由現金流（千元）
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  yearQuarterIdx: index("year_quarter_idx").on(table.year, table.quarter),
+  symbolYearQuarterIdx: index("symbol_year_quarter_idx").on(table.symbol, table.year, table.quarter),
+}));
+
+export type TwStockFinancial = typeof twStockFinancials.$inferSelect;
+export type InsertTwStockFinancial = typeof twStockFinancials.$inferInsert;
+
+/**
+ * 台股股利資訊表
+ * 儲存台股的股利發放資訊（現金股利、股票股利、除息日、殖利率）
+ */
+export const twStockDividends = mysqlTable("twStockDividends", {
+  id: int("id").autoincrement().primaryKey(),
+  symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
+  year: int("year").notNull(), // 年度
+  cashDividend: decimal("cashDividend", { precision: 10, scale: 4 }), // 現金股利（元/股）
+  stockDividend: decimal("stockDividend", { precision: 10, scale: 4 }), // 股票股利（元/股）
+  totalDividend: decimal("totalDividend", { precision: 10, scale: 4 }), // 合計股利（元/股）
+  exDividendDate: timestamp("exDividendDate"), // 除息日
+  paymentDate: timestamp("paymentDate"), // 發放日
+  yieldRate: decimal("yieldRate", { precision: 5, scale: 2 }), // 殖利率（%）
+  payoutRatio: decimal("payoutRatio", { precision: 5, scale: 2 }), // 配息率（%）
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("symbol_idx").on(table.symbol),
+  yearIdx: index("year_idx").on(table.year),
+  symbolYearIdx: index("symbol_year_idx").on(table.symbol, table.year),
+  exDividendDateIdx: index("exDividendDate_idx").on(table.exDividendDate),
+}));
+
+export type TwStockDividend = typeof twStockDividends.$inferSelect;
+export type InsertTwStockDividend = typeof twStockDividends.$inferInsert;
