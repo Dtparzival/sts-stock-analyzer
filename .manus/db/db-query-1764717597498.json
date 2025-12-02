@@ -1,0 +1,70 @@
+{
+  "query": "SHOW TABLES",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SHOW TABLES",
+  "rows": [
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "analysisCache"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "analysisHistory"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "portfolio"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "portfolioHistory"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "portfolioTransactions"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "questionStats"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "recommendationCache"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "searchHistory"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "stockDataCache"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "twDataSyncErrors"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "twDataSyncStatus"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "twStockPrices"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "twStocks"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "usDataSyncErrors"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "usDataSyncStatus"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "userBehavior"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "userInteractions"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "users"
+    },
+    {
+      "Tables_in_KzRzifpe7R9Hr8c3sVfR6n": "watchlist"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_KzRzifpe7R9Hr8c3sVfR6n\n__drizzle_migrations\nanalysisCache\nanalysisHistory\nportfolio\nportfolioHistory\nportfolioTransactions\nquestionStats\nrecommendationCache\nsearchHistory\nstockDataCache\ntwDataSyncErrors\ntwDataSyncStatus\ntwStockPrices\ntwStocks\nusDataSyncErrors\nusDataSyncStatus\nuserBehavior\nuserInteractions\nusers\nwatchlist\n",
+  "stderr": "",
+  "execution_time_ms": 1617
+}

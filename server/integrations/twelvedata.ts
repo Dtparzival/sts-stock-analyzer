@@ -5,7 +5,7 @@ import { ENV } from '../_core/env';
  * 提供美股即時報價與歷史數據查詢功能
  */
 
-const TWELVEDATA_BASE_URL = process.env.TWELVEDATA_BASE_URL || 'https://api.twelvedata.com';
+const TWELVEDATA_BASE_URL = (process.env.TWELVEDATA_BASE_URL || 'https://api.twelvedata.com').replace(/\/$/, '');
 const TWELVEDATA_TOKEN = process.env.TWELVEDATA_TOKEN;
 
 if (!TWELVEDATA_TOKEN) {
@@ -109,11 +109,13 @@ export async function getTwelveDataQuote(symbol: string): Promise<TwelveDataQuot
   }
 
   return fetchWithRetry(async () => {
-    const url = new URL(`${TWELVEDATA_BASE_URL}/quote`);
-    url.searchParams.append('symbol', symbol);
-    url.searchParams.append('apikey', TWELVEDATA_TOKEN);
+    const url = `${TWELVEDATA_BASE_URL}/quote`;
+    const params = new URLSearchParams({
+      symbol,
+      apikey: TWELVEDATA_TOKEN,
+    });
 
-    const response = await fetch(url.toString());
+    const response = await fetch(`${url}?${params.toString()}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -148,13 +150,15 @@ export async function getTwelveDataTimeSeries(
   }
 
   return fetchWithRetry(async () => {
-    const url = new URL(`${TWELVEDATA_BASE_URL}/time_series`);
-    url.searchParams.append('symbol', symbol);
-    url.searchParams.append('interval', interval);
-    url.searchParams.append('outputsize', outputsize.toString());
-    url.searchParams.append('apikey', TWELVEDATA_TOKEN);
+    const url = `${TWELVEDATA_BASE_URL}/time_series`;
+    const params = new URLSearchParams({
+      symbol,
+      interval,
+      outputsize: outputsize.toString(),
+      apikey: TWELVEDATA_TOKEN,
+    });
 
-    const response = await fetch(url.toString());
+    const response = await fetch(`${url}?${params.toString()}`);
 
     if (!response.ok) {
       const errorText = await response.text();

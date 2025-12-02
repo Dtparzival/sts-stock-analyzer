@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `usStockPrices` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `symbol` varchar(20) NOT NULL,\n  `date` date NOT NULL,\n  `open` int NOT NULL,\n  `high` int NOT NULL,\n  `low` int NOT NULL,\n  `close` int NOT NULL,\n  `volume` bigint NOT NULL,\n  `change` int NOT NULL,\n  `changePercent` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `usStockPrices_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute CREATE TABLE IF NOT EXISTS `usStockPrices` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `symbol` varchar(20) NOT NULL,\n  `date` date NOT NULL,\n  `open` int NOT NULL,\n  `high` int NOT NULL,\n  `low` int NOT NULL,\n  `close` int NOT NULL,\n  `volume` bigint NOT NULL,\n  `change` int NOT NULL,\n  `changePercent` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `usStockPrices_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1821
+}

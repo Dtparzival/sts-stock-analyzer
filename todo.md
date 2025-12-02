@@ -18,10 +18,10 @@
 - [x] 台股排程已設定 (每週日 02:00 基本資料, 每交易日 02:00 價格)
 
 ### 美股資料庫架構
-- [x] 建立 usStocks 資料表
-- [x] 建立 usStockPrices 資料表
-- [x] 建立 usDataSyncStatus 資料表
-- [x] 建立 usDataSyncErrors 資料表
+- [x] 建立 usStocks 資料表 (手動 SQL 建立)
+- [x] 建立 usStockPrices 資料表 (手動 SQL 建立)
+- [x] 建立 usDataSyncStatus 資料表 (手動 SQL 建立)
+- [x] 建立 usDataSyncErrors 資料表 (手動 SQL 建立)
 - [x] 建立 stockDataCache 快取資料表
 - [x] 實作美股資料庫操作層函數 (server/db_us.ts)
 
@@ -33,6 +33,8 @@
 - [x] 實作 getTwelveDataTimeSeries 函數
 - [x] 實作指數退避重試機制
 - [x] 實作價格轉換輔助函數
+- [x] 修正 URL 處理問題 (移除結尾斜線)
+- [x] 調整 API 請求間隔為 8 秒 (符合免費版限制)
 
 ### 快取機制
 - [ ] 實作 MySQL 快取層 (stockDataCache)
@@ -71,7 +73,9 @@
 
 ### 初始化腳本
 - [x] scripts/initTwStockData.mjs - 台股初始化 (已完成)
-- [x] scripts/initUsStockData.mjs - 美股初始化
+- [x] scripts/initUsStockData.mjs - 美股初始化 (已修正日期參數問題)
+- [x] scripts/loadTestData.mjs - 簡化版測試資料載入 (只載入 3 支股票)
+- [ ] 等待 API 額度重置後執行測試資料載入
 
 ### 維護腳本
 - [x] scripts/syncSpecificData.mjs - 特定資料同步 (已完成)

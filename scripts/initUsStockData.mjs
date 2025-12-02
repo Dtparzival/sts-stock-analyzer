@@ -19,6 +19,7 @@ import {
 
 /**
  * 常見美股股票清單（科技股、指數 ETF、熱門股）
+ * 注意: TwelveData 免費版 API 限制每分鐘 8 次請求，初始化時建議分批載入
  */
 const DEFAULT_SYMBOLS = [
   // 科技巨頭 (FAANG+)
@@ -34,33 +35,10 @@ const DEFAULT_SYMBOLS = [
   'NFLX',  // Netflix
   'AMD',   // AMD
   'INTC',  // Intel
-  'CRM',   // Salesforce
-  'ORCL',  // Oracle
-  'ADBE',  // Adobe
-  
-  // 金融股
-  'JPM',   // JPMorgan Chase
-  'BAC',   // Bank of America
-  'WFC',   // Wells Fargo
-  'GS',    // Goldman Sachs
-  
-  // 消費品
-  'KO',    // Coca-Cola
-  'PEP',   // PepsiCo
-  'WMT',   // Walmart
-  'HD',    // Home Depot
-  
-  // 醫療保健
-  'JNJ',   // Johnson & Johnson
-  'PFE',   // Pfizer
-  'UNH',   // UnitedHealth
   
   // 指數 ETF
   'SPY',   // S&P 500 ETF
   'QQQ',   // NASDAQ-100 ETF
-  'DIA',   // Dow Jones ETF
-  'IWM',   // Russell 2000 ETF
-  'VTI',   // Total Stock Market ETF
 ];
 
 /**

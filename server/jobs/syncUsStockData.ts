@@ -184,8 +184,8 @@ export async function syncStockInfoBatch(symbols: string[]): Promise<SyncResult>
         result.errors.push({ symbol, message: 'Sync failed' });
       }
 
-      // 避免 API 限流，每次請求間隔 1 秒
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 避免 API 限流，每次請求間隔 8 秒 (TwelveData 免費版限制: 8 requests/min)
+      await new Promise(resolve => setTimeout(resolve, 8000));
     } catch (error) {
       result.errorCount++;
       result.errors.push({
@@ -244,12 +244,15 @@ export async function syncSingleStockPrices(
   endDate: Date
 ): Promise<{ success: boolean; recordCount: number }> {
   try {
+    // 計算需要的資料筆數 (天數)
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const outputsize = Math.max(daysDiff, 7); // 至少 7 天
+    
     // 從 TwelveData API 獲取歷史價格
     const timeSeries = await getTwelveDataTimeSeries(
       symbol,
       '1day',
-      formatDate(startDate),
-      formatDate(endDate)
+      outputsize
     );
 
     if (!timeSeries.values || timeSeries.values.length === 0) {
@@ -313,8 +316,8 @@ export async function syncStockPricesBatch(
         result.errors.push({ symbol, message: 'Sync failed' });
       }
 
-      // 避免 API 限流，每次請求間隔 1 秒
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 避免 API 限流，每次請求間隔 8 秒 (TwelveData 免費版限制: 8 requests/min)
+      await new Promise(resolve => setTimeout(resolve, 8000));
     } catch (error) {
       result.errorCount++;
       result.errors.push({
