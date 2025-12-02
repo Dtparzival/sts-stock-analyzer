@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `usDataSyncStatus` (\n  `id` INT AUTO_INCREMENT PRIMARY KEY,\n  `dataType` VARCHAR(50) NOT NULL,\n  `source` VARCHAR(50) NOT NULL,\n  `lastSyncAt` TIMESTAMP NOT NULL,\n  `status` ENUM('success', 'partial', 'failed') NOT NULL,\n  `recordCount` INT DEFAULT 0 NOT NULL,\n  `errorMessage` TEXT,\n  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,\n  INDEX `us_dataType_idx` (`dataType`),\n  INDEX `us_lastSyncAt_idx` (`lastSyncAt`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute CREATE TABLE IF NOT EXISTS `usDataSyncStatus` (\n  `id` INT AUTO_INCREMENT PRIMARY KEY,\n  `dataType` VARCHAR(50) NOT NULL,\n  `source` VARCHAR(50) NOT NULL,\n  `lastSyncAt` TIMESTAMP NOT NULL,\n  `status` ENUM('success', 'partial', 'failed') NOT NULL,\n  `recordCount` INT DEFAULT 0 NOT NULL,\n  `errorMessage` TEXT,\n  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,\n  INDEX `us_dataType_idx` (`dataType`),\n  INDEX `us_lastSyncAt_idx` (`lastSyncAt`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2299
+}

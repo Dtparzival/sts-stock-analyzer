@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `usDataSyncErrors` (\n  `id` INT AUTO_INCREMENT PRIMARY KEY,\n  `dataType` VARCHAR(50) NOT NULL,\n  `symbol` VARCHAR(20),\n  `errorType` VARCHAR(50) NOT NULL,\n  `errorMessage` TEXT NOT NULL,\n  `errorStack` TEXT,\n  `retryCount` INT DEFAULT 0 NOT NULL,\n  `resolved` BOOLEAN DEFAULT FALSE NOT NULL,\n  `syncedAt` TIMESTAMP NOT NULL,\n  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  INDEX `us_dataType_idx` (`dataType`),\n  INDEX `us_symbol_idx` (`symbol`),\n  INDEX `us_syncedAt_idx` (`syncedAt`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute CREATE TABLE IF NOT EXISTS `usDataSyncErrors` (\n  `id` INT AUTO_INCREMENT PRIMARY KEY,\n  `dataType` VARCHAR(50) NOT NULL,\n  `symbol` VARCHAR(20),\n  `errorType` VARCHAR(50) NOT NULL,\n  `errorMessage` TEXT NOT NULL,\n  `errorStack` TEXT,\n  `retryCount` INT DEFAULT 0 NOT NULL,\n  `resolved` BOOLEAN DEFAULT FALSE NOT NULL,\n  `syncedAt` TIMESTAMP NOT NULL,\n  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  INDEX `us_dataType_idx` (`dataType`),\n  INDEX `us_symbol_idx` (`symbol`),\n  INDEX `us_syncedAt_idx` (`syncedAt`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1663
+}

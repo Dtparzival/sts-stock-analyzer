@@ -71,7 +71,7 @@
 
 ### 初始化腳本
 - [x] scripts/initTwStockData.mjs - 台股初始化 (已完成)
-- [ ] scripts/initUsStockData.mjs - 美股初始化
+- [x] scripts/initUsStockData.mjs - 美股初始化
 
 ### 維護腳本
 - [x] scripts/syncSpecificData.mjs - 特定資料同步 (已完成)
@@ -205,3 +205,22 @@
 - [x] 建立股票搜尋頁面 (client/src/pages/StockSearch.tsx)
 - [x] 在 App.tsx 中註冊新路由 (/search, /stock/:market/:symbol)
 - [x] 重啟開發伺服器並驗證功能
+
+
+---
+
+## 使用者後續需求 (2024-12-03 新增)
+
+### API 憑證設定
+- [ ] 透過管理介面 Settings → Secrets 更新 TWELVEDATA_BASE_URL
+- [ ] 透過管理介面 Settings → Secrets 更新 TWELVEDATA_TOKEN
+- [ ] 驗證 TwelveData API 連線狀態
+
+### 美股資料同步排程
+- [x] 建立 server/jobs/syncUsStockData.ts (參考台股同步機制)
+- [x] 實作美股基本資料定期同步功能
+- [x] 實作美股歷史價格定期同步功能
+- [x] 設定美股資料同步排程 (每交易日台北時間 06:00)
+- [x] 實作美股交易日判斷邏輯
+- [x] 實作美股同步狀態記錄與錯誤處理
+- [x] 測試美股資料同步完整流程 (交易日判斷邏輯測試通過)
