@@ -14,6 +14,7 @@ import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 // import { convertAlphaVantageToYahooFormat } from './alphaVantage'; // 不再使用 Alpha Vantage API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
 import { twStockRouter } from './routers/twStock';
+import { usStockRouter } from './routers/usStock';
 // import { calculateAccuracyStats, calculateAccuracyTrend, generateStockAnalysisReport, checkLowAccuracyStocks } from './analysisAccuracy';
 
 /**
@@ -99,6 +100,7 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
 export const appRouter = router({
   system: systemRouter,
   twStock: twStockRouter,
+  usStock: usStockRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

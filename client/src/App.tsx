@@ -17,11 +17,14 @@ import EmptyStateTest from "./pages/EmptyStateTest";
 import TwStockTest from "./pages/TwStockTest";
 import TwStocks from "./pages/TwStocks";
 import TwStockDetail from "./pages/TwStockDetail";
+import StockSearch from "./pages/StockSearch";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/search"} component={StockSearch} />
+      <Route path={"/stock/:market/:symbol"} component={StockDetail} />
       <Route path={"/stock/:symbol"} component={StockDetail} />
       <Route path={"/watchlist"} component={Watchlist} />
       <Route path={"/portfolio"} component={Portfolio} />
