@@ -1,56 +1,20 @@
-import { eq, desc, and, gt, gte, sql, count } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc, like, or, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
   users, 
-  watchlist, 
-  Watchlist, 
-  InsertWatchlist,
-  searchHistory,
-  SearchHistory,
-  InsertSearchHistory,
-  analysisCache,
-  AnalysisCache,
-  InsertAnalysisCache,
-  analysisHistory,
-  AnalysisHistory,
-  InsertAnalysisHistory,
-  portfolio,
-  Portfolio,
-  InsertPortfolio,
-  portfolioHistory,
-  PortfolioHistory,
-  InsertPortfolioHistory,
-  portfolioTransactions,
-  PortfolioTransaction,
-  InsertPortfolioTransaction,
-  questionStats,
-  QuestionStats,
-  InsertQuestionStats,
-  userBehavior,
-  UserBehavior,
-  InsertUserBehavior,
   twStocks,
   TwStock,
   InsertTwStock,
   twStockPrices,
   TwStockPrice,
   InsertTwStockPrice,
-  twStockIndicators,
-  TwStockIndicator,
-  InsertTwStockIndicator,
-  twStockFundamentals,
-  TwStockFundamental,
-  InsertTwStockFundamental,
   twDataSyncStatus,
   TwDataSyncStatus,
   InsertTwDataSyncStatus,
-  twStockFinancials,
-  TwStockFinancial,
-  InsertTwStockFinancial,
-  twStockDividends,
-  TwStockDividend,
-  InsertTwStockDividend
+  twDataSyncErrors,
+  TwDataSyncError,
+  InsertTwDataSyncError
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -67,6 +31,10 @@ export async function getDb() {
   }
   return _db;
 }
+
+// ============================================================================
+// User Management
+// ============================================================================
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
@@ -139,1108 +107,125 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// Watchlist functions
-export async function getUserWatchlist(userId: number): Promise<Watchlist[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select().from(watchlist).where(eq(watchlist.userId, userId)).orderBy(desc(watchlist.addedAt));
-}
-
-export async function addToWatchlist(data: InsertWatchlist): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // 檢查是否已存在（冒等性）
-  const exists = await isInWatchlist(data.userId, data.symbol);
-  if (exists) {
-    console.log(`[Watchlist] Stock ${data.symbol} already in watchlist for user ${data.userId}`);
-    return; // 已存在，直接返回成功
-  }
-  
-  await db.insert(watchlist).values(data);
-}
-
-export async function removeFromWatchlist(userId: number, symbol: string): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.delete(watchlist).where(
-    and(
-      eq(watchlist.userId, userId),
-      eq(watchlist.symbol, symbol)
-    )
-  );
-}
-
-export async function isInWatchlist(userId: number, symbol: string): Promise<boolean> {
-  const db = await getDb();
-  if (!db) return false;
-  
-  const result = await db.select().from(watchlist).where(
-    and(
-      eq(watchlist.userId, userId),
-      eq(watchlist.symbol, symbol)
-    )
-  ).limit(1);
-  
-  return result.length > 0;
-}
-
-// Search history functions
-export async function addSearchHistory(data: InsertSearchHistory): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // 檢查是否在最近 5 分鐘內已經記錄過相同的股票
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const recentRecords = await db.select().from(searchHistory)
-    .where(
-      and(
-        eq(searchHistory.userId, data.userId),
-        eq(searchHistory.symbol, data.symbol),
-        gt(searchHistory.searchedAt, fiveMinutesAgo)
-      )
-    )
-    .limit(1);
-  
-  // 如果最近 5 分鐘內已經有相同記錄，則不重複插入
-  if (recentRecords.length > 0) {
-    console.log(`[Search History] Skipping duplicate record for ${data.symbol} (recent record found)`);
-    return;
-  }
-  
-  await db.insert(searchHistory).values(data);
-}
-
-export async function getUserSearchHistory(userId: number, limit: number = 20): Promise<SearchHistory[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  // 獲取所有搜尋歷史（按時間降序）
-  const allHistory = await db.select().from(searchHistory)
-    .where(eq(searchHistory.userId, userId))
-    .orderBy(desc(searchHistory.searchedAt));
-  
-  // 去重：每個股票只保留最新一筆
-  const seenSymbols = new Set<string>();
-  const uniqueHistory: SearchHistory[] = [];
-  
-  for (const record of allHistory) {
-    if (!seenSymbols.has(record.symbol)) {
-      seenSymbols.add(record.symbol);
-      uniqueHistory.push(record);
-      
-      // 達到限制數量後停止
-      if (uniqueHistory.length >= limit) {
-        break;
-      }
-    }
-  }
-  
-  return uniqueHistory;
-}
-
-export async function deleteSearchHistory(userId: number, id: number): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.delete(searchHistory).where(
-    and(
-      eq(searchHistory.id, id),
-      eq(searchHistory.userId, userId)
-    )
-  );
-}
-
-export async function clearAllSearchHistory(userId: number): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.delete(searchHistory).where(eq(searchHistory.userId, userId));
-}
-
-export async function getTopStocks(userId: number, limit: number = 10): Promise<Array<{ symbol: string; companyName: string | null; count: number }>> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  // 使用 GROUP BY 統計每個股票的搜尋次數
-  const result = await db
-    .select({
-      symbol: searchHistory.symbol,
-      companyName: searchHistory.companyName,
-      count: count(searchHistory.id),
-    })
-    .from(searchHistory)
-    .where(eq(searchHistory.userId, userId))
-    .groupBy(searchHistory.symbol, searchHistory.companyName)
-    .orderBy(desc(count(searchHistory.id)))
-    .limit(limit);
-  
-  // 轉換 count 為 number 類型
-  return result.map(row => ({
-    symbol: row.symbol,
-    companyName: row.companyName,
-    count: Number(row.count),
-  }));
-}
-
-// Analysis cache functions
-export async function getAnalysisCache(symbol: string, analysisType: string): Promise<AnalysisCache | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  
-  const now = new Date();
-  const result = await db.select().from(analysisCache).where(
-    and(
-      eq(analysisCache.symbol, symbol),
-      eq(analysisCache.analysisType, analysisType),
-      gt(analysisCache.expiresAt, now)
-    )
-  ).limit(1);
-  
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function setAnalysisCache(data: InsertAnalysisCache): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.insert(analysisCache).values(data);
-}
-
-// Analysis history functions
-export async function saveAnalysisHistory(data: InsertAnalysisHistory): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.insert(analysisHistory).values(data);
-}
-
-export async function getAnalysisHistory(symbol: string, analysisType: string, limit: number = 10): Promise<AnalysisHistory[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select().from(analysisHistory)
-    .where(
-      and(
-        eq(analysisHistory.symbol, symbol),
-        eq(analysisHistory.analysisType, analysisType)
-      )
-    )
-    .orderBy(desc(analysisHistory.createdAt))
-    .limit(limit);
-}
-
-export async function getAllAnalysisHistory(): Promise<AnalysisHistory[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select().from(analysisHistory)
-    .where(eq(analysisHistory.analysisType, 'investment_analysis'))
-    .orderBy(desc(analysisHistory.createdAt));
-}
-
-// Portfolio functions
-export async function getUserPortfolio(userId: number): Promise<Portfolio[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select().from(portfolio)
-    .where(eq(portfolio.userId, userId))
-    .orderBy(desc(portfolio.createdAt));
-}
-
-export async function addToPortfolio(data: InsertPortfolio): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.insert(portfolio).values(data);
-}
-
-export async function updatePortfolio(id: number, userId: number, data: Partial<InsertPortfolio>): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.update(portfolio).set(data).where(
-    and(
-      eq(portfolio.id, id),
-      eq(portfolio.userId, userId)
-    )
-  );
-}
-
-export async function deleteFromPortfolio(id: number, userId: number): Promise<Portfolio | null> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // 先獲取持倉資訊，用於記錄賣出交易
-  const holding = await db.select().from(portfolio).where(
-    and(
-      eq(portfolio.id, id),
-      eq(portfolio.userId, userId)
-    )
-  ).limit(1);
-  
-  if (holding.length === 0) return null;
-  
-  await db.delete(portfolio).where(
-    and(
-      eq(portfolio.id, id),
-      eq(portfolio.userId, userId)
-    )
-  );
-  
-  return holding[0];
-}
-
-// Portfolio history functions
-export async function getPortfolioHistory(userId: number, days?: number): Promise<PortfolioHistory[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const query = db.select().from(portfolioHistory)
-    .where(eq(portfolioHistory.userId, userId))
-    .orderBy(desc(portfolioHistory.recordDate));
-  
-  const results = days ? await query.limit(days) : await query;
-  
-  // 反轉順序，使最早的記錄在前
-  return results.reverse();
-}
-
-export async function addPortfolioHistory(data: InsertPortfolioHistory): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // 檢查當天是否已有記錄
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const existing = await db.select().from(portfolioHistory).where(
-    and(
-      eq(portfolioHistory.userId, data.userId),
-      eq(portfolioHistory.recordDate, data.recordDate)
-    )
-  ).limit(1);
-  
-  if (existing.length > 0) {
-    // 更新現有記錄
-    await db.update(portfolioHistory)
-      .set({
-        totalValue: data.totalValue,
-        totalCost: data.totalCost,
-        totalGainLoss: data.totalGainLoss,
-        gainLossPercent: data.gainLossPercent,
-      })
-      .where(eq(portfolioHistory.id, existing[0].id));
-  } else {
-    // 插入新記錄
-    await db.insert(portfolioHistory).values(data);
-  }
-}
-
-// Portfolio transactions functions
-export async function addPortfolioTransaction(data: InsertPortfolioTransaction): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.insert(portfolioTransactions).values(data);
-}
-
-export async function getPortfolioTransactions(userId: number, days?: number): Promise<PortfolioTransaction[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  if (days) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    return await db.select().from(portfolioTransactions)
-      .where(
-        and(
-          eq(portfolioTransactions.userId, userId),
-          gte(portfolioTransactions.transactionDate, cutoffDate)
-        )
-      )
-      .orderBy(desc(portfolioTransactions.transactionDate));
-  }
-  
-  return await db.select().from(portfolioTransactions)
-    .where(eq(portfolioTransactions.userId, userId))
-    .orderBy(desc(portfolioTransactions.transactionDate));
-}
-
-export async function getPortfolioTransactionsBySymbol(userId: number, symbol: string): Promise<PortfolioTransaction[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select().from(portfolioTransactions)
-    .where(
-      and(
-        eq(portfolioTransactions.userId, userId),
-        eq(portfolioTransactions.symbol, symbol)
-      )
-    )
-    .orderBy(desc(portfolioTransactions.transactionDate));
-}
-
-/**
- * 計算交易統計數據
- * 包括總交易次數、平均持有時間、勝率、總獲利/虧損等
- */
-export async function getTransactionStats(userId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  // 獲取所有交易記錄
-  const transactions = await getPortfolioTransactions(userId);
-  
-  if (transactions.length === 0) {
-    return {
-      totalTransactions: 0,
-      buyCount: 0,
-      sellCount: 0,
-      avgHoldingDays: 0,
-      winRate: 0,
-      totalProfit: 0,
-      totalLoss: 0,
-      netProfitLoss: 0,
-      bestTrade: null,
-      worstTrade: null,
-    };
-  }
-  
-  // 統計買入和賣出次數
-  const buyCount = transactions.filter(t => t.transactionType === 'buy').length;
-  const sellCount = transactions.filter(t => t.transactionType === 'sell').length;
-  
-  // 計算平均持有時間（需要配對買入和賣出記錄）
-  const holdingPeriods: number[] = [];
-  const profitableTrades: { symbol: string; profit: number; buyDate: Date; sellDate: Date }[] = [];
-  const losingTrades: { symbol: string; loss: number; buyDate: Date; sellDate: Date }[] = [];
-  
-  // 按股票分組
-  const transactionsBySymbol = new Map<string, PortfolioTransaction[]>();
-  transactions.forEach(t => {
-    if (!transactionsBySymbol.has(t.symbol)) {
-      transactionsBySymbol.set(t.symbol, []);
-    }
-    transactionsBySymbol.get(t.symbol)!.push(t);
-  });
-  
-  let totalProfit = 0;
-  let totalLoss = 0;
-  
-  // 對每支股票的交易記錄進行配對分析
-  transactionsBySymbol.forEach((symbolTransactions, symbol) => {
-    // 按時間排序（最早的在前）
-    const sorted = [...symbolTransactions].sort((a, b) => 
-      new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
-    );
-    
-    // 使用 FIFO（先進先出）方法配對買入和賣出
-    const buyQueue: { shares: number; price: number; date: Date }[] = [];
-    
-    sorted.forEach(t => {
-      if (t.transactionType === 'buy') {
-        buyQueue.push({
-          shares: t.shares,
-          price: t.price,
-          date: new Date(t.transactionDate),
-        });
-      } else if (t.transactionType === 'sell') {
-        let remainingShares = t.shares;
-        const sellPrice = t.price;
-        const sellDate = new Date(t.transactionDate);
-        
-        while (remainingShares > 0 && buyQueue.length > 0) {
-          const buy = buyQueue[0];
-          const matchedShares = Math.min(remainingShares, buy.shares);
-          
-          // 計算持有天數
-          const holdingDays = Math.floor((sellDate.getTime() - buy.date.getTime()) / (1000 * 60 * 60 * 24));
-          holdingPeriods.push(holdingDays);
-          
-          // 計算損益（價格以分為單位）
-          const profitLoss = (sellPrice - buy.price) * matchedShares;
-          
-          if (profitLoss > 0) {
-            totalProfit += profitLoss;
-            profitableTrades.push({
-              symbol,
-              profit: profitLoss,
-              buyDate: buy.date,
-              sellDate,
-            });
-          } else if (profitLoss < 0) {
-            totalLoss += profitLoss;
-            losingTrades.push({
-              symbol,
-              loss: profitLoss,
-              buyDate: buy.date,
-              sellDate,
-            });
-          }
-          
-          // 更新剩餘股數
-          remainingShares -= matchedShares;
-          buy.shares -= matchedShares;
-          
-          if (buy.shares === 0) {
-            buyQueue.shift();
-          }
-        }
-      }
-    });
-  });
-  
-  // 計算平均持有天數
-  const avgHoldingDays = holdingPeriods.length > 0
-    ? Math.round(holdingPeriods.reduce((sum, days) => sum + days, 0) / holdingPeriods.length)
-    : 0;
-  
-  // 計算勝率
-  const totalCompletedTrades = profitableTrades.length + losingTrades.length;
-  const winRate = totalCompletedTrades > 0
-    ? (profitableTrades.length / totalCompletedTrades) * 100
-    : 0;
-  
-  // 找出最佳和最差交易
-  const bestTrade = profitableTrades.length > 0
-    ? profitableTrades.reduce((best, current) => current.profit > best.profit ? current : best)
-    : null;
-  
-  const worstTrade = losingTrades.length > 0
-    ? losingTrades.reduce((worst, current) => current.loss < worst.loss ? current : worst)
-    : null;
-  
-  return {
-    totalTransactions: transactions.length,
-    buyCount,
-    sellCount,
-    avgHoldingDays,
-    winRate,
-    totalProfit: totalProfit / 100, // 轉換為美元
-    totalLoss: totalLoss / 100, // 轉換為美元
-    netProfitLoss: (totalProfit + totalLoss) / 100, // 轉換為美元
-    bestTrade: bestTrade ? {
-      symbol: bestTrade.symbol,
-      profit: bestTrade.profit / 100,
-      buyDate: bestTrade.buyDate.toISOString(),
-      sellDate: bestTrade.sellDate.toISOString(),
-    } : null,
-    worstTrade: worstTrade ? {
-      symbol: worstTrade.symbol,
-      loss: worstTrade.loss / 100,
-      buyDate: worstTrade.buyDate.toISOString(),
-      sellDate: worstTrade.sellDate.toISOString(),
-    } : null,
-  };
-}
-
-// ==================== Question Stats Functions ====================
-
-/**
- * 記錄或更新快速問題點擊次數
- */
-export async function recordQuestionClick(userId: number, question: string): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot record question click: database not available");
-    return;
-  }
-
-  try {
-    // 先查詢是否已存在該問題的記錄
-    const existing = await db
-      .select()
-      .from(questionStats)
-      .where(and(
-        eq(questionStats.userId, userId),
-        eq(questionStats.question, question)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // 更新點擊次數和最後點擊時間
-      await db
-        .update(questionStats)
-        .set({
-          clickCount: existing[0].clickCount + 1,
-          lastClickedAt: new Date(),
-        })
-        .where(eq(questionStats.id, existing[0].id));
-    } else {
-      // 創建新記錄
-      await db.insert(questionStats).values({
-        userId,
-        question,
-        clickCount: 1,
-        lastClickedAt: new Date(),
-      });
-    }
-  } catch (error) {
-    console.error("[Database] Failed to record question click:", error);
-    throw error;
-  }
-}
-
-/**
- * 獲取用戶最常使用的快速問題（用於動態調整按鈕）
- */
-export async function getTopQuestions(userId: number, limit: number = 6): Promise<QuestionStats[]> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get top questions: database not available");
-    return [];
-  }
-
-  try {
-    const results = await db
-      .select()
-      .from(questionStats)
-      .where(eq(questionStats.userId, userId))
-      .orderBy(desc(questionStats.clickCount), desc(questionStats.lastClickedAt))
-      .limit(limit);
-
-    return results;
-  } catch (error) {
-    console.error("[Database] Failed to get top questions:", error);
-    return [];
-  }
-}
-
-/**
- * 獲取所有用戶的熱門問題（全局統計）
- */
-export async function getGlobalTopQuestions(limit: number = 10): Promise<Array<{ question: string; totalClicks: number }>> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get global top questions: database not available");
-    return [];
-  }
-
-  try {
-    const results = await db
-      .select({
-        question: questionStats.question,
-        totalClicks: sql<number>`SUM(${questionStats.clickCount})`.as('totalClicks'),
-      })
-      .from(questionStats)
-      .groupBy(questionStats.question)
-      .orderBy(desc(sql`SUM(${questionStats.clickCount})`))
-      .limit(limit);
-
-    return results;
-  } catch (error) {
-    console.error("[Database] Failed to get global top questions:", error);
-    return [];
-  }
-}
-
-// ==================== 用戶行為追蹤 ====================
-
-/**
- * 記錄或更新用戶查看股票的行為
- */
-export async function trackUserView(userId: number, symbol: string): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot track view: database not available");
-    return;
-  }
-
-  try {
-    // 檢查是否已存在記錄
-    const existing = await db
-      .select()
-      .from(userBehavior)
-      .where(and(
-        eq(userBehavior.userId, userId),
-        eq(userBehavior.symbol, symbol)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // 更新現有記錄
-      await db
-        .update(userBehavior)
-        .set({
-          viewCount: sql`${userBehavior.viewCount} + 1`,
-          lastViewedAt: new Date(),
-        })
-        .where(and(
-          eq(userBehavior.userId, userId),
-          eq(userBehavior.symbol, symbol)
-        ));
-    } else {
-      // 創建新記錄
-      await db.insert(userBehavior).values({
-        userId,
-        symbol,
-        viewCount: 1,
-        searchCount: 0,
-        totalViewTime: 0,
-        lastViewedAt: new Date(),
-      });
-    }
-  } catch (error) {
-    console.error("[Database] Failed to track view:", error);
-  }
-}
-
-/**
- * 記錄或更新用戶搜尋股票的行為
- */
-export async function trackUserSearch(userId: number, symbol: string): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot track search: database not available");
-    return;
-  }
-
-  try {
-    // 檢查是否已存在記錄
-    const existing = await db
-      .select()
-      .from(userBehavior)
-      .where(and(
-        eq(userBehavior.userId, userId),
-        eq(userBehavior.symbol, symbol)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // 更新現有記錄
-      await db
-        .update(userBehavior)
-        .set({
-          searchCount: sql`${userBehavior.searchCount} + 1`,
-          lastViewedAt: new Date(),
-        })
-        .where(and(
-          eq(userBehavior.userId, userId),
-          eq(userBehavior.symbol, symbol)
-        ));
-    } else {
-      // 創建新記錄
-      await db.insert(userBehavior).values({
-        userId,
-        symbol,
-        viewCount: 0,
-        searchCount: 1,
-        totalViewTime: 0,
-        lastViewedAt: new Date(),
-      });
-    }
-  } catch (error) {
-    console.error("[Database] Failed to track search:", error);
-  }
-}
-
-/**
- * 記錄用戶在股票詳情頁的停留時間
- */
-export async function trackUserViewTime(userId: number, symbol: string, viewTimeSeconds: number): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot track view time: database not available");
-    return;
-  }
-
-  try {
-    // 檢查是否已存在記錄
-    const existing = await db
-      .select()
-      .from(userBehavior)
-      .where(and(
-        eq(userBehavior.userId, userId),
-        eq(userBehavior.symbol, symbol)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // 更新現有記錄
-      await db
-        .update(userBehavior)
-        .set({
-          totalViewTime: sql`${userBehavior.totalViewTime} + ${viewTimeSeconds}`,
-          lastViewedAt: new Date(),
-        })
-        .where(and(
-          eq(userBehavior.userId, userId),
-          eq(userBehavior.symbol, symbol)
-        ));
-    } else {
-      // 創建新記錄
-      await db.insert(userBehavior).values({
-        userId,
-        symbol,
-        viewCount: 0,
-        searchCount: 0,
-        totalViewTime: viewTimeSeconds,
-        lastViewedAt: new Date(),
-      });
-    }
-  } catch (error) {
-    console.error("[Database] Failed to track view time:", error);
-  }
-}
-
-/**
- * 記錄用戶點擊推薦卡片的行為
- */
-export async function trackUserClick(userId: number, symbol: string): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot track click: database not available");
-    return;
-  }
-
-  try {
-    // 檢查是否已存在記錄
-    const existing = await db
-      .select()
-      .from(userBehavior)
-      .where(and(
-        eq(userBehavior.userId, userId),
-        eq(userBehavior.symbol, symbol)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // 更新現有記錄
-      await db
-        .update(userBehavior)
-        .set({
-          clickCount: sql`${userBehavior.clickCount} + 1`,
-          lastClickedAt: new Date(),
-          lastViewedAt: new Date(),
-        })
-        .where(and(
-          eq(userBehavior.userId, userId),
-          eq(userBehavior.symbol, symbol)
-        ));
-    } else {
-      // 創建新記錄
-      await db.insert(userBehavior).values({
-        userId,
-        symbol,
-        viewCount: 0,
-        searchCount: 0,
-        totalViewTime: 0,
-        clickCount: 1,
-        lastClickedAt: new Date(),
-        lastViewedAt: new Date(),
-      });
-    }
-  } catch (error) {
-    console.error("[Database] Failed to track click:", error);
-  }
-}
-
-/**
- * 獲取用戶的行為數據
- */
-export async function getUserBehavior(userId: number, symbol: string): Promise<UserBehavior | undefined> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user behavior: database not available");
-    return undefined;
-  }
-
-  try {
-    const result = await db
-      .select()
-      .from(userBehavior)
-      .where(and(
-        eq(userBehavior.userId, userId),
-        eq(userBehavior.symbol, symbol)
-      ))
-      .limit(1);
-
-    return result.length > 0 ? result[0] : undefined;
-  } catch (error) {
-    console.error("[Database] Failed to get user behavior:", error);
-    return undefined;
-  }
-}
-
-/**
- * 獲取用戶所有行為數據
- */
-export async function getAllUserBehavior(userId: number): Promise<UserBehavior[]> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get all user behavior: database not available");
-    return [];
-  }
-
-  try {
-    const results = await db
-      .select()
-      .from(userBehavior)
-      .where(eq(userBehavior.userId, userId))
-      .orderBy(desc(userBehavior.lastViewedAt));
-
-    return results;
-  } catch (error) {
-    console.error("[Database] Failed to get all user behavior:", error);
-    return [];
-  }
-}
-
-/**
- * 智能推薦演算法：基於用戶行為數據計算推薦評分
- * 
- * 評分邏輯：
- * - 查看頻率權重：30%
- * - 搜尋頻率權重：20%
- * - 停留時間權重：25%
- * - 收藏偏好權重：25%
- * 
- * @param userId 用戶 ID
- * @param limit 返回推薦股票數量（預設 6）
- * @returns 推薦股票列表（按評分降序排序）
- */
-export async function getPersonalizedRecommendations(
-  userId: number,
-  limit: number = 6
-): Promise<Array<{
-  symbol: string;
-  score: number;
-  viewCount: number;
-  searchCount: number;
-  totalViewTime: number;
-  isFavorited: boolean;
-  lastViewedAt: Date;
-}>> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get personalized recommendations: database not available");
-    return [];
-  }
-
-  try {
-    // 1. 獲取用戶所有行為數據
-    const behaviorData = await db
-      .select()
-      .from(userBehavior)
-      .where(eq(userBehavior.userId, userId))
-      .orderBy(desc(userBehavior.lastViewedAt));
-
-    if (behaviorData.length === 0) {
-      return [];
-    }
-
-    // 2. 獲取用戶收藏列表
-    const favorites = await db
-      .select()
-      .from(watchlist)
-      .where(eq(watchlist.userId, userId));
-
-    const favoriteSymbols = new Set(favorites.map(f => f.symbol));
-
-    // 3. 計算每個股票的推薦評分（加入時間衰減因子）
-    const recommendations = behaviorData.map(behavior => {
-      // 正規化各項指標（避免某項指標過大影響評分）
-      const maxViewCount = Math.max(...behaviorData.map(b => b.viewCount));
-      const maxSearchCount = Math.max(...behaviorData.map(b => b.searchCount));
-      const maxViewTime = Math.max(...behaviorData.map(b => b.totalViewTime));
-
-      const normalizedViewCount = maxViewCount > 0 ? behavior.viewCount / maxViewCount : 0;
-      const normalizedSearchCount = maxSearchCount > 0 ? behavior.searchCount / maxSearchCount : 0;
-      const normalizedViewTime = maxViewTime > 0 ? behavior.totalViewTime / maxViewTime : 0;
-
-      // 收藏偏好：已收藏的股票得分為 1，未收藏為 0
-      const isFavorited = favoriteSymbols.has(behavior.symbol);
-      const favoriteScore = isFavorited ? 1 : 0;
-
-      // 時間衰減因子：近期行為獲得更高權重
-      // 計算距離現在的天數
-      const now = new Date();
-      const daysSinceLastView = Math.floor(
-        (now.getTime() - behavior.lastViewedAt.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      
-      // 時間衰減函數：近 7 天內的行為權重最高
-      // 使用指數衰減：權重 = e^(-天數/7)
-      // 0 天：權重 = 1.0
-      // 7 天：權重 = 0.368
-      // 14 天：權重 = 0.135
-      // 30 天：權重 = 0.011
-      const timeDecayFactor = Math.exp(-daysSinceLastView / 7);
-
-      // 計算綜合評分（加權平均 × 時間衰減因子）
-      const baseScore = 
-        normalizedViewCount * 0.30 +      // 查看頻率權重 30%
-        normalizedSearchCount * 0.20 +    // 搜尋頻率權重 20%
-        normalizedViewTime * 0.25 +       // 停留時間權重 25%
-        favoriteScore * 0.25;             // 收藏偏好權重 25%
-      
-      // 應用時間衰減因子
-      const score = baseScore * timeDecayFactor;
-
-      return {
-        symbol: behavior.symbol,
-        score,
-        viewCount: behavior.viewCount,
-        searchCount: behavior.searchCount,
-        totalViewTime: behavior.totalViewTime,
-        isFavorited,
-        lastViewedAt: behavior.lastViewedAt,
-      };
-    });
-
-    // 4. 按評分降序排序，返回前 N 個推薦
-    return recommendations
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
-
-  } catch (error) {
-    console.error("[Database] Failed to get personalized recommendations:", error);
-    return [];
-  }
-}
-
-/**
- * 獲取用戶的熱門股票（基於查看次數）
- * 用於冷啟動場景（用戶沒有足夠行為數據時）
- * 
- * @param userId 用戶 ID
- * @param limit 返回股票數量（預設 6）
- * @returns 熱門股票列表（按查看次數降序排序）
- */
-export async function getPopularStocksForUser(
-  userId: number,
-  limit: number = 6
-): Promise<Array<{
-  symbol: string;
-  viewCount: number;
-  lastViewedAt: Date;
-}>> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get popular stocks: database not available");
-    return [];
-  }
-
-  try {
-    const results = await db
-      .select({
-        symbol: userBehavior.symbol,
-        viewCount: userBehavior.viewCount,
-        lastViewedAt: userBehavior.lastViewedAt,
-      })
-      .from(userBehavior)
-      .where(eq(userBehavior.userId, userId))
-      .orderBy(desc(userBehavior.viewCount))
-      .limit(limit);
-
-    return results;
-  } catch (error) {
-    console.error("[Database] Failed to get popular stocks:", error);
-    return [];
-  }
-}
-
-/**
- * 獲取全站熱門股票（所有用戶的行為數據聚合）
- * 用於新用戶冷啟動場景
- * 
- * @param limit 返回股票數量（預設 6）
- * @returns 全站熱門股票列表
- */
-export async function getGlobalPopularStocks(
-  limit: number = 6
-): Promise<Array<{
-  symbol: string;
-  totalViews: number;
-  uniqueUsers: number;
-}>> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get global popular stocks: database not available");
-    return [];
-  }
-
-  try {
-    // 使用 SQL 聚合查詢獲取全站熱門股票
-    const results = await db
-      .select({
-        symbol: userBehavior.symbol,
-        totalViews: sql<number>`SUM(${userBehavior.viewCount})`,
-        uniqueUsers: sql<number>`COUNT(DISTINCT ${userBehavior.userId})`,
-      })
-      .from(userBehavior)
-      .groupBy(userBehavior.symbol)
-      .orderBy(desc(sql`SUM(${userBehavior.viewCount})`))
-      .limit(limit);
-
-    return results;
-  } catch (error) {
-    console.error("[Database] Failed to get global popular stocks:", error);
-    return [];
-  }
-}
-
-// ==================== 台股資料查詢函數 ====================
+// ============================================================================
+// Taiwan Stock Basic Info
+// ============================================================================
 
 /**
  * 根據股票代號查詢台股基本資料
  */
-export async function getTwStockBySymbol(symbol: string): Promise<TwStock | undefined> {
+export async function getTwStockBySymbol(symbol: string): Promise<TwStock | null> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock: database not available");
-    return undefined;
-  }
+  if (!db) return null;
 
-  try {
-    const result = await db
-      .select()
-      .from(twStocks)
-      .where(eq(twStocks.symbol, symbol))
-      .limit(1);
+  const result = await db.select()
+    .from(twStocks)
+    .where(eq(twStocks.symbol, symbol))
+    .limit(1);
 
-    return result.length > 0 ? result[0] : undefined;
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock ${symbol}:`, error);
-    return undefined;
-  }
+  return result.length > 0 ? result[0] : null;
 }
 
 /**
- * 搜尋台股（根據股票代號或名稱）
+ * 搜尋台股 (依代號、名稱、簡稱)
  */
-export async function searchTwStocks(
-  keyword: string,
-  limit: number = 20
-): Promise<TwStock[]> {
+export async function searchTwStocks(keyword: string, limit: number = 20): Promise<TwStock[]> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot search TW stocks: database not available");
-    return [];
-  }
+  if (!db) return [];
 
-  try {
-    const results = await db
-      .select()
-      .from(twStocks)
-      .where(
-        sql`(${twStocks.symbol} LIKE ${`%${keyword}%`} OR ${twStocks.name} LIKE ${`%${keyword}%`} OR ${twStocks.shortName} LIKE ${`%${keyword}%`})`
+  return await db.select()
+    .from(twStocks)
+    .where(
+      or(
+        like(twStocks.symbol, `%${keyword}%`),
+        like(twStocks.name, `%${keyword}%`),
+        like(twStocks.shortName, `%${keyword}%`)
       )
-      .limit(limit);
-
-    return results;
-  } catch (error) {
-    console.error(`[Database] Failed to search TW stocks with keyword "${keyword}":`, error);
-    return [];
-  }
+    )
+    .limit(limit);
 }
 
 /**
- * 查詢台股歷史價格
+ * 獲取所有活躍台股
+ */
+export async function getActiveTwStocks(): Promise<TwStock[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select()
+    .from(twStocks)
+    .where(eq(twStocks.isActive, true));
+}
+
+/**
+ * 根據產業查詢台股
+ */
+export async function getTwStocksByIndustry(industry: string): Promise<TwStock[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select()
+    .from(twStocks)
+    .where(eq(twStocks.industry, industry));
+}
+
+/**
+ * 根據市場類型查詢台股
+ */
+export async function getTwStocksByMarket(market: 'TWSE' | 'TPEx'): Promise<TwStock[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select()
+    .from(twStocks)
+    .where(eq(twStocks.market, market));
+}
+
+/**
+ * 插入或更新台股基本資料
+ */
+export async function upsertTwStock(stock: InsertTwStock): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(twStocks)
+    .values(stock)
+    .onDuplicateKeyUpdate({
+      set: {
+        name: stock.name,
+        shortName: stock.shortName,
+        market: stock.market,
+        industry: stock.industry,
+        isActive: stock.isActive,
+        listedDate: stock.listedDate,
+        updatedAt: new Date(),
+      }
+    });
+}
+
+/**
+ * 批次插入台股基本資料
+ */
+export async function batchUpsertTwStocks(stocks: InsertTwStock[]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const batchSize = 100;
+  for (let i = 0; i < stocks.length; i += batchSize) {
+    const batch = stocks.slice(i, i + batchSize);
+    
+    await Promise.all(
+      batch.map(stock => upsertTwStock(stock))
+    );
+  }
+}
+
+// ============================================================================
+// Taiwan Stock Prices
+// ============================================================================
+
+/**
+ * 獲取指定日期範圍的台股價格
  */
 export async function getTwStockPrices(
   symbol: string,
@@ -1248,703 +233,264 @@ export async function getTwStockPrices(
   endDate: Date
 ): Promise<TwStockPrice[]> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock prices: database not available");
-    return [];
-  }
+  if (!db) return [];
 
-  try {
-    const results = await db
-      .select()
-      .from(twStockPrices)
-      .where(
-        and(
-          eq(twStockPrices.symbol, symbol),
-          gte(twStockPrices.date, startDate),
-          sql`${twStockPrices.date} <= ${endDate}`
-        )
+  return await db.select()
+    .from(twStockPrices)
+    .where(
+      and(
+        eq(twStockPrices.symbol, symbol),
+        gte(twStockPrices.date, startDate),
+        lte(twStockPrices.date, endDate)
       )
-      .orderBy(twStockPrices.date);
-
-    return results;
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock prices for ${symbol}:`, error);
-    return [];
-  }
+    )
+    .orderBy(desc(twStockPrices.date));
 }
 
 /**
- * 查詢台股技術指標
+ * 獲取最新價格
  */
-export async function getTwStockIndicators(
-  symbol: string,
-  startDate: Date,
-  endDate: Date
-): Promise<TwStockIndicator[]> {
+export async function getLatestTwStockPrice(symbol: string): Promise<TwStockPrice | null> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock indicators: database not available");
-    return [];
-  }
+  if (!db) return null;
 
-  try {
-    const results = await db
-      .select()
-      .from(twStockIndicators)
-      .where(
-        and(
-          eq(twStockIndicators.symbol, symbol),
-          gte(twStockIndicators.date, startDate),
-          sql`${twStockIndicators.date} <= ${endDate}`
-        )
-      )
-      .orderBy(twStockIndicators.date);
+  const result = await db.select()
+    .from(twStockPrices)
+    .where(eq(twStockPrices.symbol, symbol))
+    .orderBy(desc(twStockPrices.date))
+    .limit(1);
 
-    return results;
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock indicators for ${symbol}:`, error);
-    return [];
-  }
+  return result.length > 0 ? result[0] : null;
 }
 
 /**
- * 查詢台股基本面資料
+ * 獲取指定日期的價格
  */
-export async function getTwStockFundamentals(
-  symbol: string,
-  year?: number,
-  quarter?: number
-): Promise<TwStockFundamental[]> {
+export async function getTwStockPriceByDate(symbol: string, date: Date): Promise<TwStockPrice | null> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock fundamentals: database not available");
-    return [];
-  }
+  if (!db) return null;
 
-  try {
-    let query = db
-      .select()
-      .from(twStockFundamentals)
-      .where(eq(twStockFundamentals.symbol, symbol));
+  const result = await db.select()
+    .from(twStockPrices)
+    .where(
+      and(
+        eq(twStockPrices.symbol, symbol),
+        eq(twStockPrices.date, date)
+      )
+    )
+    .limit(1);
 
-    if (year !== undefined) {
-      query = query.where(eq(twStockFundamentals.year, year));
-    }
+  return result.length > 0 ? result[0] : null;
+}
 
-    if (quarter !== undefined) {
-      query = query.where(eq(twStockFundamentals.quarter, quarter));
-    }
+/**
+ * 獲取最近 N 天的價格
+ */
+export async function getRecentTwStockPrices(symbol: string, days: number): Promise<TwStockPrice[]> {
+  const db = await getDb();
+  if (!db) return [];
 
-    const results = await query.orderBy(
-      desc(twStockFundamentals.year),
-      desc(twStockFundamentals.quarter)
+  return await db.select()
+    .from(twStockPrices)
+    .where(eq(twStockPrices.symbol, symbol))
+    .orderBy(desc(twStockPrices.date))
+    .limit(days);
+}
+
+/**
+ * 批次獲取最新價格
+ */
+export async function getBatchLatestTwStockPrices(symbols: string[]): Promise<TwStockPrice[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await Promise.all(
+    symbols.map(async (symbol) => {
+      return await getLatestTwStockPrice(symbol);
+    })
+  );
+
+  return results.filter((price): price is TwStockPrice => price !== null);
+}
+
+/**
+ * 插入或更新台股價格
+ */
+export async function upsertTwStockPrice(price: InsertTwStockPrice): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(twStockPrices)
+    .values(price)
+    .onDuplicateKeyUpdate({
+      set: {
+        open: price.open,
+        high: price.high,
+        low: price.low,
+        close: price.close,
+        volume: price.volume,
+        amount: price.amount,
+        change: price.change,
+        changePercent: price.changePercent,
+      }
+    });
+}
+
+/**
+ * 批次插入台股價格
+ */
+export async function batchUpsertTwStockPrices(prices: InsertTwStockPrice[]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const batchSize = 100;
+  for (let i = 0; i < prices.length; i += batchSize) {
+    const batch = prices.slice(i, i + batchSize);
+    
+    await Promise.all(
+      batch.map(price => upsertTwStockPrice(price))
     );
-
-    // 資料庫已使用 DECIMAL 型別直接儲存實際數值，不需要轉換
-    return results;
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock fundamentals for ${symbol}:`, error);
-    return [];
   }
 }
 
-/**
- * 新增或更新台股基本資料
- */
-export async function upsertTwStock(stock: InsertTwStock): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert TW stock: database not available");
-    return;
-  }
+// ============================================================================
+// Data Sync Status
+// ============================================================================
 
-  try {
-    await db
-      .insert(twStocks)
-      .values(stock)
-      .onDuplicateKeyUpdate({
-        set: {
-          name: stock.name,
-          shortName: stock.shortName,
-          market: stock.market,
-          industry: stock.industry,
-          type: stock.type,
-          isActive: stock.isActive,
-          updatedAt: new Date(),
-        },
-      });
-  } catch (error) {
-    console.error(`[Database] Failed to upsert TW stock ${stock.symbol}:`, error);
-    throw error;
-  }
+/**
+ * 記錄資料同步狀態
+ */
+export async function insertTwDataSyncStatus(status: InsertTwDataSyncStatus): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(twDataSyncStatus).values(status);
 }
 
 /**
- * 批量新增台股歷史價格
+ * 獲取最新同步狀態
  */
-export async function insertTwStockPrices(prices: InsertTwStockPrice[]): Promise<void> {
+export async function getLatestTwDataSyncStatus(dataType: string): Promise<TwDataSyncStatus | null> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot insert TW stock prices: database not available");
-    return;
-  }
+  if (!db) return null;
 
-  if (prices.length === 0) {
-    return;
-  }
+  const result = await db.select()
+    .from(twDataSyncStatus)
+    .where(eq(twDataSyncStatus.dataType, dataType))
+    .orderBy(desc(twDataSyncStatus.lastSyncAt))
+    .limit(1);
 
-  try {
-    await db.insert(twStockPrices).values(prices);
-  } catch (error) {
-    console.error(`[Database] Failed to insert TW stock prices:`, error);
-    throw error;
-  }
+  return result.length > 0 ? result[0] : null;
 }
 
 /**
- * 批量新增台股技術指標
+ * 獲取所有同步狀態
  */
-export async function insertTwStockIndicators(
-  indicators: InsertTwStockIndicator[]
-): Promise<void> {
+export async function getAllTwDataSyncStatus(): Promise<TwDataSyncStatus[]> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot insert TW stock indicators: database not available");
-    return;
-  }
+  if (!db) return [];
 
-  if (indicators.length === 0) {
-    return;
-  }
+  return await db.select()
+    .from(twDataSyncStatus)
+    .orderBy(desc(twDataSyncStatus.lastSyncAt));
+}
 
-  try {
-    await db.insert(twStockIndicators).values(indicators);
-  } catch (error) {
-    console.error(`[Database] Failed to insert TW stock indicators:`, error);
-    throw error;
-  }
+// ============================================================================
+// Data Sync Errors
+// ============================================================================
+
+/**
+ * 記錄資料同步錯誤
+ */
+export async function insertTwDataSyncError(error: InsertTwDataSyncError): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(twDataSyncErrors).values(error);
 }
 
 /**
- * 批量新增台股基本面資料
+ * 批次記錄資料同步錯誤
  */
-export async function insertTwStockFundamentals(
-  fundamentals: InsertTwStockFundamental[]
-): Promise<void> {
+export async function batchInsertTwDataSyncErrors(errors: InsertTwDataSyncError[]): Promise<void> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot insert TW stock fundamentals: database not available");
-    return;
-  }
+  if (!db) return;
 
-  if (fundamentals.length === 0) {
-    return;
-  }
+  if (errors.length === 0) return;
 
-  try {
-    await db.insert(twStockFundamentals).values(fundamentals);
-  } catch (error) {
-    console.error(`[Database] Failed to insert TW stock fundamentals:`, error);
-    throw error;
-  }
+  await db.insert(twDataSyncErrors).values(errors);
 }
 
 /**
- * 更新資料同步狀態
+ * 獲取未解決的同步錯誤
  */
-export async function updateTwDataSyncStatus(
-  syncStatus: InsertTwDataSyncStatus
-): Promise<void> {
+export async function getUnresolvedTwDataSyncErrors(): Promise<TwDataSyncError[]> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot update TW data sync status: database not available");
-    return;
-  }
+  if (!db) return [];
 
-  try {
-    await db.insert(twDataSyncStatus).values(syncStatus);
-  } catch (error) {
-    console.error(`[Database] Failed to update TW data sync status:`, error);
-    throw error;
-  }
+  return await db.select()
+    .from(twDataSyncErrors)
+    .where(eq(twDataSyncErrors.resolved, false))
+    .orderBy(desc(twDataSyncErrors.syncedAt));
 }
 
 /**
- * 查詢最後同步時間
+ * 標記錯誤為已解決
  */
-export async function getLastSyncTime(
-  dataType: string,
-  source: 'TWSE' | 'TPEx' | 'FinMind'
-): Promise<Date | null> {
+export async function markTwDataSyncErrorResolved(errorId: number): Promise<void> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get last sync time: database not available");
-    return null;
-  }
+  if (!db) return;
 
-  try {
-    const result = await db
-      .select()
-      .from(twDataSyncStatus)
-      .where(
-        and(
-          eq(twDataSyncStatus.dataType, dataType),
-          eq(twDataSyncStatus.source, source),
-          eq(twDataSyncStatus.status, 'success')
-        )
-      )
-      .orderBy(desc(twDataSyncStatus.lastSyncAt))
-      .limit(1);
+  await db.update(twDataSyncErrors)
+    .set({ resolved: true })
+    .where(eq(twDataSyncErrors.id, errorId));
+}
 
-    return result.length > 0 ? result[0].lastSyncAt : null;
-  } catch (error) {
-    console.error(`[Database] Failed to get last sync time:`, error);
-    return null;
-  }
+// ============================================================================
+// Statistics
+// ============================================================================
+
+/**
+ * 統計台股數量
+ */
+export async function countTwStocks(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db.select({ count: count() })
+    .from(twStocks);
+
+  return result[0]?.count || 0;
 }
 
 /**
- * 分頁查詢台股歷史價格
+ * 統計活躍台股數量
  */
-export async function getTwStockPricesPaginated(
-  symbol: string,
-  page: number,
-  pageSize: number
-): Promise<{
-  data: TwStockPrice[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}> {
+export async function countActiveTwStocks(): Promise<number> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock prices: database not available");
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
+  if (!db) return 0;
 
-  try {
-    const offset = (page - 1) * pageSize;
+  const result = await db.select({ count: count() })
+    .from(twStocks)
+    .where(eq(twStocks.isActive, true));
 
-    // 查詢總筆數
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(twStockPrices)
-      .where(eq(twStockPrices.symbol, symbol));
-
-    const total = totalResult[0]?.count || 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    // 查詢分頁資料
-    const results = await db
-      .select()
-      .from(twStockPrices)
-      .where(eq(twStockPrices.symbol, symbol))
-      .orderBy(desc(twStockPrices.date))
-      .limit(pageSize)
-      .offset(offset);
-
-    return {
-      data: results,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-      },
-    };
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock prices for ${symbol}:`, error);
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
+  return result[0]?.count || 0;
 }
 
 /**
- * 分頁查詢台股技術指標
+ * 統計價格記錄數量
  */
-export async function getTwStockIndicatorsPaginated(
-  symbol: string,
-  page: number,
-  pageSize: number
-): Promise<{
-  data: TwStockIndicator[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}> {
+export async function countTwStockPriceRecords(symbol?: string): Promise<number> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock indicators: database not available");
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
+  if (!db) return 0;
+
+  let query = db.select({ count: count() })
+    .from(twStockPrices);
+
+  if (symbol) {
+    query = query.where(eq(twStockPrices.symbol, symbol)) as any;
   }
 
-  try {
-    const offset = (page - 1) * pageSize;
-
-    // 查詢總筆數
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(twStockIndicators)
-      .where(eq(twStockIndicators.symbol, symbol));
-
-    const total = totalResult[0]?.count || 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    // 查詢分頁資料
-    const results = await db
-      .select()
-      .from(twStockIndicators)
-      .where(eq(twStockIndicators.symbol, symbol))
-      .orderBy(desc(twStockIndicators.date))
-      .limit(pageSize)
-      .offset(offset);
-
-    return {
-      data: results,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-      },
-    };
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock indicators for ${symbol}:`, error);
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
-}
-
-/**
- * 分頁查詢台股基本面資料
- */
-export async function getTwStockFundamentalsPaginated(
-  symbol: string,
-  page: number,
-  pageSize: number
-): Promise<{
-  data: TwStockFundamental[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock fundamentals: database not available");
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
-
-  try {
-    const offset = (page - 1) * pageSize;
-
-    // 查詢總筆數
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(twStockFundamentals)
-      .where(eq(twStockFundamentals.symbol, symbol));
-
-    const total = totalResult[0]?.count || 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    // 查詢分頁資料
-    const results = await db
-      .select()
-      .from(twStockFundamentals)
-      .where(eq(twStockFundamentals.symbol, symbol))
-      .orderBy(
-        desc(twStockFundamentals.year),
-        desc(twStockFundamentals.quarter)
-      )
-      .limit(pageSize)
-      .offset(offset);
-
-    return {
-      data: results,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-      },
-    };
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock fundamentals for ${symbol}:`, error);
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
-}
-
-/**
- * 查詢台股財務報表
- */
-export async function getTwStockFinancials(
-  symbol: string,
-  year?: number,
-  quarter?: number
-): Promise<TwStockFinancial[]> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock financials: database not available");
-    return [];
-  }
-
-  try {
-    let query = db
-      .select()
-      .from(twStockFinancials)
-      .where(eq(twStockFinancials.symbol, symbol));
-
-    if (year !== undefined) {
-      query = query.where(eq(twStockFinancials.year, year));
-    }
-
-    if (quarter !== undefined) {
-      query = query.where(eq(twStockFinancials.quarter, quarter));
-    }
-
-    const results = await query.orderBy(
-      desc(twStockFinancials.year),
-      desc(twStockFinancials.quarter)
-    );
-
-    return results;
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock financials for ${symbol}:`, error);
-    return [];
-  }
-}
-
-/**
- * 查詢台股股利資訊
- */
-export async function getTwStockDividends(
-  symbol: string,
-  year?: number
-): Promise<TwStockDividend[]> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock dividends: database not available");
-    return [];
-  }
-
-  try {
-    let query = db
-      .select()
-      .from(twStockDividends)
-      .where(eq(twStockDividends.symbol, symbol));
-
-    if (year !== undefined) {
-      query = query.where(eq(twStockDividends.year, year));
-    }
-
-    const results = await query.orderBy(desc(twStockDividends.year));
-
-    return results;
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock dividends for ${symbol}:`, error);
-    return [];
-  }
-}
-
-/**
- * 批量新增台股財務報表
- */
-export async function insertTwStockFinancials(
-  financials: InsertTwStockFinancial[]
-): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot insert TW stock financials: database not available");
-    return;
-  }
-
-  if (financials.length === 0) {
-    return;
-  }
-
-  try {
-    await db.insert(twStockFinancials).values(financials);
-  } catch (error) {
-    console.error(`[Database] Failed to insert TW stock financials:`, error);
-    throw error;
-  }
-}
-
-/**
- * 批量新增台股股利資訊
- */
-export async function insertTwStockDividends(
-  dividends: InsertTwStockDividend[]
-): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot insert TW stock dividends: database not available");
-    return;
-  }
-
-  if (dividends.length === 0) {
-    return;
-  }
-
-  try {
-    await db.insert(twStockDividends).values(dividends);
-  } catch (error) {
-    console.error(`[Database] Failed to insert TW stock dividends:`, error);
-    throw error;
-  }
-}
-
-/**
- * 分頁查詢台股財務報表
- */
-export async function getTwStockFinancialsPaginated(
-  symbol: string,
-  page: number,
-  pageSize: number
-): Promise<{
-  data: TwStockFinancial[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock financials: database not available");
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
-
-  try {
-    const offset = (page - 1) * pageSize;
-
-    // 查詢總數
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(twStockFinancials)
-      .where(eq(twStockFinancials.symbol, symbol));
-
-    const total = totalResult[0]?.count || 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    // 查詢分頁資料
-    const results = await db
-      .select()
-      .from(twStockFinancials)
-      .where(eq(twStockFinancials.symbol, symbol))
-      .orderBy(
-        desc(twStockFinancials.year),
-        desc(twStockFinancials.quarter)
-      )
-      .limit(pageSize)
-      .offset(offset);
-
-    return {
-      data: results,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-      },
-    };
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock financials for ${symbol}:`, error);
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
-}
-
-/**
- * 分頁查詢台股股利資訊
- */
-export async function getTwStockDividendsPaginated(
-  symbol: string,
-  page: number,
-  pageSize: number
-): Promise<{
-  data: TwStockDividend[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get TW stock dividends: database not available");
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
-
-  try {
-    const offset = (page - 1) * pageSize;
-
-    // 查詢總數
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(twStockDividends)
-      .where(eq(twStockDividends.symbol, symbol));
-
-    const total = totalResult[0]?.count || 0;
-    const totalPages = Math.ceil(total / pageSize);
-
-    // 查詢分頁資料
-    const results = await db
-      .select()
-      .from(twStockDividends)
-      .where(eq(twStockDividends.symbol, symbol))
-      .orderBy(desc(twStockDividends.year))
-      .limit(pageSize)
-      .offset(offset);
-
-    return {
-      data: results,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-      },
-    };
-  } catch (error) {
-    console.error(`[Database] Failed to get TW stock dividends for ${symbol}:`, error);
-    return {
-      data: [],
-      pagination: { page, pageSize, total: 0, totalPages: 0 },
-    };
-  }
+  const result = await query;
+  return result[0]?.count || 0;
 }

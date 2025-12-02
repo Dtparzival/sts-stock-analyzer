@@ -1,839 +1,492 @@
+/**
+ * 台股資料同步主程式
+ * 
+ * 提供股票基本資料與歷史價格的自動化同步功能
+ * 支援排程執行與手動觸發
+ */
+
 import cron from 'node-cron';
+import {
+  fetchAllStockInfo,
+  fetchStockPrice,
+  fetchBatchStockPrices,
+  FinMindError,
+} from '../integrations/finmind';
+import {
+  transformStockInfoBatch,
+  transformStockPriceBatch,
+  formatDate,
+} from '../integrations/dataTransformer';
+import {
+  batchUpsertTwStocks,
+  batchUpsertTwStockPrices,
+  getActiveTwStocks,
+  insertTwDataSyncStatus,
+  insertTwDataSyncError,
+  batchInsertTwDataSyncErrors,
+} from '../db';
 import { notifyOwner } from '../_core/notification';
-import { getDb } from '../db';
-import { twStocks, twStockPrices, twDataSyncStatus, twDataSyncErrors } from '../../drizzle/schema';
-import { eq } from 'drizzle-orm';
-import { fetchTwseStockList, fetchTwseHistoricalPrices } from '../integrations/twse';
-import { fetchTpexStockList, fetchTpexHistoricalPrices } from '../integrations/tpex';
-import { transformTwseStock, transformTpexStock, transformHistoricalPrice, transformFundamentals, transformFinancialStatement, transformDividend } from '../integrations/dataTransformer';
-import { fetchFundamentals, fetchFinancialStatement, fetchDividend } from '../integrations/finmind';
-import { calculateTechnicalIndicators } from '../integrations/dataTransformer';
-import { twStockIndicators, twStockFundamentals, twStockFinancials, twStockDividends } from '../../drizzle/schema';
 
 /**
- * 指數退避重試機制
- * @param fn 要執行的函數
- * @param maxRetries 最大重試次數
- * @param symbol 股票代號（用於錯誤記錄）
+ * 同步結果統計
  */
-async function retryWithExponentialBackoff<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  symbol?: string
-): Promise<T> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-      
-      console.warn(`[Sync] Retry attempt ${attempt + 1}/${maxRetries} for ${symbol || 'unknown'}, waiting ${waitTime}ms...`);
-      
-      if (attempt < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-  }
-  
-  // 記錄錯誤到資料庫
-  if (symbol && lastError) {
-    await recordSyncError(symbol, 'retry_failed', lastError, maxRetries);
-  }
-  
-  throw lastError;
+interface SyncResult {
+  success: boolean;
+  recordCount: number;
+  errorCount: number;
+  errors: Array<{ symbol?: string; message: string }>;
 }
 
 /**
- * 記錄同步錯誤到資料庫
+ * 判斷是否為交易日
+ * 
+ * @param date 日期
+ * @returns 是否為交易日
  */
-async function recordSyncError(
-  symbol: string,
-  errorType: string,
-  error: Error,
-  retryCount: number
-): Promise<void> {
+export function isTradingDay(date: Date): boolean {
+  // 排除週末
+  const dayOfWeek = date.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    return false;
+  }
+
+  // 排除國定假日（簡化版，實際應整合政府開放資料 API）
+  const holidays = getHolidayList(date.getFullYear());
+  const dateStr = formatDate(date);
+  if (holidays.includes(dateStr)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 取得國定假日清單
+ * 
+ * @param year 年份
+ * @returns 假日清單 (YYYY-MM-DD 格式)
+ */
+function getHolidayList(year: number): string[] {
+  // 台灣國定假日清單（需定期更新）
+  // 建議未來整合政府開放資料 API
+  const holidays: Record<number, string[]> = {
+    2024: [
+      '2024-01-01', // 元旦
+      '2024-02-08', // 農曆春節前一日
+      '2024-02-09', // 農曆除夕
+      '2024-02-10', // 農曆春節
+      '2024-02-11', // 農曆春節
+      '2024-02-12', // 農曆春節
+      '2024-02-13', // 農曆春節
+      '2024-02-14', // 農曆春節
+      '2024-02-28', // 和平紀念日
+      '2024-04-04', // 兒童節
+      '2024-04-05', // 清明節
+      '2024-06-10', // 端午節
+      '2024-09-17', // 中秋節
+      '2024-10-10', // 國慶日
+    ],
+    2025: [
+      '2025-01-01', // 元旦
+      '2025-01-27', // 農曆春節前一日
+      '2025-01-28', // 農曆除夕
+      '2025-01-29', // 農曆春節
+      '2025-01-30', // 農曆春節
+      '2025-01-31', // 農曆春節
+      '2025-02-28', // 和平紀念日
+      '2025-04-03', // 兒童節補假
+      '2025-04-04', // 兒童節
+      '2025-04-05', // 清明節
+      '2025-05-31', // 端午節
+      '2025-10-06', // 中秋節
+      '2025-10-10', // 國慶日
+    ],
+  };
+
+  return holidays[year] || [];
+}
+
+/**
+ * 取得前一交易日
+ * 
+ * @param date 基準日期
+ * @returns 前一交易日
+ */
+export function getPreviousTradingDay(date: Date): Date {
+  const previous = new Date(date);
+  previous.setDate(previous.getDate() - 1);
+
+  // 如果是週六，往前推到週五
+  if (previous.getDay() === 6) {
+    previous.setDate(previous.getDate() - 1);
+  }
+  // 如果是週日，往前推到週五
+  if (previous.getDay() === 0) {
+    previous.setDate(previous.getDate() - 2);
+  }
+
+  // 檢查是否為國定假日，如果是則繼續往前推
+  while (!isTradingDay(previous)) {
+    previous.setDate(previous.getDate() - 1);
+  }
+
+  return previous;
+}
+
+/**
+ * 同步股票基本資料
+ * 
+ * @returns 同步結果
+ */
+export async function syncStockInfo(): Promise<SyncResult> {
+  console.log('[SyncJob] Starting stock info sync...');
+
+  const result: SyncResult = {
+    success: false,
+    recordCount: 0,
+    errorCount: 0,
+    errors: [],
+  };
+
   try {
-    const db = await getDb();
-    if (!db) return;
-    
-    await db.insert(twDataSyncErrors).values({
-      symbol,
-      errorType,
-      errorMessage: error.message,
-      errorStack: error.stack || '',
-      retryCount,
+    // 1. 從 FinMind API 獲取所有股票資料
+    const apiData = await fetchAllStockInfo();
+
+    if (apiData.length === 0) {
+      throw new Error('No stock data received from FinMind API');
+    }
+
+    // 2. 轉換資料格式
+    const stocks = transformStockInfoBatch(apiData);
+
+    if (stocks.length === 0) {
+      throw new Error('All stock data failed validation');
+    }
+
+    // 3. 批次寫入資料庫
+    await batchUpsertTwStocks(stocks);
+
+    result.success = true;
+    result.recordCount = stocks.length;
+
+    console.log(`[SyncJob] Stock info sync completed: ${stocks.length} stocks`);
+
+    // 4. 記錄同步狀態
+    await insertTwDataSyncStatus({
+      dataType: 'stocks',
+      source: 'finmind',
+      lastSyncAt: new Date(),
+      status: 'success',
+      recordCount: stocks.length,
+      errorMessage: null,
+    });
+  } catch (error) {
+    result.success = false;
+    result.errorCount = 1;
+    result.errors.push({
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    console.error('[SyncJob] Stock info sync failed:', error);
+
+    // 記錄錯誤
+    await insertTwDataSyncStatus({
+      dataType: 'stocks',
+      source: 'finmind',
+      lastSyncAt: new Date(),
+      status: 'failed',
+      recordCount: 0,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    await insertTwDataSyncError({
+      dataType: 'stocks',
+      symbol: null,
+      errorType: error instanceof FinMindError ? error.type : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack || null : null,
+      retryCount: 0,
+      resolved: false,
       syncedAt: new Date(),
     });
-  } catch (err) {
-    console.error('[Sync] Failed to record sync error:', err);
   }
+
+  return result;
 }
 
 /**
- * 格式化日期為 YYYY-MM-DD
+ * 同步歷史價格資料（單一日期）
+ * 
+ * @param date 目標日期
+ * @returns 同步結果
  */
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+export async function syncStockPrices(date: Date): Promise<SyncResult> {
+  console.log(`[SyncJob] Starting stock price sync for ${formatDate(date)}...`);
 
-/**
- * 同步歷史價格資料（增量更新）
- */
-async function syncHistoricalPrices(): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.error('[Sync] Database not available');
-    return;
-  }
-  
-  console.log('[Sync] Starting historical prices sync...');
-  
+  const result: SyncResult = {
+    success: false,
+    recordCount: 0,
+    errorCount: 0,
+    errors: [],
+  };
+
   try {
-    // 1. 取得最後同步時間
-    const syncStatus = await db.select()
-      .from(twDataSyncStatus)
-      .where(eq(twDataSyncStatus.dataType, 'prices'))
-      .limit(1);
-    
-    const lastSyncDate = syncStatus.length > 0 
-      ? syncStatus[0].lastSyncAt 
-      : new Date('2020-01-01');
-    
-    console.log(`[Sync] Last sync date: ${formatDate(lastSyncDate)}`);
-    
-    // 2. 取得所有活躍股票
-    const stocks = await db.select()
-      .from(twStocks)
-      .where(eq(twStocks.isActive, true));
-    
-    console.log(`[Sync] Found ${stocks.length} active stocks`);
-    
-    let successCount = 0;
-    let failedStocks: string[] = [];
-    
-    // 3. 逐一更新每支股票的歷史價格
-    for (const stock of stocks) {
+    // 1. 獲取所有活躍股票
+    const stocks = await getActiveTwStocks();
+
+    if (stocks.length === 0) {
+      throw new Error('No active stocks found in database');
+    }
+
+    console.log(`[SyncJob] Syncing prices for ${stocks.length} stocks...`);
+
+    const symbols = stocks.map(s => s.symbol);
+    const dateStr = formatDate(date);
+
+    // 2. 批次獲取價格資料
+    const priceMap = await fetchBatchStockPrices(
+      symbols,
+      dateStr,
+      dateStr,
+      5 // 並行請求數
+    );
+
+    // 3. 轉換並寫入資料庫
+    const allPrices: any[] = [];
+    const errors: Array<{ symbol: string; message: string }> = [];
+
+    for (const [symbol, apiPrices] of priceMap.entries()) {
       try {
-        console.log(`[Sync] Syncing prices for ${stock.symbol} (${stock.name})...`);
-        
-        const rawData = await retryWithExponentialBackoff(async () => {
-          if (stock.market === '上市') {
-            return await fetchTwseHistoricalPrices(stock.symbol, formatDate(lastSyncDate));
-          } else {
-            return await fetchTpexHistoricalPrices(
-              stock.symbol,
-              formatDate(lastSyncDate),
-              formatDate(new Date())
-            );
-          }
-        }, 3, stock.symbol);
-        
-        if (!rawData || rawData.length === 0) {
-          console.log(`[Sync] No new data for ${stock.symbol}`);
+        if (apiPrices.length === 0) {
+          // 可能該日期無交易資料（休市）
           continue;
         }
-        
-        const transformedData = rawData.map((item: any) => ({
-          symbol: stock.symbol,
-          ...transformHistoricalPrice(item, stock.market === '上市' ? 'TWSE' : 'TPEx')
-        }));
-        
-        // 4. 批次寫入資料庫（使用 onDuplicateKeyUpdate 避免重複）
-        for (const priceData of transformedData) {
-          await db.insert(twStockPrices).values(priceData).onDuplicateKeyUpdate({
-            set: {
-              open: priceData.open,
-              high: priceData.high,
-              low: priceData.low,
-              close: priceData.close,
-              volume: priceData.volume,
-              amount: priceData.amount,
-              change: priceData.change,
-              changePercent: priceData.changePercent,
-            }
-          });
-        }
-        
-        successCount++;
-        console.log(`[Sync] Successfully synced ${transformedData.length} records for ${stock.symbol}`);
-        
+
+        const prices = transformStockPriceBatch(apiPrices);
+        allPrices.push(...prices);
       } catch (error) {
-        console.error(`[Sync] Failed to sync prices for ${stock.symbol}:`, error);
-        failedStocks.push(stock.symbol);
+        errors.push({
+          symbol,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
     }
-    
-    // 5. 更新同步狀態
-    await db.insert(twDataSyncStatus).values({
+
+    // 4. 批次寫入資料庫
+    if (allPrices.length > 0) {
+      await batchUpsertTwStockPrices(allPrices);
+    }
+
+    result.success = errors.length === 0;
+    result.recordCount = allPrices.length;
+    result.errorCount = errors.length;
+    result.errors = errors;
+
+    console.log(
+      `[SyncJob] Stock price sync completed: ${allPrices.length} records, ${errors.length} errors`
+    );
+
+    // 5. 記錄同步狀態
+    await insertTwDataSyncStatus({
       dataType: 'prices',
-      source: 'TWSE+TPEx',
+      source: 'finmind',
       lastSyncAt: new Date(),
-      status: failedStocks.length === 0 ? 'success' : 'partial',
-      recordCount: successCount,
-      errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-    }).onDuplicateKeyUpdate({
-      set: {
-        lastSyncAt: new Date(),
-        status: failedStocks.length === 0 ? 'success' : 'partial',
-        recordCount: successCount,
-        errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-      }
+      status: errors.length === 0 ? 'success' : errors.length < symbols.length ? 'partial' : 'failed',
+      recordCount: allPrices.length,
+      errorMessage: errors.length > 0 ? `${errors.length} stocks failed` : null,
     });
-    
-    console.log(`[Sync] Historical prices sync completed. Success: ${successCount}, Failed: ${failedStocks.length}`);
-    
-    // 6. 如果有失敗的股票，發送通知
-    if (failedStocks.length > 0) {
-      await notifyOwner({
-        title: '台股歷史價格同步部分失敗',
-        content: `成功: ${successCount} 支股票\n失敗: ${failedStocks.length} 支股票\n失敗股票代號: ${failedStocks.join(', ')}`
-      });
+
+    // 6. 記錄錯誤詳情
+    if (errors.length > 0) {
+      await batchInsertTwDataSyncErrors(
+        errors.map(e => ({
+          dataType: 'prices',
+          symbol: e.symbol,
+          errorType: 'API',
+          errorMessage: e.message,
+          errorStack: null,
+          retryCount: 0,
+          resolved: false,
+          syncedAt: new Date(),
+        }))
+      );
     }
-    
   } catch (error) {
-    console.error('[Sync] Historical prices sync failed:', error);
-    
-    // 發送錯誤通知
-    await notifyOwner({
-      title: '台股歷史價格同步失敗',
-      content: `錯誤訊息: ${(error as Error).message}`
+    result.success = false;
+    result.errorCount = 1;
+    result.errors.push({
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    throw error;
+
+    console.error('[SyncJob] Stock price sync failed:', error);
+
+    // 記錄錯誤
+    await insertTwDataSyncStatus({
+      dataType: 'prices',
+      source: 'finmind',
+      lastSyncAt: new Date(),
+      status: 'failed',
+      recordCount: 0,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    await insertTwDataSyncError({
+      dataType: 'prices',
+      symbol: null,
+      errorType: error instanceof FinMindError ? error.type : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack || null : null,
+      retryCount: 0,
+      resolved: false,
+      syncedAt: new Date(),
+    });
   }
+
+  return result;
 }
 
 /**
- * 每日收盤後更新歷史價格（交易日 14:30）
+ * 同步歷史價格資料（日期範圍）
+ * 
+ * @param startDate 起始日期
+ * @param endDate 結束日期
+ * @returns 同步結果
  */
-export function scheduleHistoricalPricesSync(): void {
-  cron.schedule('30 14 * * 1-5', async () => {
-    console.log('[Sync] Starting scheduled historical prices sync...');
-    try {
-      await syncHistoricalPrices();
-    } catch (error) {
-      console.error('[Sync] Scheduled historical prices sync failed:', error);
+export async function syncStockPricesRange(
+  startDate: Date,
+  endDate: Date
+): Promise<SyncResult> {
+  console.log(
+    `[SyncJob] Starting stock price range sync from ${formatDate(startDate)} to ${formatDate(endDate)}...`
+  );
+
+  const result: SyncResult = {
+    success: true,
+    recordCount: 0,
+    errorCount: 0,
+    errors: [],
+  };
+
+  // 逐日同步
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    // 僅同步交易日
+    if (isTradingDay(currentDate)) {
+      const dayResult = await syncStockPrices(new Date(currentDate));
+
+      result.recordCount += dayResult.recordCount;
+      result.errorCount += dayResult.errorCount;
+      result.errors.push(...dayResult.errors);
+
+      if (!dayResult.success) {
+        result.success = false;
+      }
+
+      // 每日之間稍微延遲，避免 API 限流
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
-  }, {
-    timezone: 'Asia/Taipei'
-  });
-  
-  console.log('[Sync] Scheduled historical prices sync (Mon-Fri 14:30 Asia/Taipei)');
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  console.log(
+    `[SyncJob] Stock price range sync completed: ${result.recordCount} records, ${result.errorCount} errors`
+  );
+
+  return result;
 }
 
 /**
- * 同步基本面資料（使用 FinMind API）
+ * 設定股票基本資料同步排程
+ * 每週日凌晨 02:00 執行
  */
-async function syncFundamentals(): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.error('[Sync] Database not available');
-    return;
-  }
-  
-  console.log('[Sync] Starting fundamentals sync...');
-  
-  try {
-    // 1. 取得最後同步時間
-    const syncStatus = await db.select()
-      .from(twDataSyncStatus)
-      .where(eq(twDataSyncStatus.dataType, 'fundamentals'))
-      .limit(1);
-    
-    const lastSyncDate = syncStatus.length > 0 
-      ? syncStatus[0].lastSyncAt 
-      : new Date('2020-01-01');
-    
-    console.log(`[Sync] Last sync date: ${formatDate(lastSyncDate)}`);
-    
-    // 2. 取得所有活躍股票
-    const stocks = await db.select()
-      .from(twStocks)
-      .where(eq(twStocks.isActive, true));
-    
-    console.log(`[Sync] Found ${stocks.length} active stocks`);
-    
-    let successCount = 0;
-    let failedStocks: string[] = [];
-    
-    // 3. 逐一更新每支股票的基本面資料
-    for (const stock of stocks) {
+export function scheduleStockInfoSync() {
+  cron.schedule(
+    '0 2 * * 0',
+    async () => {
+      console.log('[Scheduler] Starting scheduled stock info sync...');
+
       try {
-        console.log(`[Sync] Syncing fundamentals for ${stock.symbol} (${stock.name})...`);
-        
-        const rawData = await retryWithExponentialBackoff(async () => {
-          return await fetchFundamentals(stock.symbol, formatDate(lastSyncDate));
-        }, 3, stock.symbol);
-        
-        if (!rawData || rawData.length === 0) {
-          console.log(`[Sync] No new data for ${stock.symbol}`);
-          continue;
-        }
-        
-        const transformedData = rawData.map((item: any) => 
-          transformFundamentals(item, stock.symbol)
-        );
-        
-        // 4. 批次寫入資料庫
-        for (const fundamentalData of transformedData) {
-          await db.insert(twStockFundamentals).values(fundamentalData).onDuplicateKeyUpdate({
-            set: {
-              eps: fundamentalData.eps,
-              pe: fundamentalData.pe,
-              pb: fundamentalData.pb,
-              roe: fundamentalData.roe,
-              dividend: fundamentalData.dividend,
-              yieldRate: fundamentalData.yieldRate,
-              revenue: fundamentalData.revenue,
-              netIncome: fundamentalData.netIncome,
-            }
+        const result = await syncStockInfo();
+
+        if (!result.success) {
+          await notifyOwner({
+            title: '台股基本資料同步失敗',
+            content: `錯誤訊息: ${result.errors.map(e => e.message).join(', ')}`,
           });
         }
-        
-        successCount++;
-        console.log(`[Sync] Successfully synced ${transformedData.length} records for ${stock.symbol}`);
-        
       } catch (error) {
-        console.error(`[Sync] Failed to sync fundamentals for ${stock.symbol}:`, error);
-        failedStocks.push(stock.symbol);
+        console.error('[Scheduler] Stock info sync failed:', error);
+        await notifyOwner({
+          title: '台股基本資料同步失敗',
+          content: `錯誤訊息: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
       }
+    },
+    {
+      timezone: 'Asia/Taipei',
     }
-    
-    // 5. 更新同步狀態
-    await db.insert(twDataSyncStatus).values({
-      dataType: 'fundamentals',
-      source: 'FinMind',
-      lastSyncAt: new Date(),
-      status: failedStocks.length === 0 ? 'success' : 'partial',
-      recordCount: successCount,
-      errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-    }).onDuplicateKeyUpdate({
-      set: {
-        lastSyncAt: new Date(),
-        status: failedStocks.length === 0 ? 'success' : 'partial',
-        recordCount: successCount,
-        errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-      }
-    });
-    
-    console.log(`[Sync] Fundamentals sync completed. Success: ${successCount}, Failed: ${failedStocks.length}`);
-    
-    // 6. 如果有失敗的股票，發送通知
-    if (failedStocks.length > 0) {
-      await notifyOwner({
-        title: '台股基本面資料同步部分失敗',
-        content: `成功: ${successCount} 支股票\n失敗: ${failedStocks.length} 支股票\n失敗股票代號: ${failedStocks.join(', ')}`
-      });
-    }
-    
-  } catch (error) {
-    console.error('[Sync] Fundamentals sync failed:', error);
-    
-    await notifyOwner({
-      title: '台股基本面資料同步失敗',
-      content: `錯誤訊息: ${(error as Error).message}`
-    });
-    
-    throw error;
-  }
+  );
+
+  console.log('[Scheduler] Stock info sync scheduled: Every Sunday 02:00');
 }
 
 /**
- * 每週日凌晨更新基本面資料
+ * 設定歷史價格同步排程
+ * 每交易日凌晨 02:00 執行（T+1 模式）
  */
-export function scheduleFundamentalsSync(): void {
-  cron.schedule('0 2 * * 0', async () => {
-    console.log('[Sync] Starting scheduled fundamentals sync...');
-    try {
-      await syncFundamentals();
-    } catch (error) {
-      console.error('[Sync] Scheduled fundamentals sync failed:', error);
-    }
-  }, {
-    timezone: 'Asia/Taipei'
-  });
-  
-  console.log('[Sync] Scheduled fundamentals sync (Sunday 02:00 Asia/Taipei)');
-}
+export function scheduleStockPriceSync() {
+  cron.schedule(
+    '0 2 * * 1-5',
+    async () => {
+      console.log('[Scheduler] Starting scheduled stock price sync (T+1 mode)...');
 
-/**
- * 同步技術指標（基於歷史價格計算）
- */
-async function syncIndicators(): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.error('[Sync] Database not available');
-    return;
-  }
-  
-  console.log('[Sync] Starting indicators sync...');
-  
-  try {
-    // 1. 取得所有活躍股票
-    const stocks = await db.select()
-      .from(twStocks)
-      .where(eq(twStocks.isActive, true));
-    
-    console.log(`[Sync] Found ${stocks.length} active stocks`);
-    
-    let successCount = 0;
-    let failedStocks: string[] = [];
-    
-    // 2. 逐一計算每支股票的技術指標
-    for (const stock of stocks) {
+      // 計算前一交易日日期
+      const today = new Date();
+      const previousTradingDay = getPreviousTradingDay(today);
+
+      // 檢查前一交易日是否為交易日
+      if (!isTradingDay(previousTradingDay)) {
+        console.log('[Scheduler] Previous day was not a trading day, skipping price sync');
+        return;
+      }
+
       try {
-        console.log(`[Sync] Calculating indicators for ${stock.symbol} (${stock.name})...`);
-        
-        // 取得最近 120 天的歷史價格（計算 MA60 需要至少 60 筆資料）
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 120);
-        
-        const prices = await db.select()
-          .from(twStockPrices)
-          .where(eq(twStockPrices.symbol, stock.symbol));
-        
-        if (prices.length < 20) {
-          console.log(`[Sync] Not enough price data for ${stock.symbol} (${prices.length} records)`);
-          continue;
-        }
-        
-        // 計算技術指標
-        const indicators = calculateTechnicalIndicators(prices);
-        
-        if (indicators.length === 0) {
-          console.log(`[Sync] No indicators calculated for ${stock.symbol}`);
-          continue;
-        }
-        
-        // 3. 批次寫入資料庫
-        for (const indicatorData of indicators) {
-          await db.insert(twStockIndicators).values(indicatorData).onDuplicateKeyUpdate({
-            set: {
-              ma5: indicatorData.ma5,
-              ma10: indicatorData.ma10,
-              ma20: indicatorData.ma20,
-              ma60: indicatorData.ma60,
-              rsi14: indicatorData.rsi14,
-              macd: indicatorData.macd,
-              macdSignal: indicatorData.macdSignal,
-              macdHistogram: indicatorData.macdHistogram,
-              kValue: indicatorData.kValue,
-              dValue: indicatorData.dValue,
-            }
+        const result = await syncStockPrices(previousTradingDay);
+
+        if (!result.success) {
+          await notifyOwner({
+            title: '台股價格資料同步失敗',
+            content: `日期: ${formatDate(previousTradingDay)}\n錯誤數量: ${result.errorCount}\n錯誤訊息: ${result.errors.slice(0, 5).map(e => `${e.symbol || 'System'}: ${e.message}`).join('\n')}`,
+          });
+        } else if (result.errorCount > 0) {
+          // 部分成功，也發送通知
+          await notifyOwner({
+            title: '台股價格資料同步部分失敗',
+            content: `日期: ${formatDate(previousTradingDay)}\n成功: ${result.recordCount} 筆\n失敗: ${result.errorCount} 筆`,
           });
         }
-        
-        successCount++;
-        console.log(`[Sync] Successfully calculated ${indicators.length} indicators for ${stock.symbol}`);
-        
       } catch (error) {
-        console.error(`[Sync] Failed to calculate indicators for ${stock.symbol}:`, error);
-        failedStocks.push(stock.symbol);
+        console.error('[Scheduler] Stock price sync failed:', error);
+        await notifyOwner({
+          title: '台股價格資料同步失敗',
+          content: `日期: ${formatDate(previousTradingDay)}\n錯誤訊息: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
       }
+    },
+    {
+      timezone: 'Asia/Taipei',
     }
-    
-    // 4. 更新同步狀態
-    await db.insert(twDataSyncStatus).values({
-      dataType: 'indicators',
-      source: 'Calculated',
-      lastSyncAt: new Date(),
-      status: failedStocks.length === 0 ? 'success' : 'partial',
-      recordCount: successCount,
-      errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-    }).onDuplicateKeyUpdate({
-      set: {
-        lastSyncAt: new Date(),
-        status: failedStocks.length === 0 ? 'success' : 'partial',
-        recordCount: successCount,
-        errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-      }
-    });
-    
-    console.log(`[Sync] Indicators sync completed. Success: ${successCount}, Failed: ${failedStocks.length}`);
-    
-    // 5. 如果有失敗的股票，發送通知
-    if (failedStocks.length > 0) {
-      await notifyOwner({
-        title: '台股技術指標計算部分失敗',
-        content: `成功: ${successCount} 支股票\n失敗: ${failedStocks.length} 支股票\n失敗股票代號: ${failedStocks.join(', ')}`
-      });
-    }
-    
-  } catch (error) {
-    console.error('[Sync] Indicators sync failed:', error);
-    
-    await notifyOwner({
-      title: '台股技術指標計算失敗',
-      content: `錯誤訊息: ${(error as Error).message}`
-    });
-    
-    throw error;
-  }
+  );
+
+  console.log('[Scheduler] Stock price sync scheduled: Every trading day 02:00 (T+1 mode)');
 }
 
 /**
- * 同步財務報表（使用 FinMind API）
+ * 啟動所有排程
  */
-async function syncFinancials(): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.error('[Sync] Database not available');
-    return;
-  }
-  
-  console.log('[Sync] Starting financials sync...');
-  
-  try {
-    const syncStatus = await db.select()
-      .from(twDataSyncStatus)
-      .where(eq(twDataSyncStatus.dataType, 'financials'))
-      .limit(1);
-    
-    const lastSyncDate = syncStatus.length > 0 
-      ? syncStatus[0].lastSyncAt 
-      : new Date('2020-01-01');
-    
-    const stocks = await db.select()
-      .from(twStocks)
-      .where(eq(twStocks.isActive, true));
-    
-    let successCount = 0;
-    let failedStocks: string[] = [];
-    
-    for (const stock of stocks) {
-      try {
-        console.log(`[Sync] Syncing financials for ${stock.symbol} (${stock.name})...`);
-        
-        const rawData = await retryWithExponentialBackoff(async () => {
-          return await fetchFinancialStatement(stock.symbol, formatDate(lastSyncDate));
-        }, 3, stock.symbol);
-        
-        if (!rawData || rawData.length === 0) {
-          console.log(`[Sync] No new data for ${stock.symbol}`);
-          continue;
-        }
-        
-        const transformedData = rawData.map((item: any) => 
-          transformFinancialStatement(item, stock.symbol)
-        );
-        
-        for (const financialData of transformedData) {
-          await db.insert(twStockFinancials).values(financialData).onDuplicateKeyUpdate({
-            set: {
-              totalAssets: financialData.totalAssets,
-              totalLiabilities: financialData.totalLiabilities,
-              totalEquity: financialData.totalEquity,
-              currentAssets: financialData.currentAssets,
-              currentLiabilities: financialData.currentLiabilities,
-              revenue: financialData.revenue,
-              operatingIncome: financialData.operatingIncome,
-              netIncome: financialData.netIncome,
-              grossProfit: financialData.grossProfit,
-              operatingExpenses: financialData.operatingExpenses,
-              operatingCashFlow: financialData.operatingCashFlow,
-              investingCashFlow: financialData.investingCashFlow,
-              financingCashFlow: financialData.financingCashFlow,
-              freeCashFlow: financialData.freeCashFlow,
-            }
-          });
-        }
-        
-        successCount++;
-        console.log(`[Sync] Successfully synced ${transformedData.length} records for ${stock.symbol}`);
-        
-      } catch (error) {
-        console.error(`[Sync] Failed to sync financials for ${stock.symbol}:`, error);
-        failedStocks.push(stock.symbol);
-      }
-    }
-    
-    await db.insert(twDataSyncStatus).values({
-      dataType: 'financials',
-      source: 'FinMind',
-      lastSyncAt: new Date(),
-      status: failedStocks.length === 0 ? 'success' : 'partial',
-      recordCount: successCount,
-      errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-    }).onDuplicateKeyUpdate({
-      set: {
-        lastSyncAt: new Date(),
-        status: failedStocks.length === 0 ? 'success' : 'partial',
-        recordCount: successCount,
-        errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-      }
-    });
-    
-    console.log(`[Sync] Financials sync completed. Success: ${successCount}, Failed: ${failedStocks.length}`);
-    
-    if (failedStocks.length > 0) {
-      await notifyOwner({
-        title: '台股財務報表同步部分失敗',
-        content: `成功: ${successCount} 支股票\n失敗: ${failedStocks.length} 支股票\n失敗股票代號: ${failedStocks.join(', ')}`
-      });
-    }
-    
-  } catch (error) {
-    console.error('[Sync] Financials sync failed:', error);
-    await notifyOwner({
-      title: '台股財務報表同步失敗',
-      content: `錯誤訊息: ${(error as Error).message}`
-    });
-    throw error;
-  }
-}
-
-/**
- * 同步股利資訊（使用 FinMind API）
- */
-async function syncDividends(): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.error('[Sync] Database not available');
-    return;
-  }
-  
-  console.log('[Sync] Starting dividends sync...');
-  
-  try {
-    const syncStatus = await db.select()
-      .from(twDataSyncStatus)
-      .where(eq(twDataSyncStatus.dataType, 'dividends'))
-      .limit(1);
-    
-    const lastSyncDate = syncStatus.length > 0 
-      ? syncStatus[0].lastSyncAt 
-      : new Date('2020-01-01');
-    
-    const stocks = await db.select()
-      .from(twStocks)
-      .where(eq(twStocks.isActive, true));
-    
-    let successCount = 0;
-    let failedStocks: string[] = [];
-    
-    for (const stock of stocks) {
-      try {
-        console.log(`[Sync] Syncing dividends for ${stock.symbol} (${stock.name})...`);
-        
-        const rawData = await retryWithExponentialBackoff(async () => {
-          return await fetchDividend(stock.symbol, formatDate(lastSyncDate));
-        }, 3, stock.symbol);
-        
-        if (!rawData || rawData.length === 0) {
-          console.log(`[Sync] No new data for ${stock.symbol}`);
-          continue;
-        }
-        
-        const transformedData = rawData.map((item: any) => 
-          transformDividend(item, stock.symbol)
-        );
-        
-        for (const dividendData of transformedData) {
-          await db.insert(twStockDividends).values(dividendData).onDuplicateKeyUpdate({
-            set: {
-              cashDividend: dividendData.cashDividend,
-              stockDividend: dividendData.stockDividend,
-              totalDividend: dividendData.totalDividend,
-              exDividendDate: dividendData.exDividendDate,
-              paymentDate: dividendData.paymentDate,
-              yieldRate: dividendData.yieldRate,
-              payoutRatio: dividendData.payoutRatio,
-            }
-          });
-        }
-        
-        successCount++;
-        console.log(`[Sync] Successfully synced ${transformedData.length} records for ${stock.symbol}`);
-        
-      } catch (error) {
-        console.error(`[Sync] Failed to sync dividends for ${stock.symbol}:`, error);
-        failedStocks.push(stock.symbol);
-      }
-    }
-    
-    await db.insert(twDataSyncStatus).values({
-      dataType: 'dividends',
-      source: 'FinMind',
-      lastSyncAt: new Date(),
-      status: failedStocks.length === 0 ? 'success' : 'partial',
-      recordCount: successCount,
-      errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-    }).onDuplicateKeyUpdate({
-      set: {
-        lastSyncAt: new Date(),
-        status: failedStocks.length === 0 ? 'success' : 'partial',
-        recordCount: successCount,
-        errorMessage: failedStocks.length > 0 ? `Failed stocks: ${failedStocks.join(', ')}` : null,
-      }
-    });
-    
-    console.log(`[Sync] Dividends sync completed. Success: ${successCount}, Failed: ${failedStocks.length}`);
-    
-    if (failedStocks.length > 0) {
-      await notifyOwner({
-        title: '台股股利資訊同步部分失敗',
-        content: `成功: ${successCount} 支股票\n失敗: ${failedStocks.length} 支股票\n失敗股票代號: ${failedStocks.join(', ')}`
-      });
-    }
-    
-  } catch (error) {
-    console.error('[Sync] Dividends sync failed:', error);
-    await notifyOwner({
-      title: '台股股利資訊同步失敗',
-      content: `錯誤訊息: ${(error as Error).message}`
-    });
-    throw error;
-  }
-}
-
-/**
- * 每日收盤後更新技術指標（交易日 15:00）
- */
-export function scheduleIndicatorsSync(): void {
-  cron.schedule('0 15 * * 1-5', async () => {
-    console.log('[Sync] Starting scheduled indicators sync...');
-    try {
-      await syncIndicators();
-    } catch (error) {
-      console.error('[Sync] Scheduled indicators sync failed:', error);
-    }
-  }, {
-    timezone: 'Asia/Taipei'
-  });
-  
-  console.log('[Sync] Scheduled indicators sync (Mon-Fri 15:00 Asia/Taipei)');
-}
-
-/**
- * 每週日凌晨更新財務報表（週日 03:00）
- */
-export function scheduleFinancialsSync(): void {
-  cron.schedule('0 3 * * 0', async () => {
-    console.log('[Sync] Starting scheduled financials sync...');
-    try {
-      await syncFinancials();
-    } catch (error) {
-      console.error('[Sync] Scheduled financials sync failed:', error);
-    }
-  }, {
-    timezone: 'Asia/Taipei'
-  });
-  
-  console.log('[Sync] Scheduled financials sync (Sunday 03:00 Asia/Taipei)');
-}
-
-/**
- * 每週日凌晨更新股利資訊（週日 04:00）
- */
-export function scheduleDividendsSync(): void {
-  cron.schedule('0 4 * * 0', async () => {
-    console.log('[Sync] Starting scheduled dividends sync...');
-    try {
-      await syncDividends();
-    } catch (error) {
-      console.error('[Sync] Scheduled dividends sync failed:', error);
-    }
-  }, {
-    timezone: 'Asia/Taipei'
-  });
-  
-  console.log('[Sync] Scheduled dividends sync (Sunday 04:00 Asia/Taipei)');
-}
-
-/**
- * 啟動所有排程任務
- */
-export function startAllSchedules(): void {
-  scheduleHistoricalPricesSync();
-  scheduleFundamentalsSync();
-  scheduleIndicatorsSync();
-  scheduleFinancialsSync();
-  scheduleDividendsSync();
-  console.log('[Sync] All schedules started');
-}
-
-/**
- * 手動觸發歷史價格同步（用於測試或手動補資料）
- */
-export async function manualSyncHistoricalPrices(): Promise<void> {
-  console.log('[Sync] Manual historical prices sync triggered');
-  await syncHistoricalPrices();
-}
-
-/**
- * 手動觸發基本面資料同步
- */
-export async function manualSyncFundamentals(): Promise<void> {
-  console.log('[Sync] Manual fundamentals sync triggered');
-  await syncFundamentals();
-}
-
-/**
- * 手動觸發技術指標計算
- */
-export async function manualSyncIndicators(): Promise<void> {
-  console.log('[Sync] Manual indicators sync triggered');
-  await syncIndicators();
-}
-
-/**
- * 手動觸發財務報表同步
- */
-export async function manualSyncFinancials(): Promise<void> {
-  console.log('[Sync] Manual financials sync triggered');
-  await syncFinancials();
-}
-
-/**
- * 手動觸發股利資訊同步
- */
-export async function manualSyncDividends(): Promise<void> {
-  console.log('[Sync] Manual dividends sync triggered');
-  await syncDividends();
-}
-
-/**
- * 手動觸發完整資料同步（所有資料類型）
- */
-export async function manualSyncAll(): Promise<void> {
-  console.log('[Sync] Manual full sync triggered');
-  
-  try {
-    console.log('[Sync] Step 1/5: Syncing historical prices...');
-    await syncHistoricalPrices();
-    
-    console.log('[Sync] Step 2/5: Syncing fundamentals...');
-    await syncFundamentals();
-    
-    console.log('[Sync] Step 3/5: Calculating indicators...');
-    await syncIndicators();
-    
-    console.log('[Sync] Step 4/5: Syncing financials...');
-    await syncFinancials();
-    
-    console.log('[Sync] Step 5/5: Syncing dividends...');
-    await syncDividends();
-    
-    console.log('[Sync] Full sync completed successfully!');
-    
-    await notifyOwner({
-      title: '台股完整資料同步完成',
-      content: '所有資料類型（歷史價格、基本面、技術指標、財務報表、股利資訊）已成功同步'
-    });
-  } catch (error) {
-    console.error('[Sync] Full sync failed:', error);
-    
-    await notifyOwner({
-      title: '台股完整資料同步失敗',
-      content: `錯誤訊息: ${(error as Error).message}`
-    });
-    
-    throw error;
-  }
+export function startAllSchedules() {
+  scheduleStockInfoSync();
+  scheduleStockPriceSync();
+  console.log('[Scheduler] All schedules started (v3.0 - Off-peak hours)');
 }

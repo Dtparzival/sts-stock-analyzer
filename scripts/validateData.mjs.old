@@ -1,0 +1,246 @@
+/**
+ * 台股資料庫驗證腳本
+ * 
+ * 此腳本用於檢查資料庫中的資料完整性和品質
+ * 
+ * 使用方式：node scripts/validateData.mjs
+ */
+
+import { getDb } from '../server/db.ts';
+import {
+  twStocks,
+  twStockPrices,
+  twStockIndicators,
+  twStockFundamentals,
+  twStockFinancials,
+  twStockDividends,
+  twDataSyncStatus,
+} from '../drizzle/schema.ts';
+import { eq, sql } from 'drizzle-orm';
+
+console.log('='.repeat(60));
+console.log('台股資料庫驗證報告');
+console.log('='.repeat(60));
+console.log('');
+
+async function main() {
+  try {
+    const db = await getDb();
+    if (!db) {
+      throw new Error('無法連接資料庫');
+    }
+
+    // 1. 檢查股票基本資料
+    console.log('1. 股票基本資料 (twStocks)');
+    console.log('-'.repeat(60));
+    
+    const totalStocks = await db.select({ count: sql`count(*)` }).from(twStocks);
+    const activeStocks = await db.select({ count: sql`count(*)` }).from(twStocks).where(eq(twStocks.isActive, true));
+    const twseStocks = await db.select({ count: sql`count(*)` }).from(twStocks).where(eq(twStocks.market, '上市'));
+    const tpexStocks = await db.select({ count: sql`count(*)` }).from(twStocks).where(eq(twStocks.market, '上櫃'));
+    
+    console.log(`  總股票數：${totalStocks[0].count}`);
+    console.log(`  活躍股票數：${activeStocks[0].count}`);
+    console.log(`  上市股票數：${twseStocks[0].count}`);
+    console.log(`  上櫃股票數：${tpexStocks[0].count}`);
+    console.log('');
+
+    // 2. 檢查歷史價格資料
+    console.log('2. 歷史價格資料 (twStockPrices)');
+    console.log('-'.repeat(60));
+    
+    const totalPrices = await db.select({ count: sql`count(*)` }).from(twStockPrices);
+    const pricesByStock = await db.select({
+      symbol: twStockPrices.symbol,
+      count: sql`count(*)`
+    }).from(twStockPrices).groupBy(twStockPrices.symbol).limit(5);
+    
+    console.log(`  總價格記錄數：${totalPrices[0].count}`);
+    console.log(`  範例股票價格記錄數：`);
+    pricesByStock.forEach(item => {
+      console.log(`    ${item.symbol}: ${item.count} 筆`);
+    });
+    console.log('');
+
+    // 3. 檢查技術指標資料
+    console.log('3. 技術指標資料 (twStockIndicators)');
+    console.log('-'.repeat(60));
+    
+    const totalIndicators = await db.select({ count: sql`count(*)` }).from(twStockIndicators);
+    const indicatorsByStock = await db.select({
+      symbol: twStockIndicators.symbol,
+      count: sql`count(*)`
+    }).from(twStockIndicators).groupBy(twStockIndicators.symbol).limit(5);
+    
+    console.log(`  總指標記錄數：${totalIndicators[0].count}`);
+    console.log(`  範例股票指標記錄數：`);
+    indicatorsByStock.forEach(item => {
+      console.log(`    ${item.symbol}: ${item.count} 筆`);
+    });
+    console.log('');
+
+    // 4. 檢查基本面資料
+    console.log('4. 基本面資料 (twStockFundamentals)');
+    console.log('-'.repeat(60));
+    
+    const totalFundamentals = await db.select({ count: sql`count(*)` }).from(twStockFundamentals);
+    const fundamentalsByStock = await db.select({
+      symbol: twStockFundamentals.symbol,
+      count: sql`count(*)`
+    }).from(twStockFundamentals).groupBy(twStockFundamentals.symbol).limit(5);
+    
+    console.log(`  總基本面記錄數：${totalFundamentals[0].count}`);
+    console.log(`  範例股票基本面記錄數：`);
+    fundamentalsByStock.forEach(item => {
+      console.log(`    ${item.symbol}: ${item.count} 筆`);
+    });
+    console.log('');
+
+    // 5. 檢查財務報表資料
+    console.log('5. 財務報表資料 (twStockFinancials)');
+    console.log('-'.repeat(60));
+    
+    const totalFinancials = await db.select({ count: sql`count(*)` }).from(twStockFinancials);
+    const financialsByStock = await db.select({
+      symbol: twStockFinancials.symbol,
+      count: sql`count(*)`
+    }).from(twStockFinancials).groupBy(twStockFinancials.symbol).limit(5);
+    
+    console.log(`  總財報記錄數：${totalFinancials[0].count}`);
+    console.log(`  範例股票財報記錄數：`);
+    financialsByStock.forEach(item => {
+      console.log(`    ${item.symbol}: ${item.count} 筆`);
+    });
+    console.log('');
+
+    // 6. 檢查股利資訊資料
+    console.log('6. 股利資訊資料 (twStockDividends)');
+    console.log('-'.repeat(60));
+    
+    const totalDividends = await db.select({ count: sql`count(*)` }).from(twStockDividends);
+    const dividendsByStock = await db.select({
+      symbol: twStockDividends.symbol,
+      count: sql`count(*)`
+    }).from(twStockDividends).groupBy(twStockDividends.symbol).limit(5);
+    
+    console.log(`  總股利記錄數：${totalDividends[0].count}`);
+    console.log(`  範例股票股利記錄數：`);
+    dividendsByStock.forEach(item => {
+      console.log(`    ${item.symbol}: ${item.count} 筆`);
+    });
+    console.log('');
+
+    // 7. 檢查資料同步狀態
+    console.log('7. 資料同步狀態 (twDataSyncStatus)');
+    console.log('-'.repeat(60));
+    
+    const syncStatuses = await db.select().from(twDataSyncStatus);
+    
+    if (syncStatuses.length === 0) {
+      console.log('  ⚠️  尚未執行任何資料同步');
+    } else {
+      syncStatuses.forEach(status => {
+        const lastSync = new Date(status.lastSyncAt).toLocaleString('zh-TW');
+        const statusIcon = status.status === 'success' ? '✅' : status.status === 'partial' ? '⚠️' : '❌';
+        console.log(`  ${statusIcon} ${status.dataType.padEnd(15)} | 狀態: ${status.status.padEnd(10)} | 最後同步: ${lastSync}`);
+        if (status.recordCount) {
+          console.log(`     記錄數: ${status.recordCount}`);
+        }
+        if (status.errorMessage) {
+          console.log(`     錯誤訊息: ${status.errorMessage}`);
+        }
+      });
+    }
+    console.log('');
+
+    // 8. 資料完整性評分
+    console.log('8. 資料完整性評分');
+    console.log('-'.repeat(60));
+    
+    const scores = [];
+    
+    // 股票基本資料評分（至少要有 100 支股票）
+    const stockScore = Math.min(100, (activeStocks[0].count / 100) * 100);
+    scores.push({ name: '股票基本資料', score: stockScore });
+    
+    // 歷史價格評分（平均每支股票至少要有 100 筆資料）
+    const avgPricesPerStock = totalPrices[0].count / (activeStocks[0].count || 1);
+    const priceScore = Math.min(100, (avgPricesPerStock / 100) * 100);
+    scores.push({ name: '歷史價格', score: priceScore });
+    
+    // 技術指標評分（平均每支股票至少要有 50 筆資料）
+    const avgIndicatorsPerStock = totalIndicators[0].count / (activeStocks[0].count || 1);
+    const indicatorScore = Math.min(100, (avgIndicatorsPerStock / 50) * 100);
+    scores.push({ name: '技術指標', score: indicatorScore });
+    
+    // 基本面資料評分（平均每支股票至少要有 4 筆資料）
+    const avgFundamentalsPerStock = totalFundamentals[0].count / (activeStocks[0].count || 1);
+    const fundamentalScore = Math.min(100, (avgFundamentalsPerStock / 4) * 100);
+    scores.push({ name: '基本面資料', score: fundamentalScore });
+    
+    // 財務報表評分（平均每支股票至少要有 4 筆資料）
+    const avgFinancialsPerStock = totalFinancials[0].count / (activeStocks[0].count || 1);
+    const financialScore = Math.min(100, (avgFinancialsPerStock / 4) * 100);
+    scores.push({ name: '財務報表', score: financialScore });
+    
+    // 股利資訊評分（平均每支股票至少要有 3 筆資料）
+    const avgDividendsPerStock = totalDividends[0].count / (activeStocks[0].count || 1);
+    const dividendScore = Math.min(100, (avgDividendsPerStock / 3) * 100);
+    scores.push({ name: '股利資訊', score: dividendScore });
+    
+    scores.forEach(item => {
+      const bar = '█'.repeat(Math.round(item.score / 5));
+      const scoreText = item.score.toFixed(1).padStart(5);
+      console.log(`  ${item.name.padEnd(12)} ${scoreText}% ${bar}`);
+    });
+    
+    const overallScore = scores.reduce((sum, item) => sum + item.score, 0) / scores.length;
+    console.log('');
+    console.log(`  總體評分：${overallScore.toFixed(1)}%`);
+    console.log('');
+
+    // 9. 建議
+    console.log('9. 建議');
+    console.log('-'.repeat(60));
+    
+    if (overallScore < 50) {
+      console.log('  ⚠️  資料完整性較低，建議執行初始化腳本：');
+      console.log('     node scripts/initTwStockData.mjs');
+    } else if (overallScore < 80) {
+      console.log('  ⚠️  部分資料缺失，建議執行特定資料同步：');
+      scores.filter(s => s.score < 80).forEach(s => {
+        const dataTypeMap = {
+          '股票基本資料': 'stocks',
+          '歷史價格': 'prices',
+          '技術指標': 'indicators',
+          '基本面資料': 'fundamentals',
+          '財務報表': 'financials',
+          '股利資訊': 'dividends',
+        };
+        const dataType = dataTypeMap[s.name];
+        if (dataType) {
+          console.log(`     node scripts/syncSpecificData.mjs ${dataType}`);
+        }
+      });
+    } else {
+      console.log('  ✅ 資料完整性良好！');
+    }
+    console.log('');
+
+    console.log('='.repeat(60));
+    console.log('驗證完成');
+    console.log('='.repeat(60));
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('');
+    console.error('='.repeat(60));
+    console.error('驗證失敗！');
+    console.error('錯誤訊息：', error.message);
+    console.error('='.repeat(60));
+    
+    process.exit(1);
+  }
+}
+
+main();

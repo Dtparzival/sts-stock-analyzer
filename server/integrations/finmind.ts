@@ -1,169 +1,356 @@
 /**
  * FinMind API 整合模組
- * 提供台股財務報表、股利資訊、技術指標、基本面指標等資料
+ * 
+ * 提供台股基本資料與歷史價格的 API 整合
+ * 支援指數退避重試機制與完整錯誤處理
  */
 
-import axios, { AxiosError } from 'axios';
+import { ENV } from '../_core/env';
 
+// FinMind API 基礎設定
 const FINMIND_BASE_URL = 'https://api.finmindtrade.com/api/v4';
-
-// 重試配置
+const DEFAULT_TIMEOUT = 30000; // 30 秒
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 秒
+const INITIAL_RETRY_DELAY = 1000; // 1 秒
 
 /**
- * 延遲函數
+ * FinMind API 錯誤類型
  */
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export class FinMindError extends Error {
+  constructor(
+    message: string,
+    public readonly type: 'API' | 'Network' | 'Parse' | 'Validation',
+    public readonly statusCode?: number,
+    public readonly originalError?: unknown
+  ) {
+    super(message);
+    this.name = 'FinMindError';
+  }
 }
 
 /**
- * 統一錯誤處理與重試機制
+ * API 請求選項
+ */
+interface RequestOptions {
+  timeout?: number;
+  retries?: number;
+  retryDelay?: number;
+}
+
+/**
+ * 股票基本資料 API 回應
+ */
+export interface StockInfoResponse {
+  stock_id: string;
+  stock_name: string;
+  industry_category: string;
+  type: string; // '上市' or '上櫃'
+  date?: string; // 上市日期
+}
+
+/**
+ * 歷史價格 API 回應
+ */
+export interface StockPriceResponse {
+  date: string; // YYYY-MM-DD
+  stock_id: string;
+  Trading_Volume: number; // 成交股數
+  Trading_money: number; // 成交金額
+  open: number;
+  max: number; // 最高價
+  min: number; // 最低價
+  close: number;
+  spread: number; // 漲跌
+  Trading_turnover: number; // 成交筆數
+}
+
+/**
+ * FinMind API 通用回應格式
+ */
+interface FinMindApiResponse<T> {
+  status: number;
+  msg: string;
+  data: T[];
+}
+
+/**
+ * 執行 HTTP 請求（帶指數退避重試）
  */
 async function fetchWithRetry<T>(
   url: string,
-  params?: Record<string, any>,
-  retries = MAX_RETRIES
+  options: RequestOptions = {}
 ): Promise<T> {
-  try {
-    const response = await axios.get<T>(url, {
-      params,
-      timeout: 15000, // 15 秒超時（FinMind API 較慢）
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    
-    // 如果還有重試次數，則重試
-    if (retries > 0) {
-      console.warn(`FinMind API 請求失敗，${RETRY_DELAY}ms 後重試... (剩餘重試次數: ${retries})`);
-      await delay(RETRY_DELAY);
-      return fetchWithRetry<T>(url, params, retries - 1);
+  const {
+    timeout = DEFAULT_TIMEOUT,
+    retries = MAX_RETRIES,
+    retryDelay = INITIAL_RETRY_DELAY,
+  } = options;
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        // API 回傳錯誤狀態碼
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new FinMindError(
+          `FinMind API returned ${response.status}: ${errorText}`,
+          'API',
+          response.status
+        );
+      }
+
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      lastError = error as Error;
+
+      // 判斷是否應該重試
+      const shouldRetry =
+        attempt < retries &&
+        (error instanceof FinMindError
+          ? error.type === 'Network' || error.statusCode === 429 || error.statusCode! >= 500
+          : true);
+
+      if (!shouldRetry) {
+        break;
+      }
+
+      // 指數退避：每次重試延遲時間加倍
+      const delay = retryDelay * Math.pow(2, attempt);
+      console.log(
+        `[FinMind] Request failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms...`
+      );
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-    
-    // 重試次數用盡，拋出錯誤
-    throw new Error(`FinMind API 請求失敗: ${axiosError.message}`);
+  }
+
+  // 所有重試都失敗
+  if (lastError instanceof FinMindError) {
+    throw lastError;
+  }
+
+  throw new FinMindError(
+    `Request failed after ${retries + 1} attempts: ${lastError?.message}`,
+    'Network',
+    undefined,
+    lastError
+  );
+}
+
+/**
+ * 建立 API URL
+ */
+function buildApiUrl(dataset: string, params: Record<string, string>): string {
+  const url = new URL(`${FINMIND_BASE_URL}/data`);
+  url.searchParams.set('dataset', dataset);
+
+  // 加入 token（如果有設定）
+  if (ENV.finmindToken) {
+    url.searchParams.set('token', ENV.finmindToken);
+  }
+
+  // 加入其他參數
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  return url.toString();
+}
+
+/**
+ * 驗證 API 回應格式
+ */
+function validateResponse<T>(response: FinMindApiResponse<T>): T[] {
+  if (response.status !== 200) {
+    throw new FinMindError(
+      `FinMind API error: ${response.msg}`,
+      'API',
+      response.status
+    );
+  }
+
+  if (!Array.isArray(response.data)) {
+    throw new FinMindError(
+      'Invalid response format: data is not an array',
+      'Parse'
+    );
+  }
+
+  return response.data;
+}
+
+/**
+ * 獲取所有台股基本資料
+ * 
+ * @returns 股票基本資料陣列
+ */
+export async function fetchAllStockInfo(
+  options?: RequestOptions
+): Promise<StockInfoResponse[]> {
+  console.log('[FinMind] Fetching all stock info...');
+
+  const url = buildApiUrl('TaiwanStockInfo', {});
+
+  try {
+    const response = await fetchWithRetry<FinMindApiResponse<StockInfoResponse>>(
+      url,
+      options
+    );
+
+    const data = validateResponse(response);
+    console.log(`[FinMind] Fetched ${data.length} stocks`);
+
+    return data;
+  } catch (error) {
+    console.error('[FinMind] Failed to fetch stock info:', error);
+    throw error;
   }
 }
 
 /**
- * 格式化日期為 FinMind API 所需格式 (YYYY-MM-DD)
+ * 獲取指定股票的歷史價格
+ * 
+ * @param symbol 股票代號
+ * @param startDate 起始日期 (YYYY-MM-DD)
+ * @param endDate 結束日期 (YYYY-MM-DD)
+ * @returns 歷史價格陣列
  */
-function formatDateForFinMind(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * 取得台股財務報表
- * 端點：/api/v4/data?dataset=TaiwanStockFinancialStatement
- * 參數：data_id=股票代號, start_date=開始日期
- * 回傳：資產負債表、損益表、現金流量表
- */
-export async function fetchFinancialStatement(
+export async function fetchStockPrice(
   symbol: string,
-  startDate: string
-): Promise<any[]> {
+  startDate: string,
+  endDate: string,
+  options?: RequestOptions
+): Promise<StockPriceResponse[]> {
+  console.log(
+    `[FinMind] Fetching price for ${symbol} from ${startDate} to ${endDate}...`
+  );
+
+  // 驗證日期格式
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+    throw new FinMindError(
+      'Invalid date format. Expected YYYY-MM-DD',
+      'Validation'
+    );
+  }
+
+  const url = buildApiUrl('TaiwanStockPrice', {
+    stock_id: symbol,
+    start_date: startDate,
+    end_date: endDate,
+  });
+
   try {
-    const data = await fetchWithRetry<any>(`${FINMIND_BASE_URL}/data`, {
-      dataset: 'TaiwanStockFinancialStatement',
-      data_id: symbol,
-      start_date: startDate, // 格式：YYYY-MM-DD
-    });
-    
-    return data?.data || [];
+    const response = await fetchWithRetry<FinMindApiResponse<StockPriceResponse>>(
+      url,
+      options
+    );
+
+    const data = validateResponse(response);
+    console.log(`[FinMind] Fetched ${data.length} price records for ${symbol}`);
+
+    return data;
   } catch (error) {
-    console.error(`取得股票 ${symbol} 財務報表失敗:`, error);
-    return [];
+    console.error(`[FinMind] Failed to fetch price for ${symbol}:`, error);
+    throw error;
   }
 }
 
 /**
- * 取得台股股利資訊
- * 端點：/api/v4/data?dataset=TaiwanStockDividend
- * 參數：data_id=股票代號, start_date=開始日期
- * 回傳：現金股利、股票股利、除息日、殖利率
+ * 批次獲取多檔股票的歷史價格
+ * 
+ * @param symbols 股票代號陣列
+ * @param startDate 起始日期 (YYYY-MM-DD)
+ * @param endDate 結束日期 (YYYY-MM-DD)
+ * @param concurrency 並行請求數量（預設 5）
+ * @returns 股票代號與價格資料的對應表
  */
-export async function fetchDividend(symbol: string, startDate: string): Promise<any[]> {
-  try {
-    const data = await fetchWithRetry<any>(`${FINMIND_BASE_URL}/data`, {
-      dataset: 'TaiwanStockDividend',
-      data_id: symbol,
-      start_date: startDate, // 格式：YYYY-MM-DD
+export async function fetchBatchStockPrices(
+  symbols: string[],
+  startDate: string,
+  endDate: string,
+  concurrency: number = 5,
+  options?: RequestOptions
+): Promise<Map<string, StockPriceResponse[]>> {
+  console.log(
+    `[FinMind] Batch fetching prices for ${symbols.length} stocks (concurrency: ${concurrency})...`
+  );
+
+  const results = new Map<string, StockPriceResponse[]>();
+  const errors: Array<{ symbol: string; error: Error }> = [];
+
+  // 分批處理，避免同時發送過多請求
+  for (let i = 0; i < symbols.length; i += concurrency) {
+    const batch = symbols.slice(i, i + concurrency);
+
+    const promises = batch.map(async symbol => {
+      try {
+        const prices = await fetchStockPrice(symbol, startDate, endDate, options);
+        results.set(symbol, prices);
+      } catch (error) {
+        errors.push({ symbol, error: error as Error });
+      }
     });
-    
-    return data?.data || [];
-  } catch (error) {
-    console.error(`取得股票 ${symbol} 股利資訊失敗:`, error);
-    return [];
+
+    await Promise.all(promises);
+
+    // 批次之間稍微延遲，避免 API 限流
+    if (i + concurrency < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
   }
+
+  if (errors.length > 0) {
+    console.warn(
+      `[FinMind] Batch fetch completed with ${errors.length} errors:`,
+      errors.map(e => `${e.symbol}: ${e.error.message}`)
+    );
+  }
+
+  console.log(
+    `[FinMind] Batch fetch completed: ${results.size}/${symbols.length} successful`
+  );
+
+  return results;
 }
 
 /**
- * 取得台股歷史價格（用於計算技術指標）
- * 端點：/api/v4/data?dataset=TaiwanStockPrice
- * 參數：data_id=股票代號, start_date=開始日期
- * 回傳：日期、開盤價、最高價、最低價、收盤價、成交量
+ * 健康檢查：測試 FinMind API 連線
  */
-export async function fetchStockPrice(symbol: string, startDate: string): Promise<any[]> {
+export async function healthCheck(): Promise<boolean> {
   try {
-    const data = await fetchWithRetry<any>(`${FINMIND_BASE_URL}/data`, {
-      dataset: 'TaiwanStockPrice',
-      data_id: symbol,
-      start_date: startDate, // 格式：YYYY-MM-DD
-    });
-    
-    return data?.data || [];
-  } catch (error) {
-    console.error(`取得股票 ${symbol} 歷史價格失敗:`, error);
-    return [];
-  }
-}
+    console.log('[FinMind] Performing health check...');
 
-/**
- * 取得台股基本面指標
- * 端點：/api/v4/data?dataset=TaiwanStockPER
- * 參數：data_id=股票代號, start_date=開始日期
- * 回傳：本益比、股價淨值比、殖利率、EPS
- */
-export async function fetchFundamentals(symbol: string, startDate: string): Promise<any[]> {
-  try {
-    const data = await fetchWithRetry<any>(`${FINMIND_BASE_URL}/data`, {
-      dataset: 'TaiwanStockPER',
-      data_id: symbol,
-      start_date: startDate, // 格式：YYYY-MM-DD
-    });
-    
-    return data?.data || [];
-  } catch (error) {
-    console.error(`取得股票 ${symbol} 基本面指標失敗:`, error);
-    return [];
-  }
-}
+    // 嘗試獲取單一股票資料（台積電 2330）
+    const testDate = new Date();
+    testDate.setDate(testDate.getDate() - 7); // 一週前
+    const startDate = testDate.toISOString().split('T')[0];
+    const endDate = new Date().toISOString().split('T')[0];
 
-/**
- * 取得台股月營收資料
- * 端點：/api/v4/data?dataset=TaiwanStockMonthRevenue
- * 參數：data_id=股票代號, start_date=開始日期
- * 回傳：月營收、年增率、月增率
- */
-export async function fetchMonthlyRevenue(symbol: string, startDate: string): Promise<any[]> {
-  try {
-    const data = await fetchWithRetry<any>(`${FINMIND_BASE_URL}/data`, {
-      dataset: 'TaiwanStockMonthRevenue',
-      data_id: symbol,
-      start_date: startDate, // 格式：YYYY-MM-DD
+    await fetchStockPrice('2330', startDate, endDate, {
+      timeout: 10000,
+      retries: 1,
     });
-    
-    return data?.data || [];
+
+    console.log('[FinMind] Health check passed');
+    return true;
   } catch (error) {
-    console.error(`取得股票 ${symbol} 月營收資料失敗:`, error);
-    return [];
+    console.error('[FinMind] Health check failed:', error);
+    return false;
   }
 }

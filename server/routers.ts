@@ -9,11 +9,12 @@ import { withRateLimit } from "./apiQueue";
 import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
 import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
-import * as dbCache from './dbStockDataCache';
+// import * as dbCache from './dbStockDataCache'; // 已移除
 // import { convertTiingoToYahooFormat } from './tiingo'; // 不再使用 Tiingo API
 // import { convertAlphaVantageToYahooFormat } from './alphaVantage'; // 不再使用 Alpha Vantage API
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
-import { calculateAccuracyStats, calculateAccuracyTrend, generateStockAnalysisReport, checkLowAccuracyStocks } from './analysisAccuracy';
+import { twStockRouter } from './routers/twStock';
+// import { calculateAccuracyStats, calculateAccuracyTrend, generateStockAnalysisReport, checkLowAccuracyStocks } from './analysisAccuracy';
 
 /**
  * 使用 TWSE API 獲取台股數據，轉換為 Yahoo Finance 格式
@@ -48,9 +49,10 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
       (async () => {
         try {
           // 獲取台股中文名稱
-          const { getTWStockInfo } = await import('./twseStockList');
-          const stockInfo = await getTWStockInfo(stockNo);
-          const companyName = stockInfo ? `${stockNo} ${stockInfo.name}` : stockNo;
+          // TODO: 台股名稱查詢功能待實作
+          // const { getTWStockInfo } = await import('./twseStockList');
+          // const stockInfo = await getTWStockInfo(stockNo);
+          const companyName = stockNo;
           const shortName = stockInfo?.shortName || stockInfo?.name || null;
           
           // 記錄搜尋歷史
@@ -96,6 +98,7 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
 
 export const appRouter = router({
   system: systemRouter,
+  twStock: twStockRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -168,7 +171,7 @@ export const appRouter = router({
             try {
               // 先檢查資料庫緩存中是否有公司名稱
               const companyNameCacheKey = { symbol, region, type: 'companyName' };
-              let companyName = await dbCache.getCache('company_name', companyNameCacheKey);
+              let companyName: string | null = null; // await dbCache.getCache('company_name', companyNameCacheKey);
               
               if (!companyName) {
                 // 嘗試從 TwelveData API 獲取公司名稱
@@ -182,7 +185,7 @@ export const appRouter = router({
                   }
                   
                   // 儲存公司名稱到資料庫緩存（24 小時）
-                  await dbCache.setCache('company_name', companyNameCacheKey, companyName, 24 * 60 * 60 * 1000);
+                  // await dbCache.setCache('company_name', companyNameCacheKey, companyName, 24 * 60 * 60 * 1000);
                 } catch (apiError: any) {
                   // 如果 API 失敗，使用股票代碼作為公司名稱
                   console.warn('[Search History] Failed to fetch company name:', apiError.message);
@@ -209,7 +212,7 @@ export const appRouter = router({
         }
         
         // 檢查資料庫緩存
-        const cacheResult = await dbCache.getCacheWithMetadata('twelvedata_stock_data', cacheParams);
+        const cacheResult = null; // await dbCache.getCacheWithMetadata('twelvedata_stock_data', cacheParams);
         if (cacheResult) {
           // 返回緩存數據並附帶時間戳
           return {
@@ -286,7 +289,7 @@ export const appRouter = router({
           
           // 儲存到資料庫緩存（1 小時）
           const now = new Date();
-          await dbCache.setCache('twelvedata_stock_data', cacheParams, data, 60 * 60 * 1000);
+          // await dbCache.setCache('twelvedata_stock_data', cacheParams, data, 60 * 60 * 1000);
           
           // 返回數據並附帶時間戳
           return {
@@ -300,7 +303,7 @@ export const appRouter = router({
         } catch (error: any) {
           // 如果是 API 錯誤，嘗試返回緩存數據（即使過期）
           console.warn('[Stock API] TwelveData API error, attempting to use stale cache:', error.message);
-          const staleData = await dbCache.getStaleCache('twelvedata_stock_data', cacheParams);
+          const staleData = null; // await dbCache.getStaleCache('twelvedata_stock_data', cacheParams);
           if (staleData) {
             console.log('[Stock API] Returning stale cached data');
             return staleData;
@@ -320,7 +323,7 @@ export const appRouter = router({
         
         // 檢查資料庫緩存
         const cacheParams = { symbol };
-        const cachedData = await dbCache.getCache('get_stock_insights', cacheParams);
+        const cachedData = null; // await dbCache.getCache('get_stock_insights', cacheParams);
         if (cachedData) {
           return cachedData;
         }
@@ -331,13 +334,13 @@ export const appRouter = router({
           }));
           
           // 儲存到資料庫緩存（10 分鐘）
-          await dbCache.setCache('get_stock_insights', cacheParams, data, 10 * 60 * 1000);
+          // await dbCache.setCache('get_stock_insights', cacheParams, data, 10 * 60 * 1000);
           
           return data;
         } catch (error: any) {
           if (error.message?.includes('429') || error.message?.includes('rate limit')) {
             console.warn('[Stock API] Rate limit hit for insights');
-            const staleData = await dbCache.getStaleCache('get_stock_insights', cacheParams);
+            const staleData = null; // await dbCache.getStaleCache('get_stock_insights', cacheParams);
             if (staleData) {
               return staleData;
             }
@@ -356,7 +359,7 @@ export const appRouter = router({
         
         // 檢查資料庫緩存
         const cacheParams = { symbol, region: 'US', lang: 'en-US' };
-        const cachedData = await dbCache.getCache('get_stock_holders', cacheParams);
+        const cachedData = null; // await dbCache.getCache('get_stock_holders', cacheParams);
         if (cachedData) {
           return cachedData;
         }
@@ -371,13 +374,13 @@ export const appRouter = router({
           }));
           
           // 儲存到資料庫緩存（1 小時，股東資訊變化較少）
-          await dbCache.setCache('get_stock_holders', cacheParams, data, 60 * 60 * 1000);
+          // await dbCache.setCache('get_stock_holders', cacheParams, data, 60 * 60 * 1000);
           
           return data;
         } catch (error: any) {
           if (error.message?.includes('429') || error.message?.includes('rate limit')) {
             console.warn('[Stock API] Rate limit hit for holders');
-            const staleData = await dbCache.getStaleCache('get_stock_holders', cacheParams);
+            const staleData = null; // await dbCache.getStaleCache('get_stock_holders', cacheParams);
             if (staleData) {
               return staleData;
             }
@@ -664,19 +667,16 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         let stockContext = '';
         let detectedSymbols: string[] = [];
         
-        if (lastUserMessage) {
-          const { detectStockSymbols, fetchStockData, buildStockContext } = await import('./chatWithStockData');
-          
-          detectedSymbols = detectStockSymbols(lastUserMessage.content);
-          
-          // 獲取股票即時數據
-          if (detectedSymbols.length > 0) {
-            const stockDataPromises = detectedSymbols.map(symbol => fetchStockData(symbol, ctx));
-            const stockDataResults = await Promise.all(stockDataPromises);
-            
-            stockContext = buildStockContext(stockDataResults);
-          }
-        }
+        // TODO: 股票數據檢測功能待實作
+        // if (lastUserMessage) {
+        //   const { detectStockSymbols, fetchStockData, buildStockContext } = await import('./chatWithStockData');
+        //   detectedSymbols = detectStockSymbols(lastUserMessage.content);
+        //   if (detectedSymbols.length > 0) {
+        //     const stockDataPromises = detectedSymbols.map(symbol => fetchStockData(symbol, ctx));
+        //     const stockDataResults = await Promise.all(stockDataPromises);
+        //     stockContext = buildStockContext(stockDataResults);
+        //   }
+        // }
         
         const systemMessage = {
           role: "system" as const,
@@ -728,13 +728,12 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
       .mutation(async ({ input, ctx }) => {
         const { symbols } = input;
         
-        // 獲取所有股票的即時數據
-        const { fetchStockData, extractStockInfo } = await import('./chatWithStockData');
-        const stockDataPromises = symbols.map(symbol => fetchStockData(symbol, ctx));
-        const stockDataResults = await Promise.all(stockDataPromises);
-        
-        // 提取股票資訊
-        const enrichedResults = stockDataResults.map(extractStockInfo);
+        // TODO: 股票對比功能待實作
+        // const { fetchStockData, extractStockInfo } = await import('./chatWithStockData');
+        // const stockDataPromises = symbols.map(symbol => fetchStockData(symbol, ctx));
+        // const stockDataResults = await Promise.all(stockDataPromises);
+        // const enrichedResults = stockDataResults.map(extractStockInfo);
+        const enrichedResults: any[] = [];
         
         // 準備對比分析的 prompt
         const stocksInfo = enrichedResults.map(data => {
@@ -963,9 +962,10 @@ ${stocksInfo}
         query: z.string(),
       }))
       .query(async ({ input }) => {
-        const { searchTWStockByName } = await import('./twseStockList');
-        const results = await searchTWStockByName(input.query);
-        return results;
+        // TODO: 台股搜尋功能待實作
+        // const { searchTWStockByName } = await import('./twseStockList');
+        // const results = await searchTWStockByName(input.query);
+        throw new Error('台股搜尋功能尚未實作');
       }),
   }),
 
@@ -1534,9 +1534,10 @@ ${portfolioData.map(h => `
         range: z.string().optional().default('1y'),
       }))
       .query(async ({ input }) => {
-        const { getBenchmarkIndexHistory } = await import('./benchmarkIndex');
-        const data = await getBenchmarkIndexHistory(input.indexType, input.range);
-        return data;
+        // TODO: 大盤指數功能待實作
+        // const { getBenchmarkIndexHistory } = await import('./benchmarkIndex');
+        // const data = await getBenchmarkIndexHistory(input.indexType, input.range);
+        throw new Error('大盤指數功能尚未實作');
       }),
 
     // 獲取投資組合相對基準指數的表現對比
@@ -1546,7 +1547,9 @@ ${portfolioData.map(h => `
         days: z.number().optional(),
       }))
       .query(async ({ input, ctx }) => {
-        const { getBenchmarkIndexHistory, calculateBenchmarkComparison } = await import('./benchmarkIndex');
+        // TODO: 大盤指數功能待實作
+        // const { getBenchmarkIndexHistory, calculateBenchmarkComparison } = await import('./benchmarkIndex');
+        throw new Error('大盤指數功能尚未實作');
         
         // 獲取投資組合歷史
         const portfolioHistory = await db.getPortfolioHistory(ctx.user.id, input.days);
@@ -1622,386 +1625,6 @@ ${portfolioData.map(h => `
       }),
   }),
 
-  // 台股資料整合 API
-  twStock: router({
-    // 搜尋台股
-    search: publicProcedure
-      .input(z.object({
-        keyword: z.string(),
-        limit: z.number().optional().default(20),
-      }))
-      .query(async ({ input }) => {
-        const { searchTwStocks } = await import('./db');
-        const results = await searchTwStocks(input.keyword, input.limit);
-        return results;
-      }),
-
-    // 獲取台股詳情
-    getDetail: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockBySymbol } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockInfo(input.symbol);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const stock = await getTwStockBySymbol(input.symbol);
-        
-        if (stock) {
-          // 寫入 Redis 快取
-          await setCache(cacheKey, stock, CacheTTL.STOCK_INFO);
-        }
-        
-        return stock;
-      }),
-
-    // 獲取台股歷史價格
-    getHistorical: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        startDate: z.string(),
-        endDate: z.string(),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockPrices } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockPrices(input.symbol, input.startDate, input.endDate);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const prices = await getTwStockPrices(
-          input.symbol,
-          new Date(input.startDate),
-          new Date(input.endDate)
-        );
-        
-        if (prices.length > 0) {
-          // 寫入 Redis 快取
-          await setCache(cacheKey, prices, CacheTTL.STOCK_PRICES);
-        }
-        
-        return prices;
-      }),
-
-    // 獲取台股技術指標
-    getIndicators: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        startDate: z.string(),
-        endDate: z.string(),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockIndicators } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockIndicators(input.symbol, input.startDate);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const indicators = await getTwStockIndicators(
-          input.symbol,
-          new Date(input.startDate),
-          new Date(input.endDate)
-        );
-        
-        if (indicators.length > 0) {
-          // 寫入 Redis 快取
-          await setCache(cacheKey, indicators, CacheTTL.STOCK_INDICATORS);
-        }
-        
-        return indicators;
-      }),
-
-    // 獲取台股基本面資料
-    getFundamentals: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        year: z.number().optional(),
-        quarter: z.number().optional(),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockFundamentals } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockFundamentals(
-          input.symbol,
-          input.year || 0,
-          input.quarter || 0
-        );
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const fundamentals = await getTwStockFundamentals(
-          input.symbol,
-          input.year,
-          input.quarter
-        );
-        
-        if (fundamentals.length > 0) {
-          // 寫入 Redis 快取
-          await setCache(cacheKey, fundamentals, CacheTTL.STOCK_FUNDAMENTALS);
-        }
-        
-        return fundamentals;
-      }),
-
-    // 分頁查詢歷史價格
-    getHistoricalPaginated: publicProcedure
-      .input(z.object({
-        symbol: z.string().min(1),
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(30),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockPricesPaginated } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockPricesPaginated(input.symbol, input.page, input.pageSize);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockPricesPaginated(
-          input.symbol,
-          input.page,
-          input.pageSize
-        );
-        
-        if (result.data.length > 0) {
-          // 寫入 Redis 快取（TTL 6 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_PRICES);
-        }
-        
-        return result;
-      }),
-
-    // 分頁查詢技術指標
-    getIndicatorsPaginated: publicProcedure
-      .input(z.object({
-        symbol: z.string().min(1),
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(30),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockIndicatorsPaginated } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockIndicatorsPaginated(input.symbol, input.page, input.pageSize);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockIndicatorsPaginated(
-          input.symbol,
-          input.page,
-          input.pageSize
-        );
-        
-        if (result.data.length > 0) {
-          // 寫入 Redis 快取（TTL 6 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_INDICATORS);
-        }
-        
-        return result;
-      }),
-
-    // 分頁查詢基本面資料
-    getFundamentalsPaginated: publicProcedure
-      .input(z.object({
-        symbol: z.string().min(1),
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(20),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockFundamentalsPaginated } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockFundamentalsPaginated(input.symbol, input.page, input.pageSize);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockFundamentalsPaginated(
-          input.symbol,
-          input.page,
-          input.pageSize
-        );
-        
-        if (result.data.length > 0) {
-          // 寫入 Redis 快取（TTL 24 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
-        }
-        
-        return result;
-      }),
-
-    // 獲取台股財務報表
-    getFinancials: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        year: z.number().optional(),
-        quarter: z.number().optional(),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockFinancials } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockFinancials(
-          input.symbol,
-          input.year || 0,
-          input.quarter || 0
-        );
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockFinancials(
-          input.symbol,
-          input.year,
-          input.quarter
-        );
-        
-        if (result.length > 0) {
-          // 寫入 Redis 快取（TTL 24 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
-        }
-        
-        return result;
-      }),
-
-    // 獲取台股股利資訊
-    getDividends: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        year: z.number().optional(),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockDividends } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockDividends(
-          input.symbol,
-          input.year || 0
-        );
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockDividends(
-          input.symbol,
-          input.year
-        );
-        
-        if (result.length > 0) {
-          // 寫入 Redis 快取（TTL 24 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
-        }
-        
-        return result;
-      }),
-
-    // 分頁查詢台股財務報表
-    getFinancialsPaginated: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockFinancialsPaginated } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockFinancialsPaginated(input.symbol, input.page, input.pageSize);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockFinancialsPaginated(
-          input.symbol,
-          input.page,
-          input.pageSize
-        );
-        
-        if (result.data.length > 0) {
-          // 寫入 Redis 快取（TTL 24 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
-        }
-        
-        return result;
-      }),
-
-    // 分頁查詢台股股利資訊
-    getDividendsPaginated: publicProcedure
-      .input(z.object({
-        symbol: z.string(),
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-      }))
-      .query(async ({ input }) => {
-        const { getTwStockDividendsPaginated } = await import('./db');
-        const { getCache, setCache, CacheKey, CacheTTL } = await import('./utils/twStockCache');
-        
-        // 嘗試從 Redis 快取獲取
-        const cacheKey = CacheKey.stockDividendsPaginated(input.symbol, input.page, input.pageSize);
-        const cached = await getCache(cacheKey);
-        if (cached) {
-          return cached;
-        }
-        
-        // 從資料庫查詢
-        const result = await getTwStockDividendsPaginated(
-          input.symbol,
-          input.page,
-          input.pageSize
-        );
-        
-        if (result.data.length > 0) {
-          // 寫入 Redis 快取（TTL 24 小時）
-          await setCache(cacheKey, result, CacheTTL.STOCK_FUNDAMENTALS);
-        }
-        
-        return result;
-      }),
-  }),
 
   // API 速率限制監控
   apiMonitor: router({
@@ -2023,7 +1646,8 @@ ${portfolioData.map(h => `
     // 手動觸發緩存預熱
     triggerCacheWarmup: publicProcedure
       .mutation(async () => {
-        const { warmupAllStocks } = await import('./utils/cacheWarmer');
+        // const { warmupAllStocks } = await import('./utils/cacheWarmer');
+        throw new Error('快取預熱功能尚未實作');
         const result = await warmupAllStocks();
         return result;
       }),
@@ -2034,16 +1658,18 @@ ${portfolioData.map(h => `
         symbols: z.array(z.string()).min(1).max(50),
       }))
       .mutation(async ({ input }) => {
-        const { warmupStocks } = await import('./utils/cacheWarmer');
-        const result = await warmupStocks(input.symbols);
-        return result;
+        // TODO: 快取預熱功能待實作
+        // const { warmupStocks } = await import('./utils/cacheWarmer');
+        // const result = await warmupStocks(input.symbols);
+        throw new Error('快取預熱功能尚未實作');
       }),
     
     // 獲取熱門股票列表
     getPopularStocks: publicProcedure
       .query(async () => {
-        const { getPopularStocks } = await import('./utils/cacheWarmer');
-        return getPopularStocks();
+        // TODO: 熱門股票功能待實作
+        // const { getPopularStocks } = await import('./utils/cacheWarmer');
+        return [];
       }),
     
     // 獲取 API 效能統計資料
