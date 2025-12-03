@@ -171,8 +171,8 @@ export const usStockPrices = mysqlTable("usStockPrices", {
   low: int("low").notNull(), // 最低價 (以美分為單位)
   close: int("close").notNull(), // 收盤價 (以美分為單位)
   volume: bigint("volume", { mode: "number" }).notNull(), // 成交量 (股)
-  change: int("change").notNull(), // 漲跌 (以美分為單位)
-  changePercent: int("changePercent").notNull(), // 漲跌幅 (以基點為單位, 萬分之一)
+  change: int("change").default(0).notNull(), // 漲跌 (以美分為單位)
+  changePercent: int("changePercent").default(0).notNull(), // 漲跌幅 (以基點為單位, 萬分之一)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   symbolDateIdx: index("us_symbol_date_idx").on(table.symbol, table.date),
