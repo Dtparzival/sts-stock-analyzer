@@ -6,18 +6,20 @@ import { useCallback, useEffect, useState } from 'react';
 interface HotStock {
   symbol: string;
   name: string;
+  originalSymbol: string;
+  market: 'US' | 'TW';
 }
 
 interface MobileHotStocksCarouselProps {
   stocks: HotStock[];
   onStockClick: (symbol: string) => void;
-  market?: 'US' | 'TW';
+  market?: 'US' | 'TW' | 'ALL';
 }
 
 export default function MobileHotStocksCarousel({ 
   stocks, 
   onStockClick,
-  market = 'US'
+  market = 'ALL'
 }: MobileHotStocksCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     align: 'start',
@@ -55,15 +57,15 @@ export default function MobileHotStocksCarousel({
                 className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:border-primary/50 bg-gradient-to-br from-card via-card to-primary/5 active:scale-95 rounded-xl shadow-md touch-manipulation h-full"
                 onClick={() => onStockClick(stock.symbol)}
               >
-                {/* 市場標籤 */}
+                {/* 市場標籤 - 根據每支股票的 market 屬性動態顯示 */}
                 <div className="absolute top-2 right-2 z-10">
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                    market === 'US' 
+                    stock.market === 'US' 
                       ? 'bg-primary/20 text-primary' 
                       : 'bg-green-500/20 text-green-700'
                   }`}>
                     <Globe className="h-3 w-3" />
-                    {market === 'US' ? '美股' : '台股'}
+                    {stock.market === 'US' ? '美股' : '台股'}
                   </span>
                 </div>
                 

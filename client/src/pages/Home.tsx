@@ -503,7 +503,7 @@ export default function Home() {
           </div>
           
           {/* 市場切換標籤 - 修正 z-index 避免被遮蔽 */}
-          <div className="flex justify-center mb-8 px-4 relative z-10">
+          <div className="flex justify-center mb-8 px-4 relative z-20">
             <div className="inline-flex items-center gap-2 p-1.5 bg-muted/50 rounded-xl border border-border shadow-sm">
               <Button
                 variant={hotStocksMarket === 'ALL' ? 'default' : 'ghost'}
@@ -558,7 +558,8 @@ export default function Home() {
                   return {
                     symbol: market === 'TW' ? cleanTWSymbol(stock.symbol) : stock.symbol,
                     name: stock.name,
-                    originalSymbol: stock.symbol
+                    originalSymbol: stock.symbol,
+                    market: market
                   };
                 });
               })()}
