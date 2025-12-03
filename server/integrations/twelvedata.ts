@@ -109,13 +109,11 @@ export async function getTwelveDataQuote(symbol: string): Promise<TwelveDataQuot
   }
 
   return fetchWithRetry(async () => {
-    const url = `${TWELVEDATA_BASE_URL}/quote`;
-    const params = new URLSearchParams({
-      symbol,
-      apikey: TWELVEDATA_TOKEN,
-    });
+    const url = new URL(`${TWELVEDATA_BASE_URL}/quote`);
+    url.searchParams.append('symbol', symbol);
+    url.searchParams.append('apikey', TWELVEDATA_TOKEN);
 
-    const response = await fetch(`${url}?${params.toString()}`);
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -150,15 +148,13 @@ export async function getTwelveDataTimeSeries(
   }
 
   return fetchWithRetry(async () => {
-    const url = `${TWELVEDATA_BASE_URL}/time_series`;
-    const params = new URLSearchParams({
-      symbol,
-      interval,
-      outputsize: outputsize.toString(),
-      apikey: TWELVEDATA_TOKEN,
-    });
+    const url = new URL(`${TWELVEDATA_BASE_URL}/time_series`);
+    url.searchParams.append('symbol', symbol);
+    url.searchParams.append('interval', interval);
+    url.searchParams.append('outputsize', outputsize.toString());
+    url.searchParams.append('apikey', TWELVEDATA_TOKEN);
 
-    const response = await fetch(`${url}?${params.toString()}`);
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
       const errorText = await response.text();

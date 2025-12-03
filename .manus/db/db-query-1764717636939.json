@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `usStocks` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `symbol` varchar(20) NOT NULL,\n  `name` varchar(200) NOT NULL,\n  `shortName` varchar(100),\n  `exchange` varchar(20),\n  `currency` varchar(10),\n  `country` varchar(50),\n  `sector` varchar(100),\n  `industry` varchar(100),\n  `isActive` boolean NOT NULL DEFAULT true,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `usStocks_id` PRIMARY KEY(`id`),\n  CONSTRAINT `usStocks_symbol_unique` UNIQUE(`symbol`)\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute CREATE TABLE IF NOT EXISTS `usStocks` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `symbol` varchar(20) NOT NULL,\n  `name` varchar(200) NOT NULL,\n  `shortName` varchar(100),\n  `exchange` varchar(20),\n  `currency` varchar(10),\n  `country` varchar(50),\n  `sector` varchar(100),\n  `industry` varchar(100),\n  `isActive` boolean NOT NULL DEFAULT true,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `usStocks_id` PRIMARY KEY(`id`),\n  CONSTRAINT `usStocks_symbol_unique` UNIQUE(`symbol`)\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1773
-}

@@ -1,11 +1,11 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "9c335d98-b28d-4650-b96e-0aaec53a7a26",
-  "prevId": "49c936f6-fc89-4929-a5b8-d480f20c584b",
+  "id": "d73288c5-198e-442e-bdd9-f1f0fd7f6bc1",
+  "prevId": "cddbfa18-2586-4c2f-85e8-f0d8efb2bc8d",
   "tables": {
-    "stockDataCache": {
-      "name": "stockDataCache",
+    "analysisCache": {
+      "name": "analysisCache",
       "columns": {
         "id": {
           "name": "id",
@@ -14,20 +14,6 @@
           "notNull": true,
           "autoincrement": true
         },
-        "cacheKey": {
-          "name": "cacheKey",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "market": {
-          "name": "market",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "symbol": {
           "name": "symbol",
           "type": "varchar(20)",
@@ -35,23 +21,16 @@
           "notNull": true,
           "autoincrement": false
         },
-        "dataType": {
-          "name": "dataType",
+        "analysisType": {
+          "name": "analysisType",
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "data": {
-          "name": "data",
+        "content": {
+          "name": "content",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "expiresAt": {
-          "name": "expiresAt",
-          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -64,28 +43,18 @@
           "autoincrement": false,
           "default": "(now())"
         },
-        "updatedAt": {
-          "name": "updatedAt",
+        "expiresAt": {
+          "name": "expiresAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "onUpdate": true,
-          "default": "(now())"
+          "autoincrement": false
         }
       },
       "indexes": {
-        "cacheKey_idx": {
-          "name": "cacheKey_idx",
+        "symbol_idx": {
+          "name": "symbol_idx",
           "columns": [
-            "cacheKey"
-          ],
-          "isUnique": false
-        },
-        "market_symbol_idx": {
-          "name": "market_symbol_idx",
-          "columns": [
-            "market",
             "symbol"
           ],
           "isUnique": false
@@ -100,127 +69,8 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "stockDataCache_id": {
-          "name": "stockDataCache_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "stockDataCache_cacheKey_unique": {
-          "name": "stockDataCache_cacheKey_unique",
-          "columns": [
-            "cacheKey"
-          ]
-        }
-      },
-      "checkConstraint": {}
-    },
-    "twDataSyncErrors": {
-      "name": "twDataSyncErrors",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "dataType": {
-          "name": "dataType",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "symbol": {
-          "name": "symbol",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "errorType": {
-          "name": "errorType",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "errorMessage": {
-          "name": "errorMessage",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "errorStack": {
-          "name": "errorStack",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "retryCount": {
-          "name": "retryCount",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "resolved": {
-          "name": "resolved",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "syncedAt": {
-          "name": "syncedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "dataType_idx": {
-          "name": "dataType_idx",
-          "columns": [
-            "dataType"
-          ],
-          "isUnique": false
-        },
-        "symbol_idx": {
-          "name": "symbol_idx",
-          "columns": [
-            "symbol"
-          ],
-          "isUnique": false
-        },
-        "syncedAt_idx": {
-          "name": "syncedAt_idx",
-          "columns": [
-            "syncedAt"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "twDataSyncErrors_id": {
-          "name": "twDataSyncErrors_id",
+        "analysisCache_id": {
+          "name": "analysisCache_id",
           "columns": [
             "id"
           ]
@@ -229,8 +79,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "twDataSyncStatus": {
-      "name": "twDataSyncStatus",
+    "portfolio": {
+      "name": "portfolio",
       "columns": {
         "id": {
           "name": "id",
@@ -239,44 +89,50 @@
           "notNull": true,
           "autoincrement": true
         },
-        "dataType": {
-          "name": "dataType",
-          "type": "varchar(50)",
+        "userId": {
+          "name": "userId",
+          "type": "int",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "source": {
-          "name": "source",
-          "type": "varchar(50)",
+        "symbol": {
+          "name": "symbol",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "lastSyncAt": {
-          "name": "lastSyncAt",
+        "companyName": {
+          "name": "companyName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shares": {
+          "name": "shares",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "purchasePrice": {
+          "name": "purchasePrice",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "purchaseDate": {
+          "name": "purchaseDate",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
-          "type": "enum('success','partial','failed')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "recordCount": {
-          "name": "recordCount",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "errorMessage": {
-          "name": "errorMessage",
+        "notes": {
+          "name": "notes",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -301,135 +157,10 @@
         }
       },
       "indexes": {
-        "dataType_idx": {
-          "name": "dataType_idx",
+        "userId_idx": {
+          "name": "userId_idx",
           "columns": [
-            "dataType"
-          ],
-          "isUnique": false
-        },
-        "lastSyncAt_idx": {
-          "name": "lastSyncAt_idx",
-          "columns": [
-            "lastSyncAt"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "twDataSyncStatus_id": {
-          "name": "twDataSyncStatus_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "twStockPrices": {
-      "name": "twStockPrices",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "symbol": {
-          "name": "symbol",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "date": {
-          "name": "date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "open": {
-          "name": "open",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "high": {
-          "name": "high",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "low": {
-          "name": "low",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "close": {
-          "name": "close",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "volume": {
-          "name": "volume",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "amount": {
-          "name": "amount",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "change": {
-          "name": "change",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "changePercent": {
-          "name": "changePercent",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "symbol_date_idx": {
-          "name": "symbol_date_idx",
-          "columns": [
-            "symbol",
-            "date"
-          ],
-          "isUnique": false
-        },
-        "date_idx": {
-          "name": "date_idx",
-          "columns": [
-            "date"
+            "userId"
           ],
           "isUnique": false
         },
@@ -443,8 +174,8 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "twStockPrices_id": {
-          "name": "twStockPrices_id",
+        "portfolio_id": {
+          "name": "portfolio_id",
           "columns": [
             "id"
           ]
@@ -453,8 +184,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "twStocks": {
-      "name": "twStocks",
+    "searchHistory": {
+      "name": "searchHistory",
       "columns": {
         "id": {
           "name": "id",
@@ -463,136 +194,9 @@
           "notNull": true,
           "autoincrement": true
         },
-        "symbol": {
-          "name": "symbol",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "shortName": {
-          "name": "shortName",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "market": {
-          "name": "market",
-          "type": "enum('TWSE','TPEx')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "industry": {
-          "name": "industry",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "isActive": {
-          "name": "isActive",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "listedDate": {
-          "name": "listedDate",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "onUpdate": true,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "symbol_idx": {
-          "name": "symbol_idx",
-          "columns": [
-            "symbol"
-          ],
-          "isUnique": false
-        },
-        "market_idx": {
-          "name": "market_idx",
-          "columns": [
-            "market"
-          ],
-          "isUnique": false
-        },
-        "industry_idx": {
-          "name": "industry_idx",
-          "columns": [
-            "industry"
-          ],
-          "isUnique": false
-        },
-        "isActive_idx": {
-          "name": "isActive_idx",
-          "columns": [
-            "isActive"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "twStocks_id": {
-          "name": "twStocks_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "twStocks_symbol_unique": {
-          "name": "twStocks_symbol_unique",
-          "columns": [
-            "symbol"
-          ]
-        }
-      },
-      "checkConstraint": {}
-    },
-    "usDataSyncErrors": {
-      "name": "usDataSyncErrors",
-      "columns": {
-        "id": {
-          "name": "id",
+        "userId": {
+          "name": "userId",
           "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "dataType": {
-          "name": "dataType",
-          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -601,55 +205,18 @@
           "name": "symbol",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "errorType": {
-          "name": "errorType",
-          "type": "varchar(50)",
-          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "errorMessage": {
-          "name": "errorMessage",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "errorStack": {
-          "name": "errorStack",
+        "companyName": {
+          "name": "companyName",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "retryCount": {
-          "name": "retryCount",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "resolved": {
-          "name": "resolved",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "syncedAt": {
-          "name": "syncedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "createdAt": {
-          "name": "createdAt",
+        "searchedAt": {
+          "name": "searchedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -658,396 +225,31 @@
         }
       },
       "indexes": {
-        "us_dataType_idx": {
-          "name": "us_dataType_idx",
+        "userId_idx": {
+          "name": "userId_idx",
           "columns": [
-            "dataType"
+            "userId"
           ],
           "isUnique": false
         },
-        "us_symbol_idx": {
-          "name": "us_symbol_idx",
+        "searchedAt_idx": {
+          "name": "searchedAt_idx",
           "columns": [
-            "symbol"
-          ],
-          "isUnique": false
-        },
-        "us_syncedAt_idx": {
-          "name": "us_syncedAt_idx",
-          "columns": [
-            "syncedAt"
+            "searchedAt"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "usDataSyncErrors_id": {
-          "name": "usDataSyncErrors_id",
+        "searchHistory_id": {
+          "name": "searchHistory_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "usDataSyncStatus": {
-      "name": "usDataSyncStatus",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "dataType": {
-          "name": "dataType",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "source": {
-          "name": "source",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "lastSyncAt": {
-          "name": "lastSyncAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "enum('success','partial','failed')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "recordCount": {
-          "name": "recordCount",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "errorMessage": {
-          "name": "errorMessage",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "onUpdate": true,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "us_dataType_idx": {
-          "name": "us_dataType_idx",
-          "columns": [
-            "dataType"
-          ],
-          "isUnique": false
-        },
-        "us_lastSyncAt_idx": {
-          "name": "us_lastSyncAt_idx",
-          "columns": [
-            "lastSyncAt"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "usDataSyncStatus_id": {
-          "name": "usDataSyncStatus_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "usStockPrices": {
-      "name": "usStockPrices",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "symbol": {
-          "name": "symbol",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "date": {
-          "name": "date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "open": {
-          "name": "open",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "high": {
-          "name": "high",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "low": {
-          "name": "low",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "close": {
-          "name": "close",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "volume": {
-          "name": "volume",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "change": {
-          "name": "change",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "changePercent": {
-          "name": "changePercent",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "us_symbol_date_idx": {
-          "name": "us_symbol_date_idx",
-          "columns": [
-            "symbol",
-            "date"
-          ],
-          "isUnique": false
-        },
-        "us_date_idx": {
-          "name": "us_date_idx",
-          "columns": [
-            "date"
-          ],
-          "isUnique": false
-        },
-        "us_symbol_idx": {
-          "name": "us_symbol_idx",
-          "columns": [
-            "symbol"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "usStockPrices_id": {
-          "name": "usStockPrices_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "usStocks": {
-      "name": "usStocks",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "symbol": {
-          "name": "symbol",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "shortName": {
-          "name": "shortName",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "exchange": {
-          "name": "exchange",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "currency": {
-          "name": "currency",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "country": {
-          "name": "country",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "sector": {
-          "name": "sector",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "industry": {
-          "name": "industry",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "isActive": {
-          "name": "isActive",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "onUpdate": true,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "us_symbol_idx": {
-          "name": "us_symbol_idx",
-          "columns": [
-            "symbol"
-          ],
-          "isUnique": false
-        },
-        "us_exchange_idx": {
-          "name": "us_exchange_idx",
-          "columns": [
-            "exchange"
-          ],
-          "isUnique": false
-        },
-        "us_sector_idx": {
-          "name": "us_sector_idx",
-          "columns": [
-            "sector"
-          ],
-          "isUnique": false
-        },
-        "us_isActive_idx": {
-          "name": "us_isActive_idx",
-          "columns": [
-            "isActive"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "usStocks_id": {
-          "name": "usStocks_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "usStocks_symbol_unique": {
-          "name": "usStocks_symbol_unique",
-          "columns": [
-            "symbol"
-          ]
-        }
-      },
       "checkConstraint": {}
     },
     "users": {
@@ -1140,6 +342,74 @@
           ]
         }
       },
+      "checkConstraint": {}
+    },
+    "watchlist": {
+      "name": "watchlist",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "companyName": {
+          "name": "companyName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "addedAt": {
+          "name": "addedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "userId_idx": {
+          "name": "userId_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "symbol_idx": {
+          "name": "symbol_idx",
+          "columns": [
+            "symbol"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "watchlist_id": {
+          "name": "watchlist_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "checkConstraint": {}
     }
   },

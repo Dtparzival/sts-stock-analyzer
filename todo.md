@@ -18,10 +18,10 @@
 - [x] 台股排程已設定 (每週日 02:00 基本資料, 每交易日 02:00 價格)
 
 ### 美股資料庫架構
-- [x] 建立 usStocks 資料表 (手動 SQL 建立)
-- [x] 建立 usStockPrices 資料表 (手動 SQL 建立)
-- [x] 建立 usDataSyncStatus 資料表 (手動 SQL 建立)
-- [x] 建立 usDataSyncErrors 資料表 (手動 SQL 建立)
+- [x] 建立 usStocks 資料表
+- [x] 建立 usStockPrices 資料表
+- [x] 建立 usDataSyncStatus 資料表
+- [x] 建立 usDataSyncErrors 資料表
 - [x] 建立 stockDataCache 快取資料表
 - [x] 實作美股資料庫操作層函數 (server/db_us.ts)
 
@@ -33,8 +33,6 @@
 - [x] 實作 getTwelveDataTimeSeries 函數
 - [x] 實作指數退避重試機制
 - [x] 實作價格轉換輔助函數
-- [x] 修正 URL 處理問題 (移除結尾斜線)
-- [x] 調整 API 請求間隔為 8 秒 (符合免費版限制)
 
 ### 快取機制
 - [ ] 實作 MySQL 快取層 (stockDataCache)
@@ -73,9 +71,7 @@
 
 ### 初始化腳本
 - [x] scripts/initTwStockData.mjs - 台股初始化 (已完成)
-- [x] scripts/initUsStockData.mjs - 美股初始化 (已修正日期參數問題)
-- [x] scripts/loadTestData.mjs - 簡化版測試資料載入 (只載入 3 支股票)
-- [ ] 等待 API 額度重置後執行測試資料載入
+- [ ] scripts/initUsStockData.mjs - 美股初始化
 
 ### 維護腳本
 - [x] scripts/syncSpecificData.mjs - 特定資料同步 (已完成)
@@ -210,53 +206,7 @@
 - [x] 在 App.tsx 中註冊新路由 (/search, /stock/:market/:symbol)
 - [x] 重啟開發伺服器並驗證功能
 
-
----
-
-## 使用者後續需求 (2024-12-03 新增)
-
-### API 憑證設定
-- [ ] 透過管理介面 Settings → Secrets 更新 TWELVEDATA_BASE_URL
-- [ ] 透過管理介面 Settings → Secrets 更新 TWELVEDATA_TOKEN
-- [ ] 驗證 TwelveData API 連線狀態
-
-### 美股資料同步排程
-- [x] 建立 server/jobs/syncUsStockData.ts (參考台股同步機制)
-- [x] 實作美股基本資料定期同步功能
-- [x] 實作美股歷史價格定期同步功能
-- [x] 設定美股資料同步排程 (每交易日台北時間 06:00)
-- [x] 實作美股交易日判斷邏輯
-- [x] 實作美股同步狀態記錄與錯誤處理
-- [x] 測試美股資料同步完整流程 (交易日判斷邏輯測試通過)
-
-
----
-
-## 使用者後續需求 (2024-12-03 更新 - 擴充股票清單)
-
-### 增加更多美股股票
-- [x] 研究並編製標普500指數公司清單
-- [x] 研究並編製主要 ETF 清單 (如 SPY, QQQ, VOO, VTI 等)
-- [x] 建立批次載入腳本 scripts/loadSP500AndETFs.ts
-- [x] 編製 Top 100 熱門股票清單 (包含科技巨頭、主要 ETF、S&P 500 公司)
-- [x] 執行批次載入腳本載入 100 支熱門股票
-- [x] 驗證新增股票資料完整性 (206 支股票, 3,203 筆價格記錄)
-- [x] 測試前端搜尋與顯示功能 (NVDA 測試通過)
-
-
----
-
-## 使用者後續需求 (2024-12-03 更新 - 美股資料同步排程優化)
-
-### 優化美股資料同步機制
-- [x] 新增 S&P 500 成分股部分清單 (~220 支股票)
-- [x] 新增 32 支主要 ETF 清單 (SPY、QQQ、VOO、VTI 等)
-- [x] 建立美股定期同步排程:
-  - [x] 基本資料同步:每週日凌晨 06:00 (台北時間)
-  - [x] 歷史價格同步:每交易日凌晨 06:00 (台北時間)
-  - [x] 同步最近 30 天歷史價格
-- [x] 其餘股票維持原有即時查詢 + 快取策略
-- [x] 更新三份交付文件:
-  - [x] 投資分析平台資料庫系統交付文件_v5.0.md
-  - [x] 投資分析平台資料庫系統實作總結_v5.0.md
-  - [x] 投資分析平台資料整合優化方案_v5.0.md
+### 2025-01-03 資料同步測試與擴展
+- [x] 測試定期同步功能 - 成功建立並測試同步腳本,修正 API 端點問題
+- [x] 擴展 S&P 500 清單 - 補充完整 501 支股票清單 (從 Wikipedia 提取)
+- [x] 驗證資料同步結果 - 已建立測試報告,確認功能正常運作

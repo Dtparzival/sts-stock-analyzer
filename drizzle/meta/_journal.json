@@ -8,13 +8,6 @@
       "when": 1733065200000,
       "tag": "0000_init_tw_stock_tables",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1764717467274,
-      "tag": "0001_clumsy_hercules",
-      "breakpoints": true
     }
   ]
 }
