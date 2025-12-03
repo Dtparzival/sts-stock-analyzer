@@ -91,20 +91,21 @@ export default function MobileHotStocksCarousel({
         </div>
       </div>
       
-      {/* 指示器點點 */}
-      <div className="flex justify-center gap-2 mt-4">
-        {stocks.map((_, index) => (
-          <button
-            key={index}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              index === selectedIndex 
-                ? 'w-6 bg-primary' 
-                : 'w-2 bg-primary/30'
-            }`}
-            onClick={() => emblaApi?.scrollTo(index)}
-            aria-label={`前往第 ${index + 1} 張卡片`}
+      {/* 進度條指示器 - 優化手機版顯示 */}
+      <div className="mt-4 px-2">
+        <div className="relative h-1 bg-primary/20 rounded-full overflow-hidden">
+          <div 
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-300 ease-out"
+            style={{
+              width: `${((selectedIndex + 1) / stocks.length) * 100}%`
+            }}
           />
-        ))}
+        </div>
+        <div className="flex justify-center mt-2">
+          <span className="text-xs text-muted-foreground">
+            {selectedIndex + 1} / {stocks.length}
+          </span>
+        </div>
       </div>
     </div>
   );

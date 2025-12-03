@@ -36,8 +36,26 @@ function formatRelativeTime(date: Date): string {
 export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
-  // 熱門股票區域的市場切換狀態（預設顯示全部）
-  const [hotStocksMarket, setHotStocksMarket] = useState<MarketType>('ALL');
+  
+  // 熱門股票區域的市場切換狀態（從 localStorage 讀取或預設顯示全部）
+  const [hotStocksMarket, setHotStocksMarket] = useState<MarketType>(() => {
+    try {
+      const saved = localStorage.getItem('hotStocksMarket');
+      return (saved as MarketType) || 'ALL';
+    } catch {
+      return 'ALL';
+    }
+  });
+  
+  // 當市場切換時儲存到 localStorage
+  const handleMarketChange = (market: MarketType) => {
+    setHotStocksMarket(market);
+    try {
+      localStorage.setItem('hotStocksMarket', market);
+    } catch (error) {
+      console.error('Failed to save market preference:', error);
+    }
+  };
   
 
   
@@ -502,16 +520,20 @@ export default function Home() {
             </p>
           </div>
           
-          {/* 市場切換標籤 - 修正 z-index 避免被遮蔽 */}
+          {/* 市場切換標籤 - 修正樣式確保文字可見 */}
           <div className="flex justify-center mb-8 px-4 relative z-20">
             <div className="inline-flex items-center gap-2 p-1.5 bg-muted/50 rounded-xl border border-border shadow-sm">
               <Button
-                variant={hotStocksMarket === 'ALL' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                onClick={() => setHotStocksMarket('ALL' as MarketType)}
-                className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base ${
+                onClick={() => handleMarketChange('ALL' as MarketType)}
+                style={{
+                  background: hotStocksMarket === 'ALL' ? 'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)' : 'transparent',
+                  color: hotStocksMarket === 'ALL' ? '#ffffff' : 'inherit',
+                }}
+                className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base font-medium ${
                   hotStocksMarket === 'ALL' 
-                    ? 'bg-gradient-blue-primary text-white shadow-md' 
+                    ? 'shadow-md hover:opacity-90' 
                     : 'hover:bg-muted'
                 }`}
               >
@@ -519,24 +541,32 @@ export default function Home() {
                 全部
               </Button>
               <Button
-                variant={hotStocksMarket === 'US' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                onClick={() => setHotStocksMarket('US')}
-                className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base ${
+                onClick={() => handleMarketChange('US')}
+                style={{
+                  background: hotStocksMarket === 'US' ? 'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)' : 'transparent',
+                  color: hotStocksMarket === 'US' ? '#ffffff' : 'inherit',
+                }}
+                className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base font-medium ${
                   hotStocksMarket === 'US' 
-                    ? 'bg-gradient-blue-primary text-white shadow-md' 
+                    ? 'shadow-md hover:opacity-90' 
                     : 'hover:bg-muted'
                 }`}
               >
                 美股
               </Button>
               <Button
-                variant={hotStocksMarket === 'TW' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                onClick={() => setHotStocksMarket('TW')}
-                className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base ${
+                onClick={() => handleMarketChange('TW')}
+                style={{
+                  background: hotStocksMarket === 'TW' ? 'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)' : 'transparent',
+                  color: hotStocksMarket === 'TW' ? '#ffffff' : 'inherit',
+                }}
+                className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base font-medium ${
                   hotStocksMarket === 'TW' 
-                    ? 'bg-gradient-blue-primary text-white shadow-md' 
+                    ? 'shadow-md hover:opacity-90' 
                     : 'hover:bg-muted'
                 }`}
               >
