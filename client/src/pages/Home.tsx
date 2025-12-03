@@ -16,6 +16,7 @@ import RecommendationEmptyState from "@/components/RecommendationEmptyState";
 import RecommendationSkeleton from "@/components/RecommendationSkeleton";
 import MobileRecommendationCarousel from "@/components/MobileRecommendationCarousel";
 import MobileHotStocksCarousel from "@/components/MobileHotStocksCarousel";
+import SmartSearchDropdown from "@/components/SmartSearchDropdown";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -35,13 +36,10 @@ function formatRelativeTime(date: Date): string {
 export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMarket, setSelectedMarket] = useState<MarketType>('US');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<Array<{ symbol: string; name: string }>>([]);
+  // 熱門股票區域的市場切換狀態（預設顯示全部）
+  const [hotStocksMarket, setHotStocksMarket] = useState<MarketType>('ALL');
   
-  // 使用防抖機制，延遲 300ms 更新建議
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
   
   // 獲取 AI 驅動的智能推薦（推薦未看過的優質股票）
   const { data: recommendationData, isLoading: isLoadingHistory, refetch: refetchRecommendations } = (trpc as any).history.getRecommendations.useQuery(
@@ -81,15 +79,11 @@ export default function Home() {
     }
   };
   
-  // 根據當前市場過濾推薦股票
+  // 推薦股票不再根據市場過濾，顯示所有推薦
   const filteredRecommendations = useMemo(() => {
     if (!recentHistory) return [];
-    
-    return recentHistory.filter((item: any) => {
-      const market = getMarketFromSymbol(item.symbol);
-      return market === selectedMarket;
-    });
-  }, [recentHistory, selectedMarket]);
+    return recentHistory;
+  }, [recentHistory]);
   
   // 漸進式載入：分離前 3 個和後 3 個推薦股票
   const [showDelayedStocks, setShowDelayedStocks] = useState(false);
@@ -287,76 +281,9 @@ export default function Home() {
     logoutMutation.mutate();
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // 如果是台股市場且輸入中文，嘗試匹配中文名稱
-      if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(searchQuery)) {
-        const results = searchTWStockByName(searchQuery);
-        if (results.length > 0) {
-          // 使用第一個匹配結果
-          setLocation(`/stock/${results[0].symbol}`);
-          setSearchQuery('');
-          setShowSuggestions(false);
-          return;
-        }
-      }
-      // 如果是台股市場，自動添加 .TW 後綴
-      let symbol = searchQuery.trim().toUpperCase();
-      if (selectedMarket === 'TW' && !symbol.endsWith('.TW') && !symbol.endsWith('.TWO')) {
-        symbol = `${symbol}.TW`;
-      }
-      setLocation(`/stock/${symbol}`);
-      setSearchQuery('');
-      setShowSuggestions(false);
-    }
-  };
-  
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-  };
-  
-  // 使用 useEffect 監聴防抖後的搜尋查詢，更新建議
-  useEffect(() => {
-    if (!debouncedSearchQuery.trim()) {
-      setShowSuggestions(false);
-      setSuggestions([]);
-      return;
-    }
-
-    // 如果是台股市場且輸入中文，顯示建議
-    if (selectedMarket === 'TW' && /[\u4e00-\u9fa5]/.test(debouncedSearchQuery)) {
-      const results = searchTWStockByName(debouncedSearchQuery);
-      setSuggestions(results.slice(0, 5)); // 最多顯示 5 個建議
-      setShowSuggestions(results.length > 0);
-    } 
-    // 如果是美股市場，從 S&P 500 清單中搜尋
-    else if (selectedMarket === 'US') {
-      const query = debouncedSearchQuery.toUpperCase();
-      const results = sp500Stocks
-        .filter(stock => 
-          stock.symbol.toUpperCase().includes(query) || 
-          stock.name.toUpperCase().includes(query)
-        )
-        .slice(0, 8) // 美股顯示更多建議（8 個）
-        .map(stock => ({
-          symbol: stock.symbol,
-          name: stock.name
-        }));
-      setSuggestions(results);
-      setShowSuggestions(results.length > 0);
-    } 
-    else {
-      setShowSuggestions(false);
-      setSuggestions([]);
-    }
-  }, [debouncedSearchQuery, selectedMarket]);
-  
-  const handleSuggestionClick = (symbol: string) => {
+  // 智能搜尋導航處理
+  const handleSmartSearchNavigate = (symbol: string, market: 'TW' | 'US') => {
     setLocation(`/stock/${symbol}`);
-    setSearchQuery('');
-    setShowSuggestions(false);
   };
 
   return (
@@ -449,92 +376,13 @@ export default function Home() {
               </h2>
               <div className="reading-optimized px-4 animate-slide-up animate-delay-100">
                 <p className="text-body-large" style={{ color: 'var(--color-text-secondary)' }}>
-                  深度分析，即時追蹤{selectedMarket === 'US' ? '美股' : '台股'}市場趋势，為您的投資組合提供專業建議。
+                  深度分析，即時追蹤台美股市場趨勢，為您的投資組合提供專業建議。
                 </p>
               </div>
             </div>
 
-            {/* 市場切換器 - 優化設計 */}
-            <div className="flex flex-col sm:flex-row justify-center gap-3 mb-8 px-4">
-              <Button
-                variant={selectedMarket === 'US' ? 'default' : 'outline'}
-                onClick={() => setSelectedMarket('US')}
-                className={`gap-2 px-4 sm:px-6 py-4 sm:py-6 text-sm sm:text-base font-medium transition-all w-full sm:w-auto ${
-                  selectedMarket === 'US' 
-                    ? 'bg-gradient-primary text-white shadow-lg scale-105' 
-                    : 'hover:border-primary/50 hover:bg-primary/5'
-                }`}
-              >
-                <Globe className="h-5 w-5" />
-                美股市場
-              </Button>
-              <Button
-                variant={selectedMarket === 'TW' ? 'default' : 'outline'}
-                onClick={() => setSelectedMarket('TW')}
-                className={`gap-2 px-4 sm:px-6 py-4 sm:py-6 text-sm sm:text-base font-medium transition-all w-full sm:w-auto ${
-                  selectedMarket === 'TW' 
-                    ? 'bg-gradient-primary text-white shadow-lg scale-105' 
-                    : 'hover:border-primary/50 hover:bg-primary/5'
-                }`}
-              >
-                <Globe className="h-5 w-5" />
-                台股市場
-              </Button>
-            </div>
-
-            {/* 搜尋框 - 優化設計 */}
-            <form onSubmit={handleSearch} className="max-w-3xl mx-auto px-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-xl rounded-2xl"></div>
-                <div className="relative bg-card border-2 border-border rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder={selectedMarket === 'US' ? "輸入股票代碼（例如：AAPL）" : "輸入股票代碼（例如：2330）"}
-                        value={searchQuery}
-                        onChange={handleSearchInputChange}
-                        onFocus={() => {
-                          if (suggestions.length > 0) {
-                            setShowSuggestions(true);
-                          }
-                        }}
-                        onBlur={() => {
-                          // 延遲隱藏，讓點擊建議有時間觸發
-                          setTimeout(() => setShowSuggestions(false), 200);
-                        }}
-                        className="pl-11 sm:pl-14 pr-3 sm:pr-4 h-12 sm:h-14 text-base sm:text-lg border-0 focus-visible:ring-0 bg-transparent"
-                      />
-                      {/* 自動完成建議 */}
-                      {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-card border-2 border-border rounded-xl shadow-2xl z-10 max-h-80 overflow-y-auto">
-                          {suggestions.map((suggestion) => (
-                            <button
-                              key={suggestion.symbol}
-                              type="button"
-                              onClick={() => handleSuggestionClick(suggestion.symbol)}
-                              className="w-full px-5 py-4 text-left hover:bg-primary/10 transition-colors flex flex-col items-start border-b border-border last:border-0"
-                            >
-                              <span className="font-semibold text-lg text-foreground">{suggestion.symbol}</span>
-                              <span className="text-sm text-muted-foreground mt-1">{suggestion.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <Button 
-                      type="submit" 
-                      size="lg" 
-                      className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base font-semibold bg-gradient-gold hover:bg-gradient-gold-hover border-0 shadow-gold-lg button-hover w-full sm:w-auto"
-                    >
-                      搜尋
-                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </form>
+            {/* 智能搜尋框 - 支援台美股統一搜尋 */}
+            <SmartSearchDropdown onNavigate={handleSmartSearchNavigate} />
           </div>
         </div>
 
@@ -654,15 +502,15 @@ export default function Home() {
             </p>
           </div>
           
-          {/* 市場切換標籤 */}
-          <div className="flex justify-center mb-8 px-4">
+          {/* 市場切換標籤 - 修正 z-index 避免被遮蔽 */}
+          <div className="flex justify-center mb-8 px-4 relative z-10">
             <div className="inline-flex items-center gap-2 p-1.5 bg-muted/50 rounded-xl border border-border shadow-sm">
               <Button
-                variant={selectedMarket === 'ALL' ? 'default' : 'ghost'}
+                variant={hotStocksMarket === 'ALL' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSelectedMarket('ALL' as MarketType)}
+                onClick={() => setHotStocksMarket('ALL' as MarketType)}
                 className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base ${
-                  selectedMarket === 'ALL' 
+                  hotStocksMarket === 'ALL' 
                     ? 'bg-gradient-blue-primary text-white shadow-md' 
                     : 'hover:bg-muted'
                 }`}
@@ -671,11 +519,11 @@ export default function Home() {
                 全部
               </Button>
               <Button
-                variant={selectedMarket === 'US' ? 'default' : 'ghost'}
+                variant={hotStocksMarket === 'US' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSelectedMarket('US')}
+                onClick={() => setHotStocksMarket('US')}
                 className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base ${
-                  selectedMarket === 'US' 
+                  hotStocksMarket === 'US' 
                     ? 'bg-gradient-blue-primary text-white shadow-md' 
                     : 'hover:bg-muted'
                 }`}
@@ -683,11 +531,11 @@ export default function Home() {
                 美股
               </Button>
               <Button
-                variant={selectedMarket === 'TW' ? 'default' : 'ghost'}
+                variant={hotStocksMarket === 'TW' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSelectedMarket('TW')}
+                onClick={() => setHotStocksMarket('TW')}
                 className={`px-4 sm:px-6 py-2 rounded-lg transition-all text-sm sm:text-base ${
-                  selectedMarket === 'TW' 
+                  hotStocksMarket === 'TW' 
                     ? 'bg-gradient-blue-primary text-white shadow-md' 
                     : 'hover:bg-muted'
                 }`}
@@ -701,9 +549,9 @@ export default function Home() {
           <div className="block md:hidden">
             <MobileHotStocksCarousel 
               stocks={(() => {
-                const allStocks = selectedMarket === 'ALL' 
+                const allStocks = hotStocksMarket === 'ALL' 
                   ? [...HOT_STOCKS.US, ...HOT_STOCKS.TW]
-                  : HOT_STOCKS[selectedMarket];
+                  : HOT_STOCKS[hotStocksMarket];
                 
                 return allStocks.map(stock => {
                   const market = getMarketFromSymbol(stock.symbol);
@@ -714,11 +562,11 @@ export default function Home() {
                   };
                 });
               })()}
-              market={selectedMarket}
+              market={hotStocksMarket}
               onStockClick={(symbol) => {
-                const allStocks = selectedMarket === 'ALL' 
+                const allStocks = hotStocksMarket === 'ALL' 
                   ? [...HOT_STOCKS.US, ...HOT_STOCKS.TW]
-                  : HOT_STOCKS[selectedMarket];
+                  : HOT_STOCKS[hotStocksMarket];
                 
                 const originalStock = allStocks.find(s => {
                   const market = getMarketFromSymbol(s.symbol);
@@ -736,9 +584,9 @@ export default function Home() {
           {/* 平板/桌面版：網格佈局 */}
           <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6 px-4">
             {(() => {
-              const allStocks = selectedMarket === 'ALL' 
+              const allStocks = hotStocksMarket === 'ALL' 
                 ? [...HOT_STOCKS.US, ...HOT_STOCKS.TW]
-                : HOT_STOCKS[selectedMarket];
+                : HOT_STOCKS[hotStocksMarket];
               
               return allStocks.map((stock, index) => {
                 const market = getMarketFromSymbol(stock.symbol);

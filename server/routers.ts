@@ -126,6 +126,69 @@ export const appRouter = router({
       }),
   }),
 
+  // 統一搜尋 API - 支援台美股模糊比對
+  search: router({
+    // 智能搜尋 - 同時搜尋台股與美股
+    unified: publicProcedure
+      .input(z.object({
+        query: z.string().min(1, '搜尋關鍵字不可為空'),
+        limit: z.number().int().positive().optional().default(10),
+      }))
+      .query(async ({ input }) => {
+        const { query, limit } = input;
+        
+        try {
+          // 並行搜尋台股與美股
+          const [twResults, usResults] = await Promise.allSettled([
+            db.searchTwStocks(query, limit),
+            (async () => {
+              const { searchUsStocks } = await import('./db_us');
+              return searchUsStocks(query, limit);
+            })(),
+          ]);
+          
+          // 處理台股結果
+          const twStocks = twResults.status === 'fulfilled' ? twResults.value.map(stock => ({
+            symbol: stock.symbol,
+            name: stock.name,
+            shortName: stock.shortName,
+            market: 'TW' as const,
+            industry: stock.industry,
+            type: stock.type,
+          })) : [];
+          
+          // 處理美股結果
+          const usStocks = usResults.status === 'fulfilled' ? usResults.value.map(stock => ({
+            symbol: stock.symbol,
+            name: stock.name,
+            shortName: stock.name, // 美股使用 name 作為 shortName
+            market: 'US' as const,
+            industry: stock.sector || null,
+            type: 'STOCK' as const,
+          })) : [];
+          
+          // 合併結果並限制總數
+          const allResults = [...twStocks, ...usStocks].slice(0, limit * 2);
+          
+          return {
+            success: true,
+            data: allResults,
+            count: allResults.length,
+            breakdown: {
+              tw: twStocks.length,
+              us: usStocks.length,
+            },
+          };
+        } catch (error) {
+          console.error('[search.unified] Error:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: '搜尋失敗',
+          });
+        }
+      }),
+  }),
+
   stock: router({
     // 獲取股票基本資訊和價格數據
     getStockData: publicProcedure
