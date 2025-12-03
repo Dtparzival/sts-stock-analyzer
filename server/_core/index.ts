@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startAllSchedules } from "../jobs/syncTwStockData";
 import { startUsStockSchedules } from "../jobs/syncUsStockData";
+import { startUsScheduledSyncs } from "../jobs/syncUsStockDataScheduled";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -65,8 +66,11 @@ async function startServer() {
     // 啟動台股資料同步排程
     startAllSchedules();
     
-    // 啟動美股資料同步排程
+    // 啟動美股資料同步排程 (即時查詢模式)
     startUsStockSchedules();
+    
+    // 啟動美股定期同步排程 (S&P 500 + 主要 ETF)
+    startUsScheduledSyncs();
   });
 }
 
