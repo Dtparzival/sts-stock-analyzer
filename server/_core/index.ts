@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startAllSchedules } from "../jobs/syncTwStockData";
+import { startUsScheduledSyncs } from "../jobs/syncUsStockDataScheduled";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -63,6 +64,9 @@ async function startServer() {
     
     // 啟動台股資料同步排程
     startAllSchedules();
+    
+    // 啟動美股定期同步排程 (v5.0 混合同步架構)
+    startUsScheduledSyncs();
   });
 }
 
