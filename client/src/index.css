@@ -1070,4 +1070,23 @@
     .text-heading-3 { font-size: 1.25rem; }
     .text-heading-4 { font-size: 1.125rem; }
   }
+  
+  /* 底部導航列動畫與樣式 */
+  .animate-bounce-subtle {
+    animation: bounce-subtle 0.6s ease-in-out;
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* 安全區域支援（適用於有瀏海或底部橫條的裝置） */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
