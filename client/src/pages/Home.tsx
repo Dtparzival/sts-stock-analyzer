@@ -19,7 +19,6 @@ import MobileHotStocksCarousel from "@/components/MobileHotStocksCarousel";
 import SmartSearchDropdown from "@/components/SmartSearchDropdown";
 import BottomSheet from "@/components/BottomSheet";
 import MarketSelectorItem from "@/components/MarketSelectorItem";
-import MobileBottomNav from "@/components/MobileBottomNav";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -331,20 +330,28 @@ export default function Home() {
                 <div className="h-10 w-20 bg-muted animate-pulse rounded-lg" />
               ) : user ? (
                 <>
-                  {/* 桌面版：顯示導航按鈕 */}
                   <Button variant="ghost" size="sm" onClick={() => setLocation("/watchlist")} className="hidden sm:flex hover:bg-primary/10">
                     <Star className="h-4 w-4 mr-2" />
                     收藏
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setLocation("/watchlist")} className="sm:hidden hover:bg-primary/10">
+                    <Star className="h-4 w-4" />
                   </Button>
                   
                   <Button variant="ghost" size="sm" onClick={() => setLocation("/portfolio")} className="hidden sm:flex hover:bg-primary/10">
                     <Wallet className="h-4 w-4 mr-2" />
                     投資組合
                   </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setLocation("/portfolio")} className="sm:hidden hover:bg-primary/10">
+                    <Wallet className="h-4 w-4" />
+                  </Button>
                   
                   <Button variant="ghost" size="sm" onClick={() => setLocation("/history")} className="hidden sm:flex hover:bg-primary/10">
                     <History className="h-4 w-4 mr-2" />
                     歷史
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setLocation("/history")} className="sm:hidden hover:bg-primary/10">
+                    <History className="h-4 w-4" />
                   </Button>
                   
                   <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-border">
@@ -746,9 +753,6 @@ export default function Home() {
           />
         </div>
       </BottomSheet>
-      
-      {/* 手機版底部導航列 */}
-      {user && <MobileBottomNav />}
     </div>
   );
 }

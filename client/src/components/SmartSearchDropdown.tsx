@@ -1,10 +1,9 @@
-import { Search, TrendingUp, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@shared/hooks/useDebounce";
-import MobileFullScreenSearch from "@/components/MobileFullScreenSearch";
 
 interface SmartSearchDropdownProps {
   onNavigate: (symbol: string, market: 'TW' | 'US') => void;
@@ -13,7 +12,6 @@ interface SmartSearchDropdownProps {
 export default function SmartSearchDropdown({ onNavigate }: SmartSearchDropdownProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -59,47 +57,30 @@ export default function SmartSearchDropdown({ onNavigate }: SmartSearchDropdownP
   };
   
   return (
-    <>
-      {/* 手機版：點擊後打開全螢幕搜尋 */}
-      <div className="sm:hidden max-w-3xl mx-auto px-4">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-xl rounded-2xl"></div>
-          <button
-            type="button"
-            onClick={() => setIsMobileSearchOpen(true)}
-            className="relative w-full bg-card border-2 border-border rounded-xl shadow-xl p-4 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
-          >
-            <Search className="h-6 w-6 text-muted-foreground shrink-0" />
-            <span className="text-base text-muted-foreground">搜尋股票代號或名稱...</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 桌面版：保持原有搜尋體驗 */}
-      <form onSubmit={handleSearch} className="hidden sm:block max-w-3xl mx-auto px-4">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-xl rounded-2xl"></div>
-          <div className="relative bg-card border-2 border-border rounded-xl sm:rounded-2xl shadow-xl overflow-visible">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground z-10" />
-                <Input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="輸入股票代碼或名稱（例如：AAPL、2330、台積電）"
-                  value={searchQuery}
-                  onChange={handleSearchInputChange}
-                  onFocus={() => {
-                    if (searchResults?.data && searchResults.data.length > 0) {
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  onBlur={() => {
-                    // 延遲隱藏，讓點擊建議有時間觸發
-                    setTimeout(() => setShowSuggestions(false), 200);
-                  }}
-                  className="pl-11 sm:pl-14 pr-3 sm:pr-4 h-12 sm:h-14 text-base sm:text-lg border-0 focus-visible:ring-0 bg-transparent"
-                />
+    <form onSubmit={handleSearch} className="max-w-3xl mx-auto px-4">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-xl rounded-2xl"></div>
+        <div className="relative bg-card border-2 border-border rounded-xl sm:rounded-2xl shadow-xl overflow-visible">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground z-10" />
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="輸入股票代碼或名稱（例如：AAPL、2330、台積電）"
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onFocus={() => {
+                  if (searchResults?.data && searchResults.data.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // 延遲隱藏，讓點擊建議有時間觸發
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
+                className="pl-11 sm:pl-14 pr-3 sm:pr-4 h-12 sm:h-14 text-base sm:text-lg border-0 focus-visible:ring-0 bg-transparent"
+              />
               
               {/* 載入指示器 */}
               {isLoading && (
@@ -163,14 +144,6 @@ export default function SmartSearchDropdown({ onNavigate }: SmartSearchDropdownP
           </div>
         </div>
       </div>
-      </form>
-
-      {/* 手機版全螢幕搜尋 */}
-      <MobileFullScreenSearch
-        isOpen={isMobileSearchOpen}
-        onClose={() => setIsMobileSearchOpen(false)}
-        onNavigate={onNavigate}
-      />
-    </>
+    </form>
   );
 }
