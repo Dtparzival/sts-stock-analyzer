@@ -17,6 +17,8 @@ import RecommendationSkeleton from "@/components/RecommendationSkeleton";
 import MobileRecommendationCarousel from "@/components/MobileRecommendationCarousel";
 import MobileHotStocksCarousel from "@/components/MobileHotStocksCarousel";
 import SmartSearchDropdown from "@/components/SmartSearchDropdown";
+import BottomSheet from "@/components/BottomSheet";
+import MarketSelectorItem from "@/components/MarketSelectorItem";
 
 // 格式化相對時間
 function formatRelativeTime(date: Date): string {
@@ -47,6 +49,9 @@ export default function Home() {
     }
   });
   
+  // 底部選單開關狀態
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  
   // 當市場切換時儲存到 localStorage
   const handleMarketChange = (market: MarketType) => {
     setHotStocksMarket(market);
@@ -55,6 +60,8 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to save market preference:', error);
     }
+    // 關閉底部選單
+    setIsBottomSheetOpen(false);
   };
   
 
@@ -520,8 +527,25 @@ export default function Home() {
             </p>
           </div>
           
-          {/* 市場切換標籤 - 修正樣式確保文字可見 */}
-          <div className="flex justify-center mb-8 px-4 relative z-20">
+          {/* 手機版：底部彈出選單觸發按鈕 */}
+          <div className="sm:hidden flex justify-center mb-8 px-4">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setIsBottomSheetOpen(true)}
+              className="w-full max-w-xs px-6 py-3 rounded-xl border-2 border-border bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <span className="text-base font-semibold">
+                {hotStocksMarket === 'ALL' && '全部市場'}
+                {hotStocksMarket === 'US' && '美股市場'}
+                {hotStocksMarket === 'TW' && '台股市場'}
+              </span>
+              <span className="ml-2 text-muted-foreground">▼</span>
+            </Button>
+          </div>
+          
+          {/* 平板/桌面版：市場切換標籤 */}
+          <div className="hidden sm:flex justify-center mb-8 px-4 relative z-20">
             <div className="inline-flex items-center gap-2 p-1.5 bg-muted/50 rounded-xl border border-border shadow-sm">
               <Button
                 variant="ghost"
@@ -698,6 +722,37 @@ export default function Home() {
       
       {/* 浮動 AI 顧問 */}
       <FloatingAIChat />
+      
+      {/* 手機版：市場選擇底部選單 */}
+      <BottomSheet
+        isOpen={isBottomSheetOpen}
+        onClose={() => setIsBottomSheetOpen(false)}
+        title="選擇市場"
+      >
+        <div className="space-y-3">
+          <MarketSelectorItem
+            market="ALL"
+            label="全部市場"
+            description="顯示台股與美股所有熱門股票"
+            isSelected={hotStocksMarket === 'ALL'}
+            onClick={() => handleMarketChange('ALL')}
+          />
+          <MarketSelectorItem
+            market="US"
+            label="美股市場"
+            description="僅顯示美國股市熱門股票"
+            isSelected={hotStocksMarket === 'US'}
+            onClick={() => handleMarketChange('US')}
+          />
+          <MarketSelectorItem
+            market="TW"
+            label="台股市場"
+            description="僅顯示台灣股市熱門股票"
+            isSelected={hotStocksMarket === 'TW'}
+            onClick={() => handleMarketChange('TW')}
+          />
+        </div>
+      </BottomSheet>
     </div>
   );
 }
