@@ -128,14 +128,15 @@ export const appRouter = router({
 
   // 統一搜尋 API - 支援台美股模糊比對
   search: router({
-    // 智能搜尋 - 同時搜尋台股與美股
+    // 智能搜尋 - 同時搜尋台股與美股，支援個人化排序
     unified: publicProcedure
       .input(z.object({
         query: z.string().min(1, '搜尋關鍵字不可為空'),
         limit: z.number().int().positive().optional().default(10),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const { query, limit } = input;
+        const userId = ctx.user?.id;
         
         try {
           // 並行搜尋台股與美股
@@ -167,8 +168,69 @@ export const appRouter = router({
             type: 'STOCK' as const,
           })) : [];
           
-          // 合併結果並限制總數
-          const allResults = [...twStocks, ...usStocks].slice(0, limit * 2);
+          // 合併結果
+          let allResults = [...twStocks, ...usStocks];
+          
+          // 如果使用者已登入，套用個人化排序
+          if (userId) {
+            try {
+              // 獲取使用者搜尋行為
+              const searchBehavior = await db.getUserSearchBehavior(userId, 100);
+              const behaviorMap = new Map(
+                searchBehavior.map(b => [`${b.market}-${b.symbol}`, b])
+              );
+              
+              // 計算每個結果的個人化分數
+              allResults = allResults.map(stock => {
+                const key = `${stock.market}-${stock.symbol}`;
+                const behavior = behaviorMap.get(key);
+                
+                let personalScore = 0;
+                if (behavior) {
+                  // 搜尋頻率分數 (0-50分)
+                  const frequencyScore = Math.min(behavior.searchCount * 5, 50);
+                  
+                  // 時間衰減分數 (0-50分)
+                  const daysSinceLastSearch = Math.floor(
+                    (Date.now() - new Date(behavior.lastSearchAt).getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  const recencyScore = Math.max(50 - daysSinceLastSearch * 2, 0);
+                  
+                  personalScore = frequencyScore + recencyScore;
+                }
+                
+                return {
+                  ...stock,
+                  _personalScore: personalScore
+                };
+              });
+              
+              // 按個人化分數排序
+              allResults.sort((a: any, b: any) => (b._personalScore || 0) - (a._personalScore || 0));
+              
+              // 移除內部分數欄位
+              allResults = allResults.map(({ _personalScore, ...stock }) => stock);
+            } catch (error) {
+              console.error('[search.unified] Personalization error:', error);
+              // 如果個人化失敗，繼續使用預設排序
+            }
+          }
+          
+          // 限制總數
+          allResults = allResults.slice(0, limit * 2);
+          
+          // 記錄使用者搜尋行為(非阻塞)
+          if (userId && allResults.length > 0) {
+            (async () => {
+              try {
+                // 記錄第一個搜尋結果
+                const firstResult = allResults[0];
+                await db.recordUserSearch(userId, firstResult.market, firstResult.symbol);
+              } catch (error) {
+                console.error('[search.unified] Failed to record search:', error);
+              }
+            })();
+          }
           
           return {
             success: true,

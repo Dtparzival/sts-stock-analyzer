@@ -254,3 +254,25 @@ export const stockDataCache = mysqlTable("stockDataCache", {
 
 export type StockDataCache = typeof stockDataCache.$inferSelect;
 export type InsertStockDataCache = typeof stockDataCache.$inferInsert;
+
+/**
+ * 使用者搜尋行為追蹤表
+ * 記錄使用者的搜尋行為,用於個人化搜尋排序與建議
+ */
+export const userSearchBehavior = mysqlTable("userSearchBehavior", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // 使用者 ID
+  market: varchar("market", { length: 10 }).notNull(), // 市場: TW / US
+  symbol: varchar("symbol", { length: 20 }).notNull(), // 股票代號
+  searchCount: int("searchCount").default(1).notNull(), // 搜尋次數
+  lastSearchAt: timestamp("lastSearchAt").defaultNow().notNull(), // 最後搜尋時間
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  userMarketSymbolIdx: index("user_market_symbol_idx").on(table.userId, table.market, table.symbol),
+  lastSearchAtIdx: index("lastSearchAt_idx").on(table.lastSearchAt),
+}));
+
+export type UserSearchBehavior = typeof userSearchBehavior.$inferSelect;
+export type InsertUserSearchBehavior = typeof userSearchBehavior.$inferInsert;

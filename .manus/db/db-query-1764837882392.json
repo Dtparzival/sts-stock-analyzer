@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `userSearchBehavior` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `userId` int NOT NULL,\n  `market` varchar(10) NOT NULL,\n  `symbol` varchar(20) NOT NULL,\n  `searchCount` int NOT NULL DEFAULT 1,\n  `lastSearchAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  KEY `userId_idx` (`userId`),\n  KEY `user_market_symbol_idx` (`userId`, `market`, `symbol`),\n  KEY `lastSearchAt_idx` (`lastSearchAt`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute CREATE TABLE IF NOT EXISTS `userSearchBehavior` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `userId` int NOT NULL,\n  `market` varchar(10) NOT NULL,\n  `symbol` varchar(20) NOT NULL,\n  `searchCount` int NOT NULL DEFAULT 1,\n  `lastSearchAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  KEY `userId_idx` (`userId`),\n  KEY `user_market_symbol_idx` (`userId`, `market`, `symbol`),\n  KEY `lastSearchAt_idx` (`lastSearchAt`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1977
+}

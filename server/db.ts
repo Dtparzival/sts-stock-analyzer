@@ -29,7 +29,10 @@ import {
   InsertUsDataSyncError,
   stockDataCache,
   StockDataCache,
-  InsertStockDataCache
+  InsertStockDataCache,
+  userSearchBehavior,
+  UserSearchBehavior,
+  InsertUserSearchBehavior
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -508,4 +511,94 @@ export async function countTwStockPriceRecords(symbol?: string): Promise<number>
 
   const result = await query;
   return result[0]?.count || 0;
+}
+
+// ============================================================================
+// User Search Behavior
+// ============================================================================
+
+/**
+ * 記錄或更新使用者搜尋行為
+ */
+export async function recordUserSearch(userId: number, market: string, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    // 檢查是否已存在記錄
+    const existing = await db.select()
+      .from(userSearchBehavior)
+      .where(
+        and(
+          eq(userSearchBehavior.userId, userId),
+          eq(userSearchBehavior.market, market),
+          eq(userSearchBehavior.symbol, symbol)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 更新現有記錄
+      await db.update(userSearchBehavior)
+        .set({
+          searchCount: existing[0].searchCount + 1,
+          lastSearchAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(userSearchBehavior.id, existing[0].id));
+    } else {
+      // 建立新記錄
+      await db.insert(userSearchBehavior).values({
+        userId,
+        market,
+        symbol,
+        searchCount: 1,
+        lastSearchAt: new Date()
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to record user search:", error);
+  }
+}
+
+/**
+ * 獲取使用者的搜尋行為記錄
+ */
+export async function getUserSearchBehavior(userId: number, limit: number = 50): Promise<UserSearchBehavior[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.select()
+    .from(userSearchBehavior)
+    .where(eq(userSearchBehavior.userId, userId))
+    .orderBy(desc(userSearchBehavior.lastSearchAt))
+    .limit(limit);
+
+  return result;
+}
+
+/**
+ * 獲取使用者所有行為數據(用於AI推薦)
+ * 這是一個臨時函數,返回空陣列以避免錯誤
+ */
+export async function getAllUserBehavior(userId: number): Promise<any[]> {
+  // TODO: 整合多個數據源(搜尋歷史、收藏、投資組合等)
+  const searchBehavior = await getUserSearchBehavior(userId, 100);
+  return searchBehavior;
+}
+
+/**
+ * 獲取使用者最常搜尋的股票
+ */
+export async function getUserTopSearchedStocks(userId: number, limit: number = 10): Promise<UserSearchBehavior[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.select()
+    .from(userSearchBehavior)
+    .where(eq(userSearchBehavior.userId, userId))
+    .orderBy(desc(userSearchBehavior.searchCount), desc(userSearchBehavior.lastSearchAt))
+    .limit(limit);
+
+  return result;
 }
