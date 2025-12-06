@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT \n  (SELECT COUNT(*) FROM twStocks) as total_tw_stocks,\n  (SELECT COUNT(*) FROM twStocks WHERE isActive = 1) as active_tw_stocks,\n  (SELECT COUNT(DISTINCT symbol) FROM twStockPrices) as tw_stocks_with_prices,\n  (SELECT MAX(date) FROM twStockPrices) as latest_price_date,\n  (SELECT COUNT(*) FROM twStockPrices WHERE date = (SELECT MAX(date) FROM twStockPrices)) as latest_day_records\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  (SELECT COUNT(*) FROM twStocks) as total_tw_stocks,\n  (SELECT COUNT(*) FROM twStocks WHERE isActive = 1) as active_tw_stocks,\n  (SELECT COUNT(DISTINCT symbol) FROM twStockPrices) as tw_stocks_with_prices,\n  (SELECT MAX(date) FROM twStockPrices) as latest_price_date,\n  (SELECT COUNT(*) FROM twStockPrices WHERE date = (SELECT MAX(date) FROM twStockPrices)) as latest_day_records\n",
+  "rows": [
+    {
+      "total_tw_stocks": "2725",
+      "active_tw_stocks": "2725",
+      "tw_stocks_with_prices": "1308",
+      "latest_price_date": "2025-12-01",
+      "latest_day_records": "1308"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_tw_stocks\tactive_tw_stocks\ttw_stocks_with_prices\tlatest_price_date\tlatest_day_records\n2725\t2725\t1308\t2025-12-01\t1308\n",
+  "stderr": "",
+  "execution_time_ms": 2372
+}

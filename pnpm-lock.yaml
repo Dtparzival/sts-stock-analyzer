@@ -202,6 +202,9 @@ importers:
       recharts:
         specifier: ^2.15.4
         version: 2.15.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      redis:
+        specifier: ^5.10.0
+        version: 5.10.0
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1614,6 +1617,34 @@ packages:
 
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
+
+  '@redis/bloom@5.10.0':
+    resolution: {integrity: sha512-doIF37ob+l47n0rkpRNgU8n4iacBlKM9xLiP1LtTZTvz8TloJB8qx/MgvhMhKdYG+CvCY2aPBnN2706izFn/4A==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.10.0
+
+  '@redis/client@5.10.0':
+    resolution: {integrity: sha512-JXmM4XCoso6C75Mr3lhKA3eNxSzkYi3nCzxDIKY+YOszYsJjuKbFgVtguVPbLMOttN4iu2fXoc2BGhdnYhIOxA==}
+    engines: {node: '>= 18'}
+
+  '@redis/json@5.10.0':
+    resolution: {integrity: sha512-B2G8XlOmTPUuZtD44EMGbtoepQG34RCDXLZbjrtON1Djet0t5Ri7/YPXvL9aomXqP8lLTreaprtyLKF4tmXEEA==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.10.0
+
+  '@redis/search@5.10.0':
+    resolution: {integrity: sha512-3SVcPswoSfp2HnmWbAGUzlbUPn7fOohVu2weUQ0S+EMiQi8jwjL+aN2p6V3TI65eNfVsJ8vyPvqWklm6H6esmg==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.10.0
+
+  '@redis/time-series@5.10.0':
+    resolution: {integrity: sha512-cPkpddXH5kc/SdRhF0YG0qtjL+noqFT0AcHbQ6axhsPsO7iqPi1cjxgdkE9TNeKiBUUdCaU1DbqkR/LzbzPBhg==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.10.0
 
   '@rolldown/pluginutils@1.0.0-beta.38':
     resolution: {integrity: sha512-N/ICGKleNhA5nc9XXQG/kkKHJ7S55u0x0XUJbbkmdCnFuoRkM1Il12q9q0eX19+M7KKUEPw/daUPIRnxhcxAIw==}
@@ -4263,6 +4294,10 @@ packages:
     resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
     engines: {node: '>=4'}
 
+  redis@5.10.0:
+    resolution: {integrity: sha512-0/Y+7IEiTgVGPrLFKy8oAEArSyEJkU0zvgV5xyi9NzNQ+SLZmyFbUsWIbgPcd4UdUh00opXGKlXJwMmsis5Byw==}
+    engines: {node: '>= 18'}
+
   regenerator-runtime@0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
 
@@ -6478,6 +6513,26 @@ snapshots:
       '@types/react-dom': 19.2.1(@types/react@19.2.2)
 
   '@radix-ui/rect@1.1.1': {}
+
+  '@redis/bloom@5.10.0(@redis/client@5.10.0)':
+    dependencies:
+      '@redis/client': 5.10.0
+
+  '@redis/client@5.10.0':
+    dependencies:
+      cluster-key-slot: 1.1.2
+
+  '@redis/json@5.10.0(@redis/client@5.10.0)':
+    dependencies:
+      '@redis/client': 5.10.0
+
+  '@redis/search@5.10.0(@redis/client@5.10.0)':
+    dependencies:
+      '@redis/client': 5.10.0
+
+  '@redis/time-series@5.10.0(@redis/client@5.10.0)':
+    dependencies:
+      '@redis/client': 5.10.0
 
   '@rolldown/pluginutils@1.0.0-beta.38': {}
 
@@ -9554,6 +9609,14 @@ snapshots:
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
+
+  redis@5.10.0:
+    dependencies:
+      '@redis/bloom': 5.10.0(@redis/client@5.10.0)
+      '@redis/client': 5.10.0
+      '@redis/json': 5.10.0(@redis/client@5.10.0)
+      '@redis/search': 5.10.0(@redis/client@5.10.0)
+      '@redis/time-series': 5.10.0(@redis/client@5.10.0)
 
   regenerator-runtime@0.13.11:
     optional: true

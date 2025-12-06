@@ -1,0 +1,90 @@
+{
+  "query": "\n(SELECT \n  'TW' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM twDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 5)\nUNION ALL\n(SELECT \n  'US' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM usDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 5)\nORDER BY lastSyncAt DESC\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \n(SELECT \n  'TW' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM twDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 5)\nUNION ALL\n(SELECT \n  'US' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM usDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 5)\nORDER BY lastSyncAt DESC\n",
+  "rows": [
+    {
+      "market": "TW",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-03 18:06:33",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "US",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-03 01:43:36",
+      "status": "success",
+      "recordCount": "775",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "US",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-03 01:37:09",
+      "status": "success",
+      "recordCount": "775",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "US",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-03 01:30:42",
+      "status": "success",
+      "recordCount": "775",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "US",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-03 01:24:15",
+      "status": "success",
+      "recordCount": "775",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "US",
+      "dataType": "stocks",
+      "lastSyncAt": "2025-12-03 01:17:56",
+      "status": "success",
+      "recordCount": "25",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "TW",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-02 20:14:28",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "TW",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-02 18:06:41",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "TW",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-02 18:06:37",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL"
+    },
+    {
+      "market": "TW",
+      "dataType": "prices",
+      "lastSyncAt": "2025-12-02 15:19:08",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "market\tdataType\tlastSyncAt\tstatus\trecordCount\terrorMessage\nTW\tprices\t2025-12-03 18:06:33\tsuccess\t0\tNULL\nUS\tprices\t2025-12-03 01:43:36\tsuccess\t775\tNULL\nUS\tprices\t2025-12-03 01:37:09\tsuccess\t775\tNULL\nUS\tprices\t2025-12-03 01:30:42\tsuccess\t775\tNULL\nUS\tprices\t2025-12-03 01:24:15\tsuccess\t775\tNULL\nUS\tstocks\t2025-12-03 01:17:56\tsuccess\t25\tNULL\nTW\tprices\t2025-12-02 20:14:28\tsuccess\t0\tNULL\nTW\tprices\t2025-12-02 18:06:41\tsuccess\t0\tNULL\nTW\tprices\t2025-12-02 18:06:37\tsuccess\t0\tNULL\nTW\tprices\t2025-12-02 15:19:08\tsuccess\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1605
+}

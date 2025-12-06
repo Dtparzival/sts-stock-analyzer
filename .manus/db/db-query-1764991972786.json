@@ -1,0 +1,16 @@
+{
+  "query": "\nSELECT \n  (SELECT COUNT(*) FROM usStocks) as total_us_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE isActive = 1) as active_us_stocks,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as us_stocks_with_prices,\n  (SELECT COUNT(*) FROM usStockPrices) as total_price_records\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  (SELECT COUNT(*) FROM usStocks) as total_us_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE isActive = 1) as active_us_stocks,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as us_stocks_with_prices,\n  (SELECT COUNT(*) FROM usStockPrices) as total_price_records\n",
+  "rows": [
+    {
+      "total_us_stocks": "465",
+      "active_us_stocks": "465",
+      "us_stocks_with_prices": "100",
+      "total_price_records": "3472"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_us_stocks\tactive_us_stocks\tus_stocks_with_prices\ttotal_price_records\n465\t465\t100\t3472\n",
+  "stderr": "",
+  "execution_time_ms": 1553
+}

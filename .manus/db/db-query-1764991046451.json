@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT \n  (SELECT COUNT(*) FROM usStocks) as total_us_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE isActive = 1) as active_us_stocks,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as us_stocks_with_prices,\n  (SELECT MAX(date) FROM usStockPrices) as latest_price_date,\n  (SELECT COUNT(*) FROM usStockPrices WHERE date = (SELECT MAX(date) FROM usStockPrices)) as latest_day_records\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  (SELECT COUNT(*) FROM usStocks) as total_us_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE isActive = 1) as active_us_stocks,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as us_stocks_with_prices,\n  (SELECT MAX(date) FROM usStockPrices) as latest_price_date,\n  (SELECT COUNT(*) FROM usStockPrices WHERE date = (SELECT MAX(date) FROM usStockPrices)) as latest_day_records\n",
+  "rows": [
+    {
+      "total_us_stocks": "465",
+      "active_us_stocks": "465",
+      "us_stocks_with_prices": "100",
+      "latest_price_date": "2025-12-01",
+      "latest_day_records": "112"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_us_stocks\tactive_us_stocks\tus_stocks_with_prices\tlatest_price_date\tlatest_day_records\n465\t465\t100\t2025-12-01\t112\n",
+  "stderr": "",
+  "execution_time_ms": 1670
+}
