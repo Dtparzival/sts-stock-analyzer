@@ -9,8 +9,6 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startAllSchedules } from "../jobs/syncTwStockData";
 import { startUsScheduledSyncs } from "../jobs/syncUsStockDataScheduled";
-import { scheduleCacheCleanup } from "../jobs/cacheCleanup";
-import { initRedisClient } from "../cache/cacheManager";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -61,20 +59,14 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, async () => {
+  server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
-    
-    // 初始化 Redis 快取
-    await initRedisClient();
     
     // 啟動台股資料同步排程
     startAllSchedules();
     
     // 啟動美股定期同步排程 (v5.0 混合同步架構)
     startUsScheduledSyncs();
-    
-    // 啟動快取清理排程
-    scheduleCacheCleanup();
   });
 }
 

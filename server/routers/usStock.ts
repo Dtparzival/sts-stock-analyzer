@@ -8,7 +8,6 @@ import {
   convertPriceToCents,
   calculateChangePercent
 } from "../integrations/twelvedata";
-import { getCache, setCache, clearCache } from "../cache/cacheManager";
 
 /**
  * 美股 tRPC Router
@@ -54,14 +53,19 @@ export const usStockRouter = router({
       const { symbol, useCache } = input;
       
       try {
-        // 檢查快取 (使用多層快取管理器)
+        // 檢查快取
+        let cachedData = null;
         if (useCache) {
-          const cachedData = await getCache('quote', symbol);
+          const cacheKey = `stock_detail:${symbol}:US`;
+          cachedData = await dbUs.getStockDataCache(cacheKey);
+          
           if (cachedData) {
             return {
               success: true,
-              data: cachedData,
+              data: JSON.parse(cachedData.data),
               fromCache: true,
+              cachedAt: cachedData.createdAt,
+              expiresAt: cachedData.expiresAt,
             };
           }
         }
@@ -99,9 +103,19 @@ export const usStockRouter = router({
           } : null,
         };
 
-        // 寫入快取 (使用多層快取管理器)
+        // 寫入快取 (1 小時)
         if (useCache) {
-          await setCache('quote', symbol, result);
+          const cacheKey = `stock_detail:${symbol}:US`;
+          const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 小時後過期
+          
+          await dbUs.setStockDataCache({
+            cacheKey,
+            market: 'US',
+            symbol,
+            dataType: 'detail',
+            data: JSON.stringify(result),
+            expiresAt,
+          });
         }
 
         return {

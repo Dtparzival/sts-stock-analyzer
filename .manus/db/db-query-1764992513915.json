@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE stockDataCache ADD COLUMN IF NOT EXISTS symbol VARCHAR(20) NOT NULL DEFAULT '' AFTER market;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute ALTER TABLE stockDataCache ADD COLUMN IF NOT EXISTS symbol VARCHAR(20) NOT NULL DEFAULT '' AFTER market;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1868
-}

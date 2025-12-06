@@ -1,8 +1,0 @@
-{
-  "query": "\nSELECT \n  'TW' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM twDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 10\nUNION ALL\nSELECT \n  'US' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM usDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 10\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  'TW' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM twDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 10\nUNION ALL\nSELECT \n  'US' as market,\n  dataType,\n  lastSyncAt,\n  status,\n  recordCount,\n  errorMessage\nFROM usDataSyncStatus\nORDER BY lastSyncAt DESC\nLIMIT 10\n",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1221 (HY000) at line 2: Incorrect usage of UNION and LIMIT"
-  ]
-}

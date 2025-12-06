@@ -1,8 +1,0 @@
-{
-  "query": "\nSELECT \n  COUNT(DISTINCT s.symbol) as total_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE lastSyncAt IS NOT NULL) as synced_stocks,\n  (SELECT COUNT(*) FROM usStockPrices) as total_price_records,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as stocks_with_prices,\n  (SELECT COUNT(*) FROM usDataSyncStatus) as sync_status_records,\n  (SELECT COUNT(*) FROM usDataSyncErrors) as error_records,\n  (SELECT MAX(lastSyncAt) FROM usStocks) as latest_sync_time\nFROM usStocks s\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  COUNT(DISTINCT s.symbol) as total_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE lastSyncAt IS NOT NULL) as synced_stocks,\n  (SELECT COUNT(*) FROM usStockPrices) as total_price_records,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as stocks_with_prices,\n  (SELECT COUNT(*) FROM usDataSyncStatus) as sync_status_records,\n  (SELECT COUNT(*) FROM usDataSyncErrors) as error_records,\n  (SELECT MAX(lastSyncAt) FROM usStocks) as latest_sync_time\nFROM usStocks s\n",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 2: Unknown column 'lastsyncat' in 'where clause'"
-  ]
-}
