@@ -7,7 +7,7 @@
  * 3. 最近 30 天歷史價格資料
  * 
  * 使用方式:
- * node scripts/initUsStockData.mjs
+ * pnpm exec tsx scripts/initUsStockData.mjs
  * 
  * 注意事項:
  * - 預計執行時間: 2-3 小時
@@ -39,10 +39,7 @@ console.log('   - 請勿中斷執行過程');
 console.log('   - 建議在非交易時段執行');
 console.log('');
 
-// 詢問使用者是否繼續
-console.log('按 Ctrl+C 取消，或按 Enter 繼續...');
-process.stdin.once('data', async () => {
-  console.log('');
+async function main() {
   console.log('開始同步...');
   console.log('');
 
@@ -127,9 +124,6 @@ process.stdin.once('data', async () => {
     console.error(error);
     process.exit(1);
   }
-});
+}
 
-// 設定 stdin 為 raw mode 以接收輸入
-process.stdin.setRawMode(true);
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
+main();

@@ -539,3 +539,54 @@
 - API 限流控制: 每次請求間隔 8 秒
 - 錯誤記錄與統計
 - 使用方式: `node scripts/initUsStockData.mjs`
+
+
+---
+
+## 更新記錄 (2025-12-06 續)
+
+### 首次美股資料同步執行中 🔄
+- [x] 修改 initUsStockData.mjs 腳本移除互動式確認
+- [x] 啟動美股資料初始化腳本
+- [ ] 等待同步完成（預計 1-2 小時）
+- [ ] 驗證同步結果與資料完整性
+- [ ] 記錄同步統計資訊
+
+### 同步執行資訊
+- 執行時間：2025-12-06 22:47
+- 同步範圍：532 支股票（S&P 500 + 主要 ETF）
+- 預計完成：約 1-2 小時
+- 日誌檔案：/tmp/us-stock-sync.log
+- 執行模式：背景自動執行
+
+
+---
+
+## 更新記錄 (2025-12-06 續)
+
+### 資料同步狀態查詢功能完成 ✅
+- [x] 建立 syncStatus router (server/routers/syncStatus.ts)
+- [x] 實作 getOverview API - 取得台美股同步狀態概覽
+- [x] 實作 getSyncHistory API - 取得同步歷史記錄
+- [x] 實作 getSyncErrors API - 取得同步錯誤記錄
+- [x] 實作 getPriceCoverage API - 取得價格覆蓋率詳情
+- [x] 在 routers.ts 中註冊 syncStatus router
+- [x] 建立 SyncStatus 頁面 (client/src/pages/SyncStatus.tsx)
+- [x] 在 App.tsx 中註冊 /sync-status 路由
+- [x] 建立 syncStatus router 單元測試 (18/18 通過)
+
+### 測試結果
+- ✅ getOverview API 測試通過 (5/5)
+- ✅ getSyncHistory API 測試通過 (4/4)
+- ✅ getSyncErrors API 測試通過 (4/4)
+- ✅ getPriceCoverage API 測試通過 (5/5)
+- ✅ 所有測試執行時間: 8.86 秒
+
+### 功能特點
+- 📊 即時顯示台美股資料統計（股票總數、價格記錄數、覆蓋率等）
+- 📅 顯示資料日期範圍（最早/最新資料日期）
+- ⏰ 顯示最後同步時間
+- 📝 查看同步歷史記錄（台股/美股分別顯示）
+- ⚠️ 查看同步錯誤記錄（未解決錯誤提醒）
+- 🎨 使用配色方案 v3.0 設計
+- 📱 響應式設計支援各種裝置

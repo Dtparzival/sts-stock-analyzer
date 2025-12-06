@@ -1,0 +1,21 @@
+{
+  "query": "\nSELECT \n  COUNT(DISTINCT s.symbol) as total_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE updatedAt IS NOT NULL) as synced_stocks,\n  (SELECT COUNT(*) FROM usStockPrices) as total_price_records,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as stocks_with_prices,\n  (SELECT COUNT(*) FROM usDataSyncStatus) as sync_status_records,\n  (SELECT COUNT(*) FROM usDataSyncErrors WHERE resolved = false) as unresolved_errors,\n  (SELECT MAX(updatedAt) FROM usStocks) as latest_sync_time,\n  (SELECT MIN(date) FROM usStockPrices) as earliest_price_date,\n  (SELECT MAX(date) FROM usStockPrices) as latest_price_date\nFROM usStocks s\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  COUNT(DISTINCT s.symbol) as total_stocks,\n  (SELECT COUNT(*) FROM usStocks WHERE updatedAt IS NOT NULL) as synced_stocks,\n  (SELECT COUNT(*) FROM usStockPrices) as total_price_records,\n  (SELECT COUNT(DISTINCT symbol) FROM usStockPrices) as stocks_with_prices,\n  (SELECT COUNT(*) FROM usDataSyncStatus) as sync_status_records,\n  (SELECT COUNT(*) FROM usDataSyncErrors WHERE resolved = false) as unresolved_errors,\n  (SELECT MAX(updatedAt) FROM usStocks) as latest_sync_time,\n  (SELECT MIN(date) FROM usStockPrices) as earliest_price_date,\n  (SELECT MAX(date) FROM usStockPrices) as latest_price_date\nFROM usStocks s\n",
+  "rows": [
+    {
+      "total_stocks": "465",
+      "synced_stocks": "465",
+      "total_price_records": "3472",
+      "stocks_with_prices": "100",
+      "sync_status_records": "21",
+      "unresolved_errors": "148",
+      "latest_sync_time": "2025-12-06 04:15:52",
+      "earliest_price_date": "2025-10-19",
+      "latest_price_date": "2025-12-01"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_stocks\tsynced_stocks\ttotal_price_records\tstocks_with_prices\tsync_status_records\tunresolved_errors\tlatest_sync_time\tearliest_price_date\tlatest_price_date\n465\t465\t3472\t100\t21\t148\t2025-12-06 04:15:52\t2025-10-19\t2025-12-01\n",
+  "stderr": "",
+  "execution_time_ms": 1697
+}

@@ -18,12 +18,14 @@ import TwStockTest from "./pages/TwStockTest";
 import TwStocks from "./pages/TwStocks";
 import TwStockDetail from "./pages/TwStockDetail";
 import StockSearch from "./pages/StockSearch";
+import SyncStatus from "./pages/SyncStatus";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/search"} component={StockSearch} />
+      <Route path={"/sync-status"} component={SyncStatus} />
       <Route path={"/stock/:market/:symbol"} component={StockDetail} />
       <Route path={"/stock/:symbol"} component={StockDetail} />
       <Route path={"/watchlist"} component={Watchlist} />

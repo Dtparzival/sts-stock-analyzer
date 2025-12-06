@@ -1,0 +1,20 @@
+{
+  "query": "\nSELECT \n  COUNT(DISTINCT s.symbol) as total_stocks,\n  (SELECT COUNT(*) FROM twStockPrices) as total_price_records,\n  (SELECT COUNT(DISTINCT symbol) FROM twStockPrices) as stocks_with_prices,\n  (SELECT COUNT(*) FROM twDataSyncStatus) as sync_status_records,\n  (SELECT COUNT(*) FROM twDataSyncErrors WHERE resolved = false) as unresolved_errors,\n  (SELECT MAX(updatedAt) FROM twStocks) as latest_sync_time,\n  (SELECT MIN(date) FROM twStockPrices) as earliest_price_date,\n  (SELECT MAX(date) FROM twStockPrices) as latest_price_date\nFROM twStocks s\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute \nSELECT \n  COUNT(DISTINCT s.symbol) as total_stocks,\n  (SELECT COUNT(*) FROM twStockPrices) as total_price_records,\n  (SELECT COUNT(DISTINCT symbol) FROM twStockPrices) as stocks_with_prices,\n  (SELECT COUNT(*) FROM twDataSyncStatus) as sync_status_records,\n  (SELECT COUNT(*) FROM twDataSyncErrors WHERE resolved = false) as unresolved_errors,\n  (SELECT MAX(updatedAt) FROM twStocks) as latest_sync_time,\n  (SELECT MIN(date) FROM twStockPrices) as earliest_price_date,\n  (SELECT MAX(date) FROM twStockPrices) as latest_price_date\nFROM twStocks s\n",
+  "rows": [
+    {
+      "total_stocks": "2725",
+      "total_price_records": "1308",
+      "stocks_with_prices": "1308",
+      "sync_status_records": "9",
+      "unresolved_errors": "0",
+      "latest_sync_time": "2025-12-06 03:19:47",
+      "earliest_price_date": "2025-12-01",
+      "latest_price_date": "2025-12-01"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_stocks\ttotal_price_records\tstocks_with_prices\tsync_status_records\tunresolved_errors\tlatest_sync_time\tearliest_price_date\tlatest_price_date\n2725\t1308\t1308\t9\t0\t2025-12-06 03:19:47\t2025-12-01\t2025-12-01\n",
+  "stderr": "",
+  "execution_time_ms": 1644
+}
