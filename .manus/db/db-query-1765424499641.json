@@ -1,0 +1,120 @@
+{
+  "query": "SELECT * FROM twDataSyncStatus ORDER BY lastSyncAt DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT * FROM twDataSyncStatus ORDER BY lastSyncAt DESC LIMIT 10",
+  "rows": [
+    {
+      "id": "210001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-07 18:05:44",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-07 18:05:46",
+      "updatedAt": "2025-12-07 18:05:46"
+    },
+    {
+      "id": "180001",
+      "dataType": "stocks",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-06 03:19:48",
+      "status": "success",
+      "recordCount": "3620",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-06 03:19:47",
+      "updatedAt": "2025-12-06 03:19:47"
+    },
+    {
+      "id": "150001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-03 18:06:33",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-03 18:06:33",
+      "updatedAt": "2025-12-03 18:06:33"
+    },
+    {
+      "id": "120001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 20:14:28",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 20:14:30",
+      "updatedAt": "2025-12-02 20:14:30"
+    },
+    {
+      "id": "90002",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 18:06:41",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 18:06:40",
+      "updatedAt": "2025-12-02 18:06:40"
+    },
+    {
+      "id": "90001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 18:06:37",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 18:06:39",
+      "updatedAt": "2025-12-02 18:06:39"
+    },
+    {
+      "id": "60002",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 15:19:08",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 15:19:09",
+      "updatedAt": "2025-12-02 15:19:09"
+    },
+    {
+      "id": "60001",
+      "dataType": "stocks",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 15:10:07",
+      "status": "success",
+      "recordCount": "3620",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 15:10:07",
+      "updatedAt": "2025-12-02 15:10:07"
+    },
+    {
+      "id": "30001",
+      "dataType": "indicators",
+      "source": "TWSE",
+      "lastSyncAt": "2025-12-02 07:00:15",
+      "status": "success",
+      "recordCount": "0",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 07:00:14",
+      "updatedAt": "2025-12-02 07:00:14"
+    },
+    {
+      "id": "1",
+      "dataType": "prices",
+      "source": "TWSE",
+      "lastSyncAt": "2025-12-02 06:30:23",
+      "status": "success",
+      "recordCount": "1308",
+      "errorMessage": "NULL",
+      "createdAt": "2025-12-02 06:30:23",
+      "updatedAt": "2025-12-02 06:30:23"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdataType\tsource\tlastSyncAt\tstatus\trecordCount\terrorMessage\tcreatedAt\tupdatedAt\n210001\tprices\tfinmind\t2025-12-07 18:05:44\tsuccess\t0\tNULL\t2025-12-07 18:05:46\t2025-12-07 18:05:46\n180001\tstocks\tfinmind\t2025-12-06 03:19:48\tsuccess\t3620\tNULL\t2025-12-06 03:19:47\t2025-12-06 03:19:47\n150001\tprices\tfinmind\t2025-12-03 18:06:33\tsuccess\t0\tNULL\t2025-12-03 18:06:33\t2025-12-03 18:06:33\n120001\tprices\tfinmind\t2025-12-02 20:14:28\tsuccess\t0\tNULL\t2025-12-02 20:14:30\t2025-12-02 20:14:30\n90002\tprices\tfinmind\t2025-12-02 18:06:41\tsuccess\t0\tNULL\t2025-12-02 18:06:40\t2025-12-02 18:06:40\n90001\tprices\tfinmind\t2025-12-02 18:06:37\tsuccess\t0\tNULL\t2025-12-02 18:06:39\t2025-12-02 18:06:39\n60002\tprices\tfinmind\t2025-12-02 15:19:08\tsuccess\t0\tNULL\t2025-12-02 15:19:09\t2025-12-02 15:19:09\n60001\tstocks\tfinmind\t2025-12-02 15:10:07\tsuccess\t3620\tNULL\t2025-12-02 15:10:07\t2025-12-02 15:10:07\n30001\tindicators\tTWSE\t2025-12-02 07:00:15\tsuccess\t0\tNULL\t2025-12-02 07:00:14\t2025-12-02 07:00:14\n1\tprices\tTWSE\t2025-12-02 06:30:23\tsuccess\t1308\tNULL\t2025-12-02 06:30:23\t2025-12-02 06:30:23\n",
+  "stderr": "",
+  "execution_time_ms": 2209
+}

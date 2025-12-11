@@ -15,6 +15,7 @@ import { getUSDToTWDRate, getExchangeRateUpdateTime } from "./exchangeRate";
 import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from './twse';
 import { twStockRouter } from './routers/twStock';
 import { usStockRouter } from './routers/usStock';
+import { syncMonitorRouter } from './routers/syncMonitor';
 // import { calculateAccuracyStats, calculateAccuracyTrend, generateStockAnalysisReport, checkLowAccuracyStocks } from './analysisAccuracy';
 
 /**
@@ -101,6 +102,7 @@ export const appRouter = router({
   system: systemRouter,
   twStock: twStockRouter,
   usStock: usStockRouter,
+  syncMonitor: syncMonitorRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
