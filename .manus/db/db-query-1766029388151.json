@@ -1,0 +1,79 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME;",
+  "rows": [
+    {
+      "TABLE_NAME": "__drizzle_migrations"
+    },
+    {
+      "TABLE_NAME": "analysisCache"
+    },
+    {
+      "TABLE_NAME": "analysisHistory"
+    },
+    {
+      "TABLE_NAME": "portfolio"
+    },
+    {
+      "TABLE_NAME": "portfolioHistory"
+    },
+    {
+      "TABLE_NAME": "portfolioTransactions"
+    },
+    {
+      "TABLE_NAME": "questionStats"
+    },
+    {
+      "TABLE_NAME": "recommendationCache"
+    },
+    {
+      "TABLE_NAME": "searchHistory"
+    },
+    {
+      "TABLE_NAME": "stockDataCache"
+    },
+    {
+      "TABLE_NAME": "twDataSyncErrors"
+    },
+    {
+      "TABLE_NAME": "twDataSyncStatus"
+    },
+    {
+      "TABLE_NAME": "twStockPrices"
+    },
+    {
+      "TABLE_NAME": "twStocks"
+    },
+    {
+      "TABLE_NAME": "usDataSyncErrors"
+    },
+    {
+      "TABLE_NAME": "usDataSyncStatus"
+    },
+    {
+      "TABLE_NAME": "usStockPrices"
+    },
+    {
+      "TABLE_NAME": "usStocks"
+    },
+    {
+      "TABLE_NAME": "userBehavior"
+    },
+    {
+      "TABLE_NAME": "userInteractions"
+    },
+    {
+      "TABLE_NAME": "userSearchBehavior"
+    },
+    {
+      "TABLE_NAME": "users"
+    },
+    {
+      "TABLE_NAME": "watchlist"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\n__drizzle_migrations\nanalysisCache\nanalysisHistory\nportfolio\nportfolioHistory\nportfolioTransactions\nquestionStats\nrecommendationCache\nsearchHistory\nstockDataCache\ntwDataSyncErrors\ntwDataSyncStatus\ntwStockPrices\ntwStocks\nusDataSyncErrors\nusDataSyncStatus\nusStockPrices\nusStocks\nuserBehavior\nuserInteractions\nuserSearchBehavior\nusers\nwatchlist\n",
+  "stderr": "",
+  "execution_time_ms": 1668
+}

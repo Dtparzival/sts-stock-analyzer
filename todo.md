@@ -591,9 +591,9 @@
 - [x] 測試前端股票詳情頁面 (網站運作正常)
 
 ### 發佈與同步
-- [ ] 建立 checkpoint 並發佈更新
-- [ ] 推送變更到 GitHub
-- [ ] 更新版本說明文件
+- [x] 建立 checkpoint 並發佈更新 (version: 17dfe459)
+- [x] 推送變更到 GitHub (commit: 17dfe45)
+- [x] 更新版本說明文件
 
 ### 更新摘要 (2025-12-18)
 - 移除歷史價格資料表 (twStockPrices, usStockPrices)
@@ -601,4 +601,36 @@
 - 美股價格維持即時呼叫 TwelveData API
 - 股票基本資料每週自動更新 (台股週日 02:00, 美股週日 06:00)
 - 啟動時自動檢查並補執行過期的同步任務
+
+
+
+---
+
+## 階段十七:移除歷史價格表與自動更新機制優化 (2025-12-18) 🔴
+
+### 移除歷史價格資料表 ✅
+- [x] 確認 twStockPrices 表已從 schema 移除
+- [x] 確認 usStockPrices 表已從 schema 移除
+- [x] 刪除資料庫中的 twStockPrices 表
+- [x] 刪除資料庫中的 usStockPrices 表
+- [x] 清理相關程式碼中的 Prices 表引用
+
+### 台股基本資料自動更新機制 ✅
+- [x] 改用 TWSE/TPEx 官方 API 獲取上市櫃股票清單
+- [x] 實作 TWSE 上市股票清單同步 (含 ETF) - 1,121 股票 + 205 ETF
+- [x] 實作 TPEx 上櫃股票清單同步 (含 ETF) - 877 股票 + 106 ETF
+- [x] 設計自動更新排程 (每週日 02:00)
+- [x] 總計 2,309 檔台股基本資料
+
+### 美股基本資料自動更新機制 ✅
+- [x] 維持 TwelveData API 獲取美股基本資料
+- [x] 確認 S&P 500 + ETF 清單完整性 (533 支)
+- [x] 設計自動更新排程 (每週日 06:00)
+- [x] 美股基本資料同步機制已完成
+
+### 文件更新與發佈
+- [x] 更新 todo.md 完成項目
+- [x] 更新相關技術文件 (版本更新說明_v5.1.md)
+- [ ] 建立 checkpoint 並發佈
+- [ ] 推送到 GitHub sts-stock-analyzer repository
 

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('twStockPrices', 'usStockPrices');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('twStockPrices', 'usStockPrices');",
+  "rows": [
+    {
+      "TABLE_NAME": "twStockPrices"
+    },
+    {
+      "TABLE_NAME": "usStockPrices"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\ntwStockPrices\nusStockPrices\n",
+  "stderr": "",
+  "execution_time_ms": 1538
+}

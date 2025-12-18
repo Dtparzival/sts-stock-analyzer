@@ -232,7 +232,7 @@ async function checkAndSyncUsStocks(): Promise<void> {
  * 注意: 價格同步已移除，改為即時 API 呼叫
  */
 export async function runStartupSyncCheck(): Promise<void> {
-  console.log('[StartupSync] Starting startup sync check (v4.0 - Stock info only)...');
+  console.log('[StartupSync] Starting startup sync check (v5.0 - TWSE/TPEx Official API)...');
   
   try {
     // 並行檢查台股和美股

@@ -1,21 +1,21 @@
 /**
- * 台股資料同步主程式
+ * 台股資料同步主程式 v5.0
  * 
- * 提供股票基本資料的自動化同步功能
+ * 使用 TWSE/TPEx 官方 OpenAPI 同步股票基本資料
  * 支援排程執行與手動觸發
+ * 
+ * API 來源:
+ * - TWSE: https://openapi.twse.com.tw/v1
+ * - TPEx: https://www.tpex.org.tw/openapi/v1
  * 
  * 注意: 歷史價格資料已改為即時 API 呼叫，不再儲存於資料庫
  */
 
 import cron from 'node-cron';
 import {
-  fetchAllStockInfo,
-  FinMindError,
-} from '../integrations/finmind';
-import {
-  transformStockInfoBatch,
-  formatDate,
-} from '../integrations/dataTransformer';
+  fetchAllTwStockInfo,
+  UnifiedStockInfo,
+} from '../integrations/twseOfficial';
 import {
   batchUpsertTwStocks,
   insertTwDataSyncStatus,
@@ -30,7 +30,21 @@ interface SyncResult {
   success: boolean;
   recordCount: number;
   errorCount: number;
+  twseStocks: number;
+  twseEtfs: number;
+  tpexStocks: number;
+  tpexEtfs: number;
   errors: Array<{ symbol?: string; message: string }>;
+}
+
+/**
+ * 格式化日期為 YYYY-MM-DD
+ */
+export function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -130,47 +144,76 @@ export function getPreviousTradingDay(date: Date): Date {
 }
 
 /**
+ * 轉換 UnifiedStockInfo 為資料庫格式
+ */
+function transformToDbFormat(stock: UnifiedStockInfo) {
+  return {
+    symbol: stock.symbol,
+    name: stock.name,
+    shortName: stock.shortName,
+    industry: stock.industry,
+    market: stock.market,
+    type: stock.type,
+    listedDate: stock.listedDate ? new Date(stock.listedDate) : null,
+    capital: stock.capital,
+    isActive: stock.isActive,
+  };
+}
+
+/**
  * 同步股票基本資料
+ * 
+ * 使用 TWSE/TPEx 官方 OpenAPI 獲取:
+ * - 上市公司基本資料
+ * - 上櫃公司基本資料
+ * - ETF 資料 (從每日交易資料補充)
  * 
  * @returns 同步結果
  */
 export async function syncStockInfo(): Promise<SyncResult> {
-  console.log('[SyncJob] Starting stock info sync...');
+  console.log('[SyncJob] Starting stock info sync using TWSE/TPEx Official API...');
 
   const result: SyncResult = {
     success: false,
     recordCount: 0,
     errorCount: 0,
+    twseStocks: 0,
+    twseEtfs: 0,
+    tpexStocks: 0,
+    tpexEtfs: 0,
     errors: [],
   };
 
   try {
-    // 1. 從 FinMind API 獲取所有股票資料
-    const apiData = await fetchAllStockInfo();
+    // 1. 從 TWSE/TPEx 官方 API 獲取所有股票資料
+    const { stocks, stats } = await fetchAllTwStockInfo();
 
-    if (apiData.length === 0) {
-      throw new Error('No stock data received from FinMind API');
+    if (stocks.length === 0) {
+      throw new Error('No stock data received from TWSE/TPEx Official API');
     }
 
     // 2. 轉換資料格式
-    const stocks = transformStockInfoBatch(apiData);
-
-    if (stocks.length === 0) {
-      throw new Error('All stock data failed validation');
-    }
+    const dbStocks = stocks.map(transformToDbFormat);
 
     // 3. 批次寫入資料庫
-    await batchUpsertTwStocks(stocks);
+    await batchUpsertTwStocks(dbStocks);
 
     result.success = true;
     result.recordCount = stocks.length;
+    result.twseStocks = stats.twseStocks;
+    result.twseEtfs = stats.twseEtfs;
+    result.tpexStocks = stats.tpexStocks;
+    result.tpexEtfs = stats.tpexEtfs;
 
-    console.log(`[SyncJob] Stock info sync completed: ${stocks.length} stocks`);
+    console.log(`[SyncJob] Stock info sync completed:`);
+    console.log(`  - Total: ${stocks.length} stocks`);
+    console.log(`  - TWSE: ${stats.twseStocks} stocks, ${stats.twseEtfs} ETFs`);
+    console.log(`  - TPEx: ${stats.tpexStocks} stocks, ${stats.tpexEtfs} ETFs`);
 
     // 4. 記錄同步狀態
     await insertTwDataSyncStatus({
       dataType: 'stocks',
-      source: 'finmind',
+      source: 'twse_tpex_official',
       lastSyncAt: new Date(),
       status: 'success',
       recordCount: stocks.length,
@@ -188,7 +231,7 @@ export async function syncStockInfo(): Promise<SyncResult> {
     // 記錄錯誤
     await insertTwDataSyncStatus({
       dataType: 'stocks',
-      source: 'finmind',
+      source: 'twse_tpex_official',
       lastSyncAt: new Date(),
       status: 'failed',
       recordCount: 0,
@@ -198,7 +241,7 @@ export async function syncStockInfo(): Promise<SyncResult> {
     await insertTwDataSyncError({
       dataType: 'stocks',
       symbol: null,
-      errorType: error instanceof FinMindError ? error.type : 'Unknown',
+      errorType: 'API_ERROR',
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
       errorStack: error instanceof Error ? error.stack || null : null,
       retryCount: 0,
@@ -223,7 +266,12 @@ export function scheduleStockInfoSync() {
       try {
         const result = await syncStockInfo();
 
-        if (!result.success) {
+        if (result.success) {
+          await notifyOwner({
+            title: '台股基本資料同步完成',
+            content: `同步成功!\n\n總計: ${result.recordCount} 檔\n- TWSE 上市: ${result.twseStocks} 股票, ${result.twseEtfs} ETF\n- TPEx 上櫃: ${result.tpexStocks} 股票, ${result.tpexEtfs} ETF`,
+          });
+        } else {
           await notifyOwner({
             title: '台股基本資料同步失敗',
             content: `錯誤訊息: ${result.errors.map(e => e.message).join(', ')}`,
@@ -251,5 +299,5 @@ export function scheduleStockInfoSync() {
  */
 export function startAllSchedules() {
   scheduleStockInfoSync();
-  console.log('[Scheduler] All schedules started (v4.0 - Stock info only, prices via real-time API)');
+  console.log('[Scheduler] All schedules started (v5.0 - TWSE/TPEx Official API, prices via real-time API)');
 }
