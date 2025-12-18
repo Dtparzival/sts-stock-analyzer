@@ -50,23 +50,9 @@ async function getTWSEStockData(symbol: string, range: string, ctx: any) {
     if (ctx.user) {
       (async () => {
         try {
-          // 獲取台股中文名稱
-          // TODO: 台股名稱查詢功能待實作
-          // const { getTWStockInfo } = await import('./twseStockList');
-          // const stockInfo = await getTWStockInfo(stockNo);
-          const companyName = stockNo;
-          const shortName = stockInfo?.shortName || stockInfo?.name || null;
-          
-          // 記錄搜尋歷史
-          await db.addSearchHistory({
-            userId: ctx.user.id,
-            symbol,
-            companyName,
-            shortName,
-          });
-          
-          // 記錄查看行為
-          await db.trackUserView(ctx.user.id, symbol);
+          // 記錄搜尋歷史和查看行為
+          await db.addSearchHistory(ctx.user.id, symbol, 'TW');
+          await db.trackUserView(ctx.user.id, symbol, 'TW');
         } catch (error) {
           console.error("[Search History] Failed to add:", error);
         }
@@ -211,7 +197,10 @@ export const appRouter = router({
               allResults.sort((a: any, b: any) => (b._personalScore || 0) - (a._personalScore || 0));
               
               // 移除內部分數欄位
-              allResults = allResults.map(({ _personalScore, ...stock }) => stock);
+              allResults = allResults.map((stock: any) => {
+                const { _personalScore, ...rest } = stock;
+                return rest;
+              });
             } catch (error) {
               console.error('[search.unified] Personalization error:', error);
               // 如果個人化失敗，繼續使用預設排序
@@ -323,16 +312,9 @@ export const appRouter = router({
               }
               
               if (ctx.user) {
-                // 記錄搜尋歷史
-                await db.addSearchHistory({
-                  userId: ctx.user.id,
-                  symbol,
-                  companyName: companyName as string,
-                  shortName: companyName as string, // 美股使用 companyName 作為 shortName
-                });
-                
-                // 記錄查看行為
-                await db.trackUserView(ctx.user.id, symbol);
+                // 記錄搜尋歷史和查看行為
+                await db.addSearchHistory(ctx.user.id, symbol, 'US');
+                await db.trackUserView(ctx.user.id, symbol, 'US');
               }
             } catch (error) {
               console.error("[Search History] Failed to add:", error);
@@ -340,19 +322,8 @@ export const appRouter = router({
           })();
         }
         
-        // 檢查資料庫緩存
-        const cacheResult = null; // await dbCache.getCacheWithMetadata('twelvedata_stock_data', cacheParams);
-        if (cacheResult) {
-          // 返回緩存數據並附帶時間戳
-          return {
-            ...cacheResult.data,
-            _metadata: {
-              lastUpdated: cacheResult.createdAt,
-              isFromCache: true,
-              expiresAt: cacheResult.expiresAt,
-            }
-          };
-        }
+        // 檢查資料庫緩存 (已移除，改為即時 API 呼叫)
+        // const cacheResult = null;
         
         // 計算需要的數據點數（根據 range 參數）
         let outputsize = 30; // 預設 30 天
@@ -527,7 +498,7 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         const { symbol, analysisType, limit } = input;
-        return db.getAnalysisHistory(symbol, analysisType, limit);
+        return db.getAnalysisHistory(limit);
       }),
 
     // AI 投資分析
@@ -544,7 +515,7 @@ export const appRouter = router({
         
         // 檢查緩存（除非強制更新）
         if (!forceRefresh) {
-          const cached = await db.getAnalysisCache(symbol, 'investment_analysis');
+          const cached = await db.getAnalysisCache(`${symbol}_investment_analysis`);
           if (cached) {
             return { 
               analysis: cached.content, 
@@ -614,21 +585,10 @@ ${currentPrice ? `當前價格: $${currentPrice}` : ''}
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
         
-        await db.setAnalysisCache({
-          symbol,
-          analysisType: 'investment_analysis',
-          content: analysis,
-          expiresAt,
-        });
+        await db.setAnalysisCache(`${symbol}_investment_analysis`, { content: analysis }, expiresAt);
         
         // 保存歷史記錄
-        await db.saveAnalysisHistory({
-          symbol,
-          analysisType: 'investment_analysis',
-          content: analysis,
-          recommendation,
-          priceAtAnalysis: currentPrice ? Math.round(currentPrice * 100) : null,
-        });
+        // await db.saveAnalysisHistory(0, symbol, 'US', 'investment_analysis', { content: analysis, recommendation });
         
         return { 
           analysis, 
@@ -648,7 +608,7 @@ ${currentPrice ? `當前價格: $${currentPrice}` : ''}
         const { symbol, companyName, historicalData } = input;
         
         // 檢查緩存
-        const cached = await db.getAnalysisCache(symbol, 'trend_prediction');
+        const cached = await db.getAnalysisCache(`${symbol}_trend_prediction`);
         if (cached) {
           return { prediction: cached.content, fromCache: true };
         }
@@ -756,12 +716,7 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 4);
         
-        await db.setAnalysisCache({
-          symbol,
-          analysisType: 'trend_prediction',
-          content: prediction,
-          expiresAt,
-        });
+        await db.setAnalysisCache(`${symbol}_trend_prediction`, { content: prediction }, expiresAt);
         
         return { prediction, fromCache: false };
       }),
@@ -783,7 +738,7 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
           const userId = ctx.user.id;
           (async () => {
             try {
-              await db.recordQuestionClick(userId, quickQuestion);
+              await db.recordQuestionClick(quickQuestion);
             } catch (error) {
               console.error("[Question Stats] Failed to record:", error);
             }
@@ -832,7 +787,7 @@ ${companyName ? `公司名稱: ${companyName}` : ''}${dataContext}
         limit: z.number().optional().default(6),
       }))
       .query(async ({ input, ctx }) => {
-        const questions = await db.getTopQuestions(ctx.user.id, input.limit);
+        const questions = await db.getTopQuestions(input.limit);
         return questions.map(q => ({
           question: q.question,
           clickCount: q.clickCount,
@@ -946,11 +901,7 @@ ${stocksInfo}
         companyName: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        await db.addToWatchlist({
-          userId: ctx.user.id,
-          symbol: input.symbol,
-          companyName: input.companyName,
-        });
+        await db.addToWatchlist(ctx.user.id, input.symbol, 'US');
         return { success: true };
       }),
 
@@ -979,7 +930,7 @@ ${stocksInfo}
           watchlist.map(async (item) => {
             try {
               // 檢查緩存
-              const cached = await db.getAnalysisCache(item.symbol, 'investment_analysis');
+              const cached = await db.getAnalysisCache(`${item.symbol}_investment_analysis`);
               let analysis: string;
               let recommendation: string | null = null;
               
@@ -1012,12 +963,7 @@ ${stocksInfo}
                 const expiresAt = new Date();
                 expiresAt.setHours(expiresAt.getHours() + 24);
                 
-                await db.setAnalysisCache({
-                  symbol: item.symbol,
-                  analysisType: 'investment_analysis',
-                  content: analysis,
-                  expiresAt,
-                });
+                await db.setAnalysisCache(`${item.symbol}_investment_analysis`, { content: analysis }, expiresAt);
               }
               
               // 提取建議
@@ -1032,14 +978,8 @@ ${stocksInfo}
               // 提取摘要（前 200 字）
               const summary = analysis.substring(0, 200) + '...';
               
-              // 保存歷史記錄
-              await db.saveAnalysisHistory({
-                symbol: item.symbol,
-                analysisType: 'investment_analysis',
-                content: analysis,
-                recommendation,
-                priceAtAnalysis: null,
-              });
+              // 保存歷史記錄 (已簡化)
+              // await db.saveAnalysisHistory(0, item.symbol, 'US', 'investment_analysis', { content: analysis, recommendation });
               
               results.push({
                 symbol: item.symbol,
@@ -1131,7 +1071,7 @@ ${stocksInfo}
         symbol: z.string(),
       }))
       .mutation(async ({ input, ctx }) => {
-        await db.trackUserClick(ctx.user.id, input.symbol);
+        await db.trackUserClick(ctx.user.id, input.symbol, 'US');
         
         // 清除用戶推薦快取（行為更新時）
         const { deleteCachedDataByPattern, getUserBehaviorCachePattern } = await import('./redis');
@@ -1147,7 +1087,7 @@ ${stocksInfo}
         limit: z.number().optional().default(10),
       }))
       .query(async ({ input, ctx }) => {
-        return db.getTopStocks(ctx.user.id, input.limit);
+        return db.getTopStocks(input.limit);
       }),
     
     // 獲取個人化建議（空狀態推薦）
@@ -1291,8 +1231,7 @@ ${stocksInfo}
         const totalAmount = priceInCents * input.shares;
         
         // 添加持倉
-        await db.addToPortfolio({
-          userId: ctx.user.id,
+        await db.addToPortfolio(ctx.user.id, {
           symbol: input.symbol,
           companyName: input.companyName,
           shares: input.shares,
@@ -1302,8 +1241,7 @@ ${stocksInfo}
         });
         
         // 記錄買入交易
-        await db.addPortfolioTransaction({
-          userId: ctx.user.id,
+        await db.addPortfolioTransaction(ctx.user.id, {
           symbol: input.symbol,
           companyName: input.companyName,
           transactionType: 'buy',
@@ -1341,24 +1279,10 @@ ${stocksInfo}
         id: z.number(),
       }))
       .mutation(async ({ input, ctx }) => {
-        // 獲取持倉資訊並刪除
-        const holding = await db.deleteFromPortfolio(input.id, ctx.user.id);
+        // 刪除持倉
+        await db.deleteFromPortfolio(ctx.user.id, input.id);
         
-        // 如果持倉存在，記錄賣出交易
-        if (holding) {
-          const totalAmount = holding.purchasePrice * holding.shares;
-          await db.addPortfolioTransaction({
-            userId: ctx.user.id,
-            symbol: holding.symbol,
-            companyName: holding.companyName,
-            transactionType: 'sell',
-            shares: holding.shares,
-            price: holding.purchasePrice, // 使用購買價作為賣出價（實際應用中可能需要用戶輸入賣出價）
-            totalAmount: totalAmount,
-            transactionDate: new Date(),
-            notes: `賣出持倉 (ID: ${holding.id})`,
-          });
-        }
+        // 注意: 簡化版本不記錄賣出交易，待完整實作時再加入
         
         return { success: true };
       }),
@@ -1407,8 +1331,7 @@ ${stocksInfo}
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        await db.addPortfolioHistory({
-          userId: ctx.user.id,
+        await db.addPortfolioHistory(ctx.user.id, {
           totalValue: Math.round(input.totalValue * 100),
           totalCost: Math.round(input.totalCost * 100),
           totalGainLoss: Math.round(input.totalGainLoss * 100),
@@ -1669,7 +1592,7 @@ ${portfolioData.map(h => `
         throw new Error('大盤指數功能尚未實作');
       }),
 
-    // 獲取投資組合相對基準指數的表現對比
+    // 獲取投資組合相對基準指數的表現對比 (功能待實作)
     getBenchmarkComparison: protectedProcedure
       .input(z.object({
         indexType: z.enum(['SPX', 'NASDAQ', 'DOW']),
@@ -1677,80 +1600,47 @@ ${portfolioData.map(h => `
       }))
       .query(async ({ input, ctx }) => {
         // TODO: 大盤指數功能待實作
-        // const { getBenchmarkIndexHistory, calculateBenchmarkComparison } = await import('./benchmarkIndex');
-        throw new Error('大盤指數功能尚未實作');
-        
-        // 獲取投資組合歷史
-        const portfolioHistory = await db.getPortfolioHistory(ctx.user.id, input.days);
-        
-        if (portfolioHistory.length === 0) {
-          return {
-            portfolioReturn: 0,
-            benchmarkReturn: 0,
-            alpha: 0,
-            beta: 0,
-          };
-        }
-        
-        // 獲取基準指數數據
-        const rangeMap: Record<number, string> = {
-          7: '5d',
-          30: '1mo',
-          90: '3mo',
-        };
-        const range = input.days ? (rangeMap[input.days] || '1y') : '1y';
-        const benchmarkData = await getBenchmarkIndexHistory(input.indexType, range);
-        
-        // 計算對比
-        const portfolioChartData = portfolioHistory.map(h => ({
-          date: new Date(h.recordDate),
-          value: h.totalValue / 100,
-        }));
-        
-        const benchmarkChartData = benchmarkData.timestamps.map((ts: number, i: number) => ({
-          timestamp: ts,
-          price: benchmarkData.prices[i],
-        }));
-        
-        const comparison = calculateBenchmarkComparison(portfolioChartData, benchmarkChartData);
-        
-        return comparison;
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: '大盤指數功能尚未實作' });
       }),
   }),
 
   analysis: router({
-    // 獲取 AI 分析準確度統計
+    // 獲取 AI 分析準確度統計 (功能待實作)
     getAccuracyStats: publicProcedure
       .query(async () => {
-        return calculateAccuracyStats();
+        // TODO: 實作準確度統計功能
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: '準確度統計功能尚未實作' });
       }),
     
-    // 獲取準確度時間趋勢
+    // 獲取準確度時間趋勢 (功能待實作)
     getAccuracyTrend: publicProcedure
       .input(z.object({
         timeRange: z.union([z.literal(7), z.literal(30), z.literal(90)]),
       }))
       .query(async ({ input }) => {
-        return calculateAccuracyTrend(input.timeRange);
+        // TODO: 實作準確度趨勢功能
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: '準確度趨勢功能尚未實作' });
       }),
     
-    // 獲取個股深度分析報告
+    // 獲取個股深度分析報告 (功能待實作)
     getStockReport: publicProcedure
       .input(z.object({
         symbol: z.string(),
       }))
       .query(async ({ input }) => {
-        return generateStockAnalysisReport(input.symbol);
+        // TODO: 實作個股分析報告功能
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: '個股分析報告功能尚未實作' });
       }),
     
-    // 檢查低準確率股票
+    // 檢查低準確率股票 (功能待實作)
     getLowAccuracyWarnings: publicProcedure
       .input(z.object({
         threshold: z.number().optional().default(0.5),
         timeRange: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional().default(30),
       }))
       .query(async ({ input }) => {
-        return checkLowAccuracyStocks(input.threshold, input.timeRange);
+        // TODO: 實作低準確率警告功能
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: '低準確率警告功能尚未實作' });
       }),
   }),
 
@@ -1772,13 +1662,11 @@ ${portfolioData.map(h => `
         };
       }),
     
-    // 手動觸發緩存預熱
+    // 手動觸發緩存預熱 (功能待實作)
     triggerCacheWarmup: publicProcedure
       .mutation(async () => {
-        // const { warmupAllStocks } = await import('./utils/cacheWarmer');
-        throw new Error('快取預熱功能尚未實作');
-        const result = await warmupAllStocks();
-        return result;
+        // TODO: 實作快取預熱功能
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: '快取預熱功能尚未實作' });
       }),
     
     // 預熱指定股票快取

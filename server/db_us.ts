@@ -1,12 +1,9 @@
-import { eq, and, gte, lte, desc, like, or, sql, count } from "drizzle-orm";
+import { eq, and, desc, like, or, sql, count } from "drizzle-orm";
 import { getDb } from "./db";
 import { 
   usStocks,
   UsStock,
   InsertUsStock,
-  usStockPrices,
-  UsStockPrice,
-  InsertUsStockPrice,
   usDataSyncStatus,
   UsDataSyncStatus,
   InsertUsDataSyncStatus,
@@ -145,6 +142,7 @@ export async function upsertUsStock(stock: InsertUsStock): Promise<void> {
         country: stock.country,
         sector: stock.sector,
         industry: stock.industry,
+        type: stock.type,
         isActive: stock.isActive,
         updatedAt: new Date(),
       }
@@ -165,149 +163,6 @@ export async function batchUpsertUsStocks(stocks: InsertUsStock[]): Promise<void
     
     for (const stock of batch) {
       await upsertUsStock(stock);
-    }
-  }
-}
-
-// ============================================================================
-// US Stock Price Operations
-// ============================================================================
-
-/**
- * 獲取美股指定日期範圍的價格資料
- */
-export async function getUsStockPrices(
-  symbol: string,
-  startDate: Date,
-  endDate: Date
-): Promise<UsStockPrice[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  const result = await db.select()
-    .from(usStockPrices)
-    .where(
-      and(
-        eq(usStockPrices.symbol, symbol),
-        gte(usStockPrices.date, startDate),
-        lte(usStockPrices.date, endDate)
-      )
-    )
-    .orderBy(desc(usStockPrices.date));
-
-  return result;
-}
-
-/**
- * 獲取美股最新價格
- */
-export async function getLatestUsStockPrice(symbol: string): Promise<UsStockPrice | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  const result = await db.select()
-    .from(usStockPrices)
-    .where(eq(usStockPrices.symbol, symbol))
-    .orderBy(desc(usStockPrices.date))
-    .limit(1);
-
-  return result[0];
-}
-
-/**
- * 獲取美股指定日期的價格
- */
-export async function getUsStockPriceByDate(symbol: string, date: Date): Promise<UsStockPrice | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  const result = await db.select()
-    .from(usStockPrices)
-    .where(
-      and(
-        eq(usStockPrices.symbol, symbol),
-        eq(usStockPrices.date, date)
-      )
-    )
-    .limit(1);
-
-  return result[0];
-}
-
-/**
- * 獲取美股最近 N 天的價格
- */
-export async function getRecentUsStockPrices(symbol: string, days: number = 30): Promise<UsStockPrice[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  const result = await db.select()
-    .from(usStockPrices)
-    .where(eq(usStockPrices.symbol, symbol))
-    .orderBy(desc(usStockPrices.date))
-    .limit(days);
-
-  return result;
-}
-
-/**
- * 批次獲取美股最新價格
- */
-export async function getBatchLatestUsStockPrices(symbols: string[]): Promise<UsStockPrice[]> {
-  const db = await getDb();
-  if (!db || symbols.length === 0) return [];
-
-  // 使用子查詢獲取每個股票的最新價格
-  const result = await db.select()
-    .from(usStockPrices)
-    .where(
-      sql`(${usStockPrices.symbol}, ${usStockPrices.date}) IN (
-        SELECT symbol, MAX(date) 
-        FROM ${usStockPrices} 
-        WHERE symbol IN (${sql.join(symbols.map(s => sql`${s}`), sql`, `)})
-        GROUP BY symbol
-      )`
-    );
-
-  return result;
-}
-
-/**
- * 插入或更新美股價格資料
- */
-export async function upsertUsStockPrice(price: InsertUsStockPrice): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-
-  await db.insert(usStockPrices)
-    .values(price)
-    .onDuplicateKeyUpdate({
-      set: {
-        open: price.open,
-        high: price.high,
-        low: price.low,
-        close: price.close,
-        volume: price.volume,
-        change: price.change,
-        changePercent: price.changePercent,
-      }
-    });
-}
-
-/**
- * 批次插入或更新美股價格資料
- */
-export async function batchUpsertUsStockPrices(prices: InsertUsStockPrice[]): Promise<void> {
-  const db = await getDb();
-  if (!db || prices.length === 0) return;
-
-  // 分批處理,每次 100 筆
-  const batchSize = 100;
-  for (let i = 0; i < prices.length; i += batchSize) {
-    const batch = prices.slice(i, i + batchSize);
-    
-    for (const price of batch) {
-      await upsertUsStockPrice(price);
     }
   }
 }
@@ -422,13 +277,15 @@ export async function getStockDataCache(cacheKey: string): Promise<StockDataCach
 
   const result = await db.select()
     .from(stockDataCache)
-    .where(
-      and(
-        eq(stockDataCache.cacheKey, cacheKey),
-        gte(stockDataCache.expiresAt, new Date())
-      )
-    )
+    .where(eq(stockDataCache.cacheKey, cacheKey))
     .limit(1);
+
+  if (!result[0]) return undefined;
+
+  // 檢查是否過期
+  if (new Date() > result[0].expiresAt) {
+    return undefined;
+  }
 
   return result[0];
 }
@@ -506,23 +363,5 @@ export async function countActiveUsStocks(): Promise<number> {
     .from(usStocks)
     .where(eq(usStocks.isActive, true));
 
-  return result[0]?.count || 0;
-}
-
-/**
- * 統計美股價格記錄數量
- */
-export async function countUsStockPriceRecords(symbol?: string): Promise<number> {
-  const db = await getDb();
-  if (!db) return 0;
-
-  let query = db.select({ count: count() })
-    .from(usStockPrices);
-
-  if (symbol) {
-    query = query.where(eq(usStockPrices.symbol, symbol)) as any;
-  }
-
-  const result = await query;
   return result[0]?.count || 0;
 }

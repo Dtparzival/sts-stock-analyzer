@@ -14,7 +14,7 @@ import AnalysisAccuracy from "./pages/AnalysisAccuracy";
 import TransactionHistory from "./pages/TransactionHistory";
 import { ApiMonitor } from "./components/ApiMonitor";
 import EmptyStateTest from "./pages/EmptyStateTest";
-import TwStockTest from "./pages/TwStockTest";
+// TwStockTest removed
 import TwStocks from "./pages/TwStocks";
 import TwStockDetail from "./pages/TwStockDetail";
 import StockSearch from "./pages/StockSearch";
@@ -33,7 +33,7 @@ function Router() {
       <Route path={"/ai-advisor"} component={AIAdvisor} />
       <Route path={"/analysis-accuracy"} component={AnalysisAccuracy} />
       <Route path={"/test/empty-state"} component={EmptyStateTest} />
-      <Route path={"/test/tw-stock"} component={TwStockTest} />
+      {/* TwStockTest route removed */}
       <Route path={"/tw-stocks"} component={TwStocks} />
       <Route path={"/tw-stocks/:symbol"} component={TwStockDetail} />
       <Route path={"/404"} component={NotFound} />

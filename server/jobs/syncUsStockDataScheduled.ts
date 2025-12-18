@@ -9,17 +9,15 @@
  * 
  * 排程設定:
  * - 基本資料:每週日凌晨 06:00 (台北時間)
- * - 歷史價格:每交易日凌晨 06:00 (台北時間)
- * - 資料範圍:最近 30 天
  * 
- * 注意: TwelveData API 已無限流限制，同步速度大幅提升
+ * 注意: 
+ * - 歷史價格資料已改為即時 API 呼叫，不再儲存於資料庫
+ * - TwelveData API 已無限流限制，同步速度大幅提升
  */
 
 import cron from 'node-cron';
 import {
   getTwelveDataQuote,
-  getTwelveDataTimeSeries,
-  convertPriceToCents,
 } from '../integrations/twelvedata';
 import {
   SCHEDULED_SYNC_STOCKS,
@@ -27,7 +25,6 @@ import {
 } from '../config/usStockLists';
 import {
   upsertUsStock,
-  batchUpsertUsStockPrices,
   insertUsDataSyncStatus,
   insertUsDataSyncError,
 } from '../db_us';
@@ -145,7 +142,6 @@ export async function syncScheduledStockInfo(): Promise<SyncResult> {
     errors: [],
   };
 
-  const successCount = 0;
   const errors: Array<{ symbol: string; message: string }> = [];
 
   try {
@@ -165,7 +161,7 @@ export async function syncScheduledStockInfo(): Promise<SyncResult> {
           name: quote.name,
           exchange: quote.exchange,
           currency: quote.currency,
-          type: quote.type,
+          type: 'Common Stock', // TwelveData Quote 未提供 type
           country: 'US',
           isActive: true,
         });
@@ -252,147 +248,6 @@ export async function syncScheduledStockInfo(): Promise<SyncResult> {
 }
 
 /**
- * 同步歷史價格資料
- * 
- * @param days 同步最近幾天的資料 (預設 30 天)
- * @returns 同步結果
- */
-export async function syncScheduledStockPrices(days: number = 30): Promise<SyncResult> {
-  console.log(`[US Scheduled Sync] Starting stock price sync (last ${days} days)...`);
-  console.log(`[US Scheduled Sync] Total stocks to sync: ${SCHEDULED_SYNC_STOCKS.length}`);
-
-  const result: SyncResult = {
-    success: false,
-    recordCount: 0,
-    errorCount: 0,
-    errors: [],
-  };
-
-  const errors: Array<{ symbol: string; message: string }> = [];
-
-  try {
-    // 遍歷所有需要定期同步的股票
-    for (let i = 0; i < SCHEDULED_SYNC_STOCKS.length; i++) {
-      const symbol = SCHEDULED_SYNC_STOCKS[i];
-
-      try {
-        console.log(`[US Scheduled Sync] Syncing prices for ${symbol} (${i + 1}/${SCHEDULED_SYNC_STOCKS.length})...`);
-
-        // 獲取歷史價格資料
-        const timeSeries = await getTwelveDataTimeSeries(symbol, '1day', days);
-
-        if (timeSeries.values.length === 0) {
-          console.warn(`[US Scheduled Sync] No price data for ${symbol}`);
-          continue;
-        }
-
-        // 轉換為資料庫格式
-        const prices = timeSeries.values.map(v => {
-          const openCents = convertPriceToCents(v.open);
-          const highCents = convertPriceToCents(v.high);
-          const lowCents = convertPriceToCents(v.low);
-          const closeCents = convertPriceToCents(v.close);
-          
-          return {
-            symbol,
-            date: v.datetime, // 使用字串格式 YYYY-MM-DD
-            open: openCents,
-            high: highCents,
-            low: lowCents,
-            close: closeCents,
-            volume: parseInt(v.volume, 10) || 0,
-            change: 0, // API 未提供，設為 0
-            changePercent: 0, // API 未提供，設為 0
-          };
-        });
-
-        // 批次寫入資料庫
-        await batchUpsertUsStockPrices(prices);
-
-        result.recordCount += prices.length;
-
-        console.log(`[US Scheduled Sync] Synced ${prices.length} price records for ${symbol}`);
-
-        // 簡短延遲以避免 API 過載
-        if (i < SCHEDULED_SYNC_STOCKS.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      } catch (error) {
-        result.errorCount++;
-        errors.push({
-          symbol,
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
-
-        console.error(`[US Scheduled Sync] Failed to sync prices for ${symbol}:`, error);
-
-        // 記錄錯誤
-        await insertUsDataSyncError({
-          dataType: 'prices',
-          symbol,
-          errorType: 'API_ERROR',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          errorStack: error instanceof Error ? error.stack || null : null,
-          retryCount: 0,
-          resolved: false,
-          syncedAt: new Date(),
-        });
-      }
-    }
-
-    result.success = errors.length === 0;
-    result.errors = errors;
-
-    console.log(
-      `[US Scheduled Sync] Stock price sync completed: ${result.recordCount} records, ${errors.length} errors`
-    );
-
-    // 記錄同步狀態
-    await insertUsDataSyncStatus({
-      dataType: 'prices',
-      source: 'twelvedata_scheduled',
-      lastSyncAt: new Date(),
-      status: errors.length === 0 ? 'success' : errors.length < SCHEDULED_SYNC_STOCKS.length ? 'partial' : 'failed',
-      recordCount: result.recordCount,
-      errorMessage: errors.length > 0 ? `${errors.length} stocks failed` : null,
-    });
-
-    // 如果有錯誤,發送通知
-    if (errors.length > 0) {
-      await notifyOwner({
-        title: '美股定期同步 - 價格資料同步部分失敗',
-        content: `成功: ${result.recordCount} 筆\n失敗: ${errors.length} 筆\n\n失敗股票:\n${errors.map(e => `- ${e.symbol}: ${e.message}`).join('\n')}`,
-      });
-    }
-  } catch (error) {
-    result.success = false;
-    result.errors.push({
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    console.error('[US Scheduled Sync] Stock price sync failed:', error);
-
-    // 記錄錯誤
-    await insertUsDataSyncStatus({
-      dataType: 'prices',
-      source: 'twelvedata_scheduled',
-      lastSyncAt: new Date(),
-      status: 'failed',
-      recordCount: result.recordCount,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    // 發送通知
-    await notifyOwner({
-      title: '美股定期同步 - 價格資料同步失敗',
-      content: `錯誤訊息: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    });
-  }
-
-  return result;
-}
-
-/**
  * 設定股票基本資料同步排程
  * 每週日凌晨 06:00 執行
  */
@@ -409,34 +264,11 @@ export function scheduleStockInfoSync() {
 }
 
 /**
- * 設定歷史價格同步排程
- * 每交易日凌晨 06:00 執行
- */
-export function scheduleStockPriceSync() {
-  // Cron 表達式: 0 0 6 * * 1-5 (週一到週五 06:00)
-  cron.schedule('0 0 6 * * 1-5', async () => {
-    const today = new Date();
-
-    // 檢查是否為交易日
-    if (!isUsMarketTradingDay(today)) {
-      console.log('[US Scheduled Sync] Today is not a US market trading day, skipping price sync');
-      return;
-    }
-
-    console.log('[US Scheduled Sync] Stock price sync triggered by schedule');
-    await syncScheduledStockPrices(30); // 同步最近 30 天
-  }, {
-    timezone: 'Asia/Taipei'
-  });
-
-  console.log('[Scheduler] US stock price sync scheduled: Every trading day 06:00 (Taipei Time)');
-}
-
-/**
  * 啟動所有美股定期同步排程
+ * 
+ * 注意: 價格同步排程已移除，改為即時 API 呼叫
  */
 export function startUsScheduledSyncs() {
   scheduleStockInfoSync();
-  scheduleStockPriceSync();
-  console.log(`[Scheduler] All US scheduled syncs started (S&P 500 + Major ETFs, ${getScheduledSyncStockCount()} stocks)`);
+  console.log(`[Scheduler] US scheduled syncs started (S&P 500 + Major ETFs, ${getScheduledSyncStockCount()} stocks) - Stock info only`);
 }

@@ -133,9 +133,9 @@ export const MAJOR_ETFS = [
  * 需要定期同步的所有股票清單
  * 包含 S&P 500 成分股與主要 ETF
  */
-export const SCHEDULED_SYNC_STOCKS = [
-  ...new Set([...SP500_STOCKS, ...MAJOR_ETFS])
-];
+export const SCHEDULED_SYNC_STOCKS = Array.from(
+  new Set([...SP500_STOCKS, ...MAJOR_ETFS])
+);
 
 /**
  * 判斷股票是否需要定期同步

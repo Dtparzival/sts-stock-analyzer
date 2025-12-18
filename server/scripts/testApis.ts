@@ -58,12 +58,15 @@ async function testApis() {
   
   console.log('');
   
-  // 4. 測試 TPEx 歷史價格 API（以聯發科 2454 為例）
+  // 4. 測試 TPEx 歷史價格 API（以中美晶 5483 為例）
   console.log('4️⃣  測試 TPEx 歷史價格 API (5483 中美晶)...');
   try {
     const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const prices = await fetchTpexHistoricalPrices('5483', dateStr);
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const startDate = `${year}/${month}/01`;
+    const endDate = `${year}/${month}/${String(now.getDate()).padStart(2, '0')}`;
+    const prices = await fetchTpexHistoricalPrices('5483', startDate, endDate);
     console.log(`   ✅ 歷史價格: ${prices.length} 筆`);
     
     if (prices.length > 0) {
@@ -75,7 +78,7 @@ async function testApis() {
   }
   
   console.log('\n=== 測試完成 ===');
-  console.log('💡 如果所有 API 測試通過，可以執行 initialDataLoad.ts 載入完整資料');
+  console.log('💡 如果所有 API 測試通過，表示 API 連線正常');
 }
 
 // 執行測試

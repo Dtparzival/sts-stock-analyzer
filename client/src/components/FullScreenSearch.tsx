@@ -55,13 +55,15 @@ export default function FullScreenSearch({ isOpen, onClose, onNavigate }: FullSc
     setSearchQuery(e.target.value);
   };
   
-  const handleResultClick = (symbol: string, name: string, market: 'TW' | 'US') => {
-    // 儲存到搜尋歷史
-    addSearchItem({ symbol, name, market });
+  const handleResultClick = (symbol: string, name: string, market: 'TW' | 'US' | 'ALL') => {
+    // 儲存到搜尋歷史 (轉換為小寫)
+    const historyMarket = market === 'TW' ? 'tw' : 'us';
+    addSearchItem({ symbol, name, market: historyMarket as 'tw' | 'us' });
     
     // 導航到股票詳情頁
     const fullSymbol = market === 'TW' ? `${symbol}.TW` : symbol;
-    onNavigate(fullSymbol, market);
+    const navMarket = market === 'ALL' ? 'US' : market;
+    onNavigate(fullSymbol, navMarket as 'TW' | 'US');
     onClose();
   };
   

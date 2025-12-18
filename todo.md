@@ -557,3 +557,48 @@
 
 ### 同步到 GitHub
 - [x] 提交變更到 GitHub (commit: 2bb66dc)
+
+
+---
+
+## 階段十七:資料架構優化 - 移除歷史價格表並實作即時 API 呼叫 (2025-12-18) 🔴
+
+### 資料庫架構修改
+- [x] 移除 twStockPrices 歷史價格表
+- [x] 移除 usStockPrices 歷史價格表
+- [x] 更新 drizzle/schema.ts 移除相關表定義
+- [x] 執行資料庫遷移 (pnpm db:push)
+
+### API 層修改 - 即時呼叫取得價格
+- [x] 更新台股 API 改為即時呼叫 TWSE API
+- [x] 更新美股 API 改為即時呼叫 TwelveData API
+- [x] 移除 server/db.ts 中的價格相關函數
+- [x] 移除 server/db_us.ts 中的價格相關函數
+- [x] 更新 tRPC router 中的價格查詢邏輯
+
+### 股票基本資料自動更新機制
+- [x] 設計自動更新排程策略 (每週日凌晨執行)
+- [x] 實作台股基本資料自動同步功能 (每週日 02:00)
+- [x] 實作美股基本資料自動同步功能 (每週日 06:00)
+- [x] 建立同步狀態監控機制 (twDataSyncStatus, usDataSyncStatus)
+- [x] 實作啟動時同步檢查機制 (startupSyncCheck.ts)
+
+### 文件與測試更新
+- [x] 更新 todo.md 標記完成項目
+- [ ] 更新相關技術文件說明
+- [x] 驗證 API 功能正常運作 (TypeScript 編譯通過)
+- [x] 撰寫即時價格 API 測試 (12 項測試全部通過)
+- [x] 測試前端股票詳情頁面 (網站運作正常)
+
+### 發佈與同步
+- [ ] 建立 checkpoint 並發佈更新
+- [ ] 推送變更到 GitHub
+- [ ] 更新版本說明文件
+
+### 更新摘要 (2025-12-18)
+- 移除歷史價格資料表 (twStockPrices, usStockPrices)
+- 台股價格改為即時呼叫 TWSE API
+- 美股價格維持即時呼叫 TwelveData API
+- 股票基本資料每週自動更新 (台股週日 02:00, 美股週日 06:00)
+- 啟動時自動檢查並補執行過期的同步任務
+

@@ -1,14 +1,12 @@
-import { eq, and, gte, lte, desc, asc, like, or, sql, count } from "drizzle-orm";
+import { eq, and, desc, like, or, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
+  User,
   InsertUser, 
   users, 
   twStocks,
   TwStock,
   InsertTwStock,
-  twStockPrices,
-  TwStockPrice,
-  InsertTwStockPrice,
   twDataSyncStatus,
   TwDataSyncStatus,
   InsertTwDataSyncStatus,
@@ -18,9 +16,6 @@ import {
   usStocks,
   UsStock,
   InsertUsStock,
-  usStockPrices,
-  UsStockPrice,
-  InsertUsStockPrice,
   usDataSyncStatus,
   UsDataSyncStatus,
   InsertUsDataSyncStatus,
@@ -214,6 +209,7 @@ export async function upsertTwStock(stock: InsertTwStock): Promise<void> {
         shortName: stock.shortName,
         market: stock.market,
         industry: stock.industry,
+        type: stock.type,
         isActive: stock.isActive,
         listedDate: stock.listedDate,
         updatedAt: new Date(),
@@ -234,139 +230,6 @@ export async function batchUpsertTwStocks(stocks: InsertTwStock[]): Promise<void
     
     await Promise.all(
       batch.map(stock => upsertTwStock(stock))
-    );
-  }
-}
-
-// ============================================================================
-// Taiwan Stock Prices
-// ============================================================================
-
-/**
- * 獲取指定日期範圍的台股價格
- */
-export async function getTwStockPrices(
-  symbol: string,
-  startDate: Date,
-  endDate: Date
-): Promise<TwStockPrice[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  return await db.select()
-    .from(twStockPrices)
-    .where(
-      and(
-        eq(twStockPrices.symbol, symbol),
-        gte(twStockPrices.date, startDate),
-        lte(twStockPrices.date, endDate)
-      )
-    )
-    .orderBy(desc(twStockPrices.date));
-}
-
-/**
- * 獲取最新價格
- */
-export async function getLatestTwStockPrice(symbol: string): Promise<TwStockPrice | null> {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db.select()
-    .from(twStockPrices)
-    .where(eq(twStockPrices.symbol, symbol))
-    .orderBy(desc(twStockPrices.date))
-    .limit(1);
-
-  return result.length > 0 ? result[0] : null;
-}
-
-/**
- * 獲取指定日期的價格
- */
-export async function getTwStockPriceByDate(symbol: string, date: Date): Promise<TwStockPrice | null> {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db.select()
-    .from(twStockPrices)
-    .where(
-      and(
-        eq(twStockPrices.symbol, symbol),
-        eq(twStockPrices.date, date)
-      )
-    )
-    .limit(1);
-
-  return result.length > 0 ? result[0] : null;
-}
-
-/**
- * 獲取最近 N 天的價格
- */
-export async function getRecentTwStockPrices(symbol: string, days: number): Promise<TwStockPrice[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  return await db.select()
-    .from(twStockPrices)
-    .where(eq(twStockPrices.symbol, symbol))
-    .orderBy(desc(twStockPrices.date))
-    .limit(days);
-}
-
-/**
- * 批次獲取最新價格
- */
-export async function getBatchLatestTwStockPrices(symbols: string[]): Promise<TwStockPrice[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  const results = await Promise.all(
-    symbols.map(async (symbol) => {
-      return await getLatestTwStockPrice(symbol);
-    })
-  );
-
-  return results.filter((price): price is TwStockPrice => price !== null);
-}
-
-/**
- * 插入或更新台股價格
- */
-export async function upsertTwStockPrice(price: InsertTwStockPrice): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-
-  await db.insert(twStockPrices)
-    .values(price)
-    .onDuplicateKeyUpdate({
-      set: {
-        open: price.open,
-        high: price.high,
-        low: price.low,
-        close: price.close,
-        volume: price.volume,
-        amount: price.amount,
-        change: price.change,
-        changePercent: price.changePercent,
-      }
-    });
-}
-
-/**
- * 批次插入台股價格
- */
-export async function batchUpsertTwStockPrices(prices: InsertTwStockPrice[]): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-
-  const batchSize = 100;
-  for (let i = 0; i < prices.length; i += batchSize) {
-    const batch = prices.slice(i, i + batchSize);
-    
-    await Promise.all(
-      batch.map(price => upsertTwStockPrice(price))
     );
   }
 }
@@ -495,110 +358,443 @@ export async function countActiveTwStocks(): Promise<number> {
   return result[0]?.count || 0;
 }
 
-/**
- * 統計價格記錄數量
- */
-export async function countTwStockPriceRecords(symbol?: string): Promise<number> {
-  const db = await getDb();
-  if (!db) return 0;
-
-  let query = db.select({ count: count() })
-    .from(twStockPrices);
-
-  if (symbol) {
-    query = query.where(eq(twStockPrices.symbol, symbol)) as any;
-  }
-
-  const result = await query;
-  return result[0]?.count || 0;
-}
-
 // ============================================================================
 // User Search Behavior
 // ============================================================================
 
 /**
- * 記錄或更新使用者搜尋行為
+ * 記錄使用者搜尋行為
  */
 export async function recordUserSearch(userId: number, market: string, symbol: string): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
-  try {
-    // 檢查是否已存在記錄
-    const existing = await db.select()
-      .from(userSearchBehavior)
-      .where(
-        and(
-          eq(userSearchBehavior.userId, userId),
-          eq(userSearchBehavior.market, market),
-          eq(userSearchBehavior.symbol, symbol)
-        )
+  // 嘗試更新現有記錄
+  const existing = await db.select()
+    .from(userSearchBehavior)
+    .where(
+      and(
+        eq(userSearchBehavior.userId, userId),
+        eq(userSearchBehavior.market, market),
+        eq(userSearchBehavior.symbol, symbol)
       )
-      .limit(1);
+    )
+    .limit(1);
 
-    if (existing.length > 0) {
-      // 更新現有記錄
-      await db.update(userSearchBehavior)
-        .set({
-          searchCount: existing[0].searchCount + 1,
-          lastSearchAt: new Date(),
-          updatedAt: new Date()
-        })
-        .where(eq(userSearchBehavior.id, existing[0].id));
-    } else {
-      // 建立新記錄
-      await db.insert(userSearchBehavior).values({
-        userId,
-        market,
-        symbol,
-        searchCount: 1,
-        lastSearchAt: new Date()
-      });
-    }
-  } catch (error) {
-    console.error("[Database] Failed to record user search:", error);
+  if (existing.length > 0) {
+    // 更新搜尋次數和時間
+    await db.update(userSearchBehavior)
+      .set({
+        searchCount: sql`${userSearchBehavior.searchCount} + 1`,
+        lastSearchAt: new Date(),
+      })
+      .where(eq(userSearchBehavior.id, existing[0].id));
+  } else {
+    // 插入新記錄
+    await db.insert(userSearchBehavior).values({
+      userId,
+      market,
+      symbol,
+      searchCount: 1,
+      lastSearchAt: new Date(),
+    });
   }
 }
 
 /**
- * 獲取使用者的搜尋行為記錄
+ * 獲取使用者搜尋行為
  */
 export async function getUserSearchBehavior(userId: number, limit: number = 50): Promise<UserSearchBehavior[]> {
   const db = await getDb();
   if (!db) return [];
 
-  const result = await db.select()
+  return await db.select()
     .from(userSearchBehavior)
     .where(eq(userSearchBehavior.userId, userId))
     .orderBy(desc(userSearchBehavior.lastSearchAt))
     .limit(limit);
-
-  return result;
-}
-
-/**
- * 獲取使用者所有行為數據(用於AI推薦)
- * 這是一個臨時函數,返回空陣列以避免錯誤
- */
-export async function getAllUserBehavior(userId: number): Promise<any[]> {
-  // TODO: 整合多個數據源(搜尋歷史、收藏、投資組合等)
-  const searchBehavior = await getUserSearchBehavior(userId, 100);
-  return searchBehavior;
 }
 
 /**
  * 獲取使用者最常搜尋的股票
  */
-export async function getUserTopSearchedStocks(userId: number, limit: number = 10): Promise<UserSearchBehavior[]> {
+export async function getUserTopSearches(userId: number, limit: number = 10): Promise<UserSearchBehavior[]> {
   const db = await getDb();
   if (!db) return [];
 
-  const result = await db.select()
+  return await db.select()
     .from(userSearchBehavior)
     .where(eq(userSearchBehavior.userId, userId))
-    .orderBy(desc(userSearchBehavior.searchCount), desc(userSearchBehavior.lastSearchAt))
+    .orderBy(desc(userSearchBehavior.searchCount))
     .limit(limit);
+}
 
-  return result;
+// ============================================================================
+// Stock Data Cache
+// ============================================================================
+
+/**
+ * 獲取快取資料
+ */
+export async function getStockDataCache(cacheKey: string): Promise<StockDataCache | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select()
+    .from(stockDataCache)
+    .where(eq(stockDataCache.cacheKey, cacheKey))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  // 檢查是否過期
+  if (new Date() > result[0].expiresAt) {
+    return null;
+  }
+
+  return result[0];
+}
+
+/**
+ * 設定快取資料
+ */
+export async function setStockDataCache(cache: InsertStockDataCache): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(stockDataCache)
+    .values(cache)
+    .onDuplicateKeyUpdate({
+      set: {
+        data: cache.data,
+        expiresAt: cache.expiresAt,
+        updatedAt: new Date(),
+      }
+    });
+}
+
+/**
+ * 刪除過期快取
+ */
+export async function deleteExpiredCache(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(stockDataCache)
+    .where(sql`${stockDataCache.expiresAt} < NOW()`);
+}
+
+/**
+ * 刪除特定股票的快取
+ */
+export async function deleteStockCache(market: string, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(stockDataCache)
+    .where(
+      and(
+        eq(stockDataCache.market, market),
+        eq(stockDataCache.symbol, symbol)
+      )
+    );
+}
+
+// ============================================================================
+// Re-export types for convenience
+// ============================================================================
+
+export type {
+  User,
+  InsertUser,
+  TwStock,
+  InsertTwStock,
+  TwDataSyncStatus,
+  InsertTwDataSyncStatus,
+  TwDataSyncError,
+  InsertTwDataSyncError,
+  UsStock,
+  InsertUsStock,
+  UsDataSyncStatus,
+  InsertUsDataSyncStatus,
+  UsDataSyncError,
+  InsertUsDataSyncError,
+  StockDataCache,
+  InsertStockDataCache,
+  UserSearchBehavior,
+  InsertUserSearchBehavior,
+};
+
+
+// ============================================================================
+// Search History and User Behavior (Stub functions - to be implemented)
+// ============================================================================
+
+/**
+ * Add search history record
+ * @stub This function is a placeholder for future implementation
+ */
+export async function addSearchHistory(userId: number, symbol: string, market: 'TW' | 'US'): Promise<void> {
+  // TODO: Implement search history tracking
+  console.log(`[DB] addSearchHistory called: userId=${userId}, symbol=${symbol}, market=${market}`);
+}
+
+/**
+ * Track user view behavior
+ * @stub This function is a placeholder for future implementation
+ */
+export async function trackUserView(userId: number, symbol: string, market: 'TW' | 'US'): Promise<void> {
+  // TODO: Implement user view tracking
+  console.log(`[DB] trackUserView called: userId=${userId}, symbol=${symbol}, market=${market}`);
+}
+
+/**
+ * Get analysis history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getAnalysisHistory(userId: number, limit: number = 10): Promise<any[]> {
+  // TODO: Implement analysis history retrieval
+  console.log(`[DB] getAnalysisHistory called: userId=${userId}, limit=${limit}`);
+  return [];
+}
+
+/**
+ * Get analysis cache
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getAnalysisCache(cacheKey: string): Promise<any | null> {
+  // TODO: Implement analysis cache retrieval
+  console.log(`[DB] getAnalysisCache called: cacheKey=${cacheKey}`);
+  return null;
+}
+
+/**
+ * Set analysis cache
+ * @stub This function is a placeholder for future implementation
+ */
+export async function setAnalysisCache(cacheKey: string, data: any, expiresAt: Date): Promise<void> {
+  // TODO: Implement analysis cache storage
+  console.log(`[DB] setAnalysisCache called: cacheKey=${cacheKey}`);
+}
+
+/**
+ * Save analysis history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function saveAnalysisHistory(userId: number, symbol: string, market: 'TW' | 'US', analysisType: string, result: any): Promise<void> {
+  // TODO: Implement analysis history saving
+  console.log(`[DB] saveAnalysisHistory called: userId=${userId}, symbol=${symbol}`);
+}
+
+/**
+ * Record question click
+ * @stub This function is a placeholder for future implementation
+ */
+export async function recordQuestionClick(questionId: string): Promise<void> {
+  // TODO: Implement question click tracking
+  console.log(`[DB] recordQuestionClick called: questionId=${questionId}`);
+}
+
+/**
+ * Get top questions
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getTopQuestions(limit: number = 10): Promise<any[]> {
+  // TODO: Implement top questions retrieval
+  console.log(`[DB] getTopQuestions called: limit=${limit}`);
+  return [];
+}
+
+
+// ============================================================================
+// User Behavior and Watchlist (Stub functions - to be implemented)
+// ============================================================================
+
+/**
+ * Get all user behavior data
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getAllUserBehavior(userId: number): Promise<any[]> {
+  console.log(`[DB] getAllUserBehavior called: userId=${userId}`);
+  return [];
+}
+
+/**
+ * Get user portfolio
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getUserPortfolio(userId: number): Promise<any[]> {
+  console.log(`[DB] getUserPortfolio called: userId=${userId}`);
+  return [];
+}
+
+/**
+ * Get user watchlist
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getUserWatchlist(userId: number): Promise<any[]> {
+  console.log(`[DB] getUserWatchlist called: userId=${userId}`);
+  return [];
+}
+
+/**
+ * Get global popular stocks
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getGlobalPopularStocks(limit: number = 10): Promise<any[]> {
+  console.log(`[DB] getGlobalPopularStocks called: limit=${limit}`);
+  return [];
+}
+
+/**
+ * Get global top questions
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getGlobalTopQuestions(limit: number = 10): Promise<any[]> {
+  console.log(`[DB] getGlobalTopQuestions called: limit=${limit}`);
+  return [];
+}
+
+/**
+ * Add to watchlist
+ * @stub This function is a placeholder for future implementation
+ */
+export async function addToWatchlist(userId: number, symbol: string, market: 'TW' | 'US'): Promise<void> {
+  console.log(`[DB] addToWatchlist called: userId=${userId}, symbol=${symbol}, market=${market}`);
+}
+
+/**
+ * Remove from watchlist
+ * @stub This function is a placeholder for future implementation
+ */
+export async function removeFromWatchlist(userId: number, symbol: string): Promise<void> {
+  console.log(`[DB] removeFromWatchlist called: userId=${userId}, symbol=${symbol}`);
+}
+
+/**
+ * Check if stock is in watchlist
+ * @stub This function is a placeholder for future implementation
+ */
+export async function isInWatchlist(userId: number, symbol: string): Promise<boolean> {
+  console.log(`[DB] isInWatchlist called: userId=${userId}, symbol=${symbol}`);
+  return false;
+}
+
+/**
+ * Get user search history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getUserSearchHistory(userId: number, limit: number = 20): Promise<any[]> {
+  console.log(`[DB] getUserSearchHistory called: userId=${userId}, limit=${limit}`);
+  return [];
+}
+
+/**
+ * Delete search history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function deleteSearchHistory(userId: number, historyId: number): Promise<void> {
+  console.log(`[DB] deleteSearchHistory called: userId=${userId}, historyId=${historyId}`);
+}
+
+/**
+ * Clear all search history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function clearAllSearchHistory(userId: number): Promise<void> {
+  console.log(`[DB] clearAllSearchHistory called: userId=${userId}`);
+}
+
+/**
+ * Track user click
+ * @stub This function is a placeholder for future implementation
+ */
+export async function trackUserClick(userId: number, symbol: string, market: 'TW' | 'US'): Promise<void> {
+  console.log(`[DB] trackUserClick called: userId=${userId}, symbol=${symbol}, market=${market}`);
+}
+
+/**
+ * Get top stocks
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getTopStocks(limit: number = 10): Promise<any[]> {
+  console.log(`[DB] getTopStocks called: limit=${limit}`);
+  return [];
+}
+
+// ============================================================================
+// Portfolio Management (Stub functions - to be implemented)
+// ============================================================================
+
+/**
+ * Add to portfolio
+ * @stub This function is a placeholder for future implementation
+ */
+export async function addToPortfolio(userId: number, data: any): Promise<void> {
+  console.log(`[DB] addToPortfolio called: userId=${userId}`);
+}
+
+/**
+ * Add portfolio transaction
+ * @stub This function is a placeholder for future implementation
+ */
+export async function addPortfolioTransaction(userId: number, data: any): Promise<void> {
+  console.log(`[DB] addPortfolioTransaction called: userId=${userId}`);
+}
+
+/**
+ * Update portfolio
+ * @stub This function is a placeholder for future implementation
+ */
+export async function updatePortfolio(userId: number, holdingId: number, data: any): Promise<void> {
+  console.log(`[DB] updatePortfolio called: userId=${userId}, holdingId=${holdingId}`);
+}
+
+/**
+ * Delete from portfolio
+ * @stub This function is a placeholder for future implementation
+ */
+export async function deleteFromPortfolio(userId: number, holdingId: number): Promise<void> {
+  console.log(`[DB] deleteFromPortfolio called: userId=${userId}, holdingId=${holdingId}`);
+}
+
+/**
+ * Get portfolio history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getPortfolioHistory(userId: number, days?: number): Promise<any[]> {
+  console.log(`[DB] getPortfolioHistory called: userId=${userId}, days=${days}`);
+  return [];
+}
+
+/**
+ * Get portfolio transactions
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getPortfolioTransactions(userId: number, limit: number = 50): Promise<any[]> {
+  console.log(`[DB] getPortfolioTransactions called: userId=${userId}, limit=${limit}`);
+  return [];
+}
+
+/**
+ * Add portfolio history
+ * @stub This function is a placeholder for future implementation
+ */
+export async function addPortfolioHistory(userId: number, data: any): Promise<void> {
+  console.log(`[DB] addPortfolioHistory called: userId=${userId}`);
+}
+
+/**
+ * Get transaction stats
+ * @stub This function is a placeholder for future implementation
+ */
+export async function getTransactionStats(userId: number): Promise<any> {
+  console.log(`[DB] getTransactionStats called: userId=${userId}`);
+  return {
+    totalBuys: 0,
+    totalSells: 0,
+    totalTransactions: 0,
+    totalInvested: 0,
+    totalReturned: 0,
+  };
 }

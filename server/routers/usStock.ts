@@ -11,7 +11,9 @@ import {
 
 /**
  * 美股 tRPC Router
- * 提供美股基本資料、價格查詢、快取管理等功能
+ * 提供美股基本資料、即時價格查詢、快取管理等功能
+ * 
+ * 注意: 價格資料改為即時 API 呼叫，不再儲存於資料庫
  */
 export const usStockRouter = router({
   /**
@@ -103,10 +105,10 @@ export const usStockRouter = router({
           } : null,
         };
 
-        // 寫入快取 (1 小時)
+        // 寫入快取 (5 分鐘)
         if (useCache) {
           const cacheKey = `stock_detail:${symbol}:US`;
-          const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 小時後過期
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
           
           await dbUs.setStockDataCache({
             cacheKey,
@@ -133,7 +135,7 @@ export const usStockRouter = router({
     }),
 
   /**
-   * 獲取美股歷史價格
+   * 獲取美股歷史價格 (即時呼叫 TwelveData API)
    */
   getHistorical: publicProcedure
     .input(z.object({
@@ -182,10 +184,10 @@ export const usStockRouter = router({
           status: timeSeries.status,
         };
 
-        // 寫入快取 (1 小時)
+        // 寫入快取 (5 分鐘)
         if (useCache) {
           const cacheKey = `stock_historical:${symbol}:US:${interval}:${outputsize}`;
-          const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 小時後過期
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
           
           await dbUs.setStockDataCache({
             cacheKey,
@@ -212,7 +214,7 @@ export const usStockRouter = router({
     }),
 
   /**
-   * 獲取美股最新價格 (從資料庫)
+   * 獲取美股最新價格 (即時呼叫 TwelveData API)
    */
   getLatestPrice: publicProcedure
     .input(z.object({
@@ -222,26 +224,55 @@ export const usStockRouter = router({
       const { symbol } = input;
       
       try {
-        const price = await dbUs.getLatestUsStockPrice(symbol);
+        // 檢查快取
+        const cacheKey = `us_latest:${symbol}`;
+        const cachedData = await dbUs.getStockDataCache(cacheKey);
         
-        if (!price) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `找不到股票 ${symbol} 的價格資料`,
-          });
+        if (cachedData) {
+          return {
+            success: true,
+            data: JSON.parse(cachedData.data),
+            fromCache: true,
+            cachedAt: cachedData.createdAt,
+          };
         }
+
+        // 從 TwelveData API 獲取即時報價
+        const quote = await getTwelveDataQuote(symbol);
+        
+        const close = convertPriceToCents(quote.close);
+        const previousClose = convertPriceToCents(quote.previous_close);
+        
+        const result = {
+          symbol: quote.symbol,
+          datetime: quote.datetime,
+          open: convertPriceToCents(quote.open),
+          high: convertPriceToCents(quote.high),
+          low: convertPriceToCents(quote.low),
+          close,
+          volume: parseInt(quote.volume),
+          change: close - previousClose,
+          changePercent: calculateChangePercent(close, previousClose),
+        };
+
+        // 寫入快取 (5 分鐘)
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await dbUs.setStockDataCache({
+          cacheKey,
+          market: 'US',
+          symbol,
+          dataType: 'latest',
+          data: JSON.stringify(result),
+          expiresAt,
+        });
 
         return {
           success: true,
-          data: price,
+          data: result,
+          fromCache: false,
         };
       } catch (error: any) {
         console.error("[usStock.getLatestPrice] Error:", error);
-        
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-        
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `獲取最新價格失敗: ${error.message}`,
@@ -384,14 +415,14 @@ export const usStockRouter = router({
       try {
         const totalStocks = await dbUs.countUsStocks();
         const activeStocks = await dbUs.countActiveUsStocks();
-        const totalPriceRecords = await dbUs.countUsStockPriceRecords();
 
         return {
           success: true,
           data: {
             totalStocks,
             activeStocks,
-            totalPriceRecords,
+            // 價格記錄數已移除，改為即時 API 呼叫
+            totalPriceRecords: 0,
           },
         };
       } catch (error: any) {

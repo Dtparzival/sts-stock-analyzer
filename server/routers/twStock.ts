@@ -1,7 +1,8 @@
 /**
  * 台股 tRPC API 路由模組
  * 
- * 提供台股基本資料、歷史價格查詢與資料同步功能
+ * 提供台股基本資料查詢與即時價格 API 功能
+ * 價格資料改為即時呼叫 TWSE/TPEx API，不再儲存於資料庫
  */
 
 import { z } from 'zod';
@@ -10,11 +11,20 @@ import { TRPCError } from '@trpc/server';
 import * as db from '../db';
 import {
   syncStockInfo,
-  syncStockPrices,
-  syncStockPricesRange,
-  getPreviousTradingDay,
 } from '../jobs/syncTwStockData';
-import { centsToYuan, basisPointsToPercent, formatDate } from '../integrations/dataTransformer';
+import { formatDate } from '../integrations/dataTransformer';
+import { getTWSEStockHistory, convertTWSEToYahooFormat, convertSymbolToTWSE } from '../twse';
+
+/**
+ * 解析 TWSE 日期格式（民國年/月/日）為 YYYY-MM-DD
+ */
+function parseTWSEDateToString(dateStr: string): string {
+  const parts = dateStr.split('/');
+  const year = parseInt(parts[0]) + 1911;
+  const month = parts[1].padStart(2, '0');
+  const day = parts[2].padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 /**
  * 台股 API 路由
@@ -97,48 +107,61 @@ export const twStockRouter = router({
     }),
 
   /**
-   * 獲取歷史價格
+   * 獲取歷史價格 (即時呼叫 TWSE API)
    */
   getHistorical: publicProcedure
     .input(
       z.object({
         symbol: z.string().regex(/^\d{4,6}$/, '股票代號格式錯誤'),
-        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式錯誤 (YYYY-MM-DD)'),
-        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式錯誤 (YYYY-MM-DD)'),
-        limit: z.number().int().positive().optional(),
+        months: z.number().int().min(1).max(12).optional().default(1),
       })
     )
     .query(async ({ input }) => {
-      const { symbol, startDate, endDate, limit } = input;
+      const { symbol, months } = input;
 
       try {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        // 檢查快取
+        const cacheKey = `tw_historical:${symbol}:${months}m`;
+        const cachedData = await db.getStockDataCache(cacheKey);
+        
+        if (cachedData) {
+          return {
+            success: true,
+            data: JSON.parse(cachedData.data),
+            fromCache: true,
+            cachedAt: cachedData.createdAt,
+          };
+        }
 
-        if (start > end) {
+        // 呼叫 TWSE API 獲取歷史價格
+        const stockNo = convertSymbolToTWSE(symbol);
+        const twseData = await getTWSEStockHistory(stockNo, months);
+        
+        if (!twseData || twseData.length === 0) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: '起始日期不可晚於結束日期',
+            code: 'NOT_FOUND',
+            message: '找不到該股票的價格資料',
           });
         }
 
-        const prices = await db.getTwStockPrices(symbol, start, end, limit);
+        // 轉換為標準格式
+        const result = convertTWSEToYahooFormat(stockNo, twseData);
+
+        // 寫入快取 (5 分鐘)
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await db.setStockDataCache({
+          cacheKey,
+          market: 'TW',
+          symbol,
+          dataType: 'historical',
+          data: JSON.stringify(result),
+          expiresAt,
+        });
 
         return {
           success: true,
-          data: prices.map(price => ({
-            symbol: price.symbol,
-            date: formatDate(price.date),
-            open: centsToYuan(price.open),
-            high: centsToYuan(price.high),
-            low: centsToYuan(price.low),
-            close: centsToYuan(price.close),
-            volume: price.volume,
-            amount: price.amount,
-            change: centsToYuan(price.change),
-            changePercent: basisPointsToPercent(price.changePercent),
-          })),
-          count: prices.length,
+          data: result,
+          fromCache: false,
         };
       } catch (error) {
         if (error instanceof TRPCError) {
@@ -154,7 +177,7 @@ export const twStockRouter = router({
     }),
 
   /**
-   * 獲取最新價格
+   * 獲取最新價格 (即時呼叫 TWSE API)
    */
   getLatestPrice: publicProcedure
     .input(
@@ -166,29 +189,82 @@ export const twStockRouter = router({
       const { symbol } = input;
 
       try {
-        const price = await db.getLatestTwStockPrice(symbol);
+        // 檢查快取
+        const cacheKey = `tw_latest:${symbol}`;
+        const cachedData = await db.getStockDataCache(cacheKey);
+        
+        if (cachedData) {
+          return {
+            success: true,
+            data: JSON.parse(cachedData.data),
+            fromCache: true,
+            cachedAt: cachedData.createdAt,
+          };
+        }
 
-        if (!price) {
+        // 呼叫 TWSE API 獲取最新價格
+        const stockNo = convertSymbolToTWSE(symbol);
+        const twseData = await getTWSEStockHistory(stockNo, 1);
+        
+        if (!twseData || twseData.length === 0) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: '找不到該股票的價格資料',
           });
         }
 
+        // 取最新一筆 - TWSE 返回的是 TWSEStockDayResponse 格式
+        const latestMonth = twseData[0];
+        if (!latestMonth.data || latestMonth.data.length === 0) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: '找不到該股票的價格資料',
+          });
+        }
+        
+        const latestRow = latestMonth.data[latestMonth.data.length - 1];
+        // TWSE 數據欄位：日期, 成交股數, 成交金額, 開盤價, 最高價, 最低價, 收盤價, 漲跌價差, 成交筆數
+        
+        const close = parseFloat(latestRow[6].replace(/,/g, ''));
+        const change = parseFloat(latestRow[7].replace(/,/g, '')) || 0;
+        let changePercent = 0;
+        
+        // 計算漲跌幅
+        if (latestMonth.data.length > 1) {
+          const prevRow = latestMonth.data[latestMonth.data.length - 2];
+          const prevClose = parseFloat(prevRow[6].replace(/,/g, ''));
+          if (prevClose > 0) {
+            changePercent = ((close - prevClose) / prevClose) * 100;
+          }
+        }
+        
+        const result = {
+          symbol,
+          date: parseTWSEDateToString(latestRow[0]),
+          open: parseFloat(latestRow[3].replace(/,/g, '')),
+          high: parseFloat(latestRow[4].replace(/,/g, '')),
+          low: parseFloat(latestRow[5].replace(/,/g, '')),
+          close,
+          volume: parseInt(latestRow[1].replace(/,/g, '')),
+          change,
+          changePercent,
+        };
+
+        // 寫入快取 (5 分鐘)
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await db.setStockDataCache({
+          cacheKey,
+          market: 'TW',
+          symbol,
+          dataType: 'latest',
+          data: JSON.stringify(result),
+          expiresAt,
+        });
+
         return {
           success: true,
-          data: {
-            symbol: price.symbol,
-            date: formatDate(price.date),
-            open: centsToYuan(price.open),
-            high: centsToYuan(price.high),
-            low: centsToYuan(price.low),
-            close: centsToYuan(price.close),
-            volume: price.volume,
-            amount: price.amount,
-            change: centsToYuan(price.change),
-            changePercent: basisPointsToPercent(price.changePercent),
-          },
+          data: result,
+          fromCache: false,
         };
       } catch (error) {
         if (error instanceof TRPCError) {
@@ -204,34 +280,85 @@ export const twStockRouter = router({
     }),
 
   /**
-   * 批次獲取最新價格
+   * 批次獲取最新價格 (即時呼叫 TWSE API)
    */
   getBatchLatestPrices: publicProcedure
     .input(
       z.object({
-        symbols: z.array(z.string().regex(/^\d{4,6}$/, '股票代號格式錯誤')).min(1).max(100),
+        symbols: z.array(z.string().regex(/^\d{4,6}$/, '股票代號格式錯誤')).min(1).max(20),
       })
     )
     .query(async ({ input }) => {
       const { symbols } = input;
 
       try {
-        const prices = await db.getBatchLatestTwStockPrices(symbols);
+        const results = await Promise.allSettled(
+          symbols.map(async (symbol) => {
+            // 檢查快取
+            const cacheKey = `tw_latest:${symbol}`;
+            const cachedData = await db.getStockDataCache(cacheKey);
+            
+            if (cachedData) {
+              return JSON.parse(cachedData.data);
+            }
+
+            // 呼叫 TWSE API
+            const stockNo = convertSymbolToTWSE(symbol);
+            const twseData = await getTWSEStockHistory(stockNo, 1);
+            
+            if (!twseData || twseData.length === 0 || !twseData[0].data || twseData[0].data.length === 0) {
+              return null;
+            }
+
+            const latestMonth = twseData[0];
+            const latestRow = latestMonth.data[latestMonth.data.length - 1];
+            
+            const close = parseFloat(latestRow[6].replace(/,/g, ''));
+            const change = parseFloat(latestRow[7].replace(/,/g, '')) || 0;
+            let changePercent = 0;
+            
+            if (latestMonth.data.length > 1) {
+              const prevRow = latestMonth.data[latestMonth.data.length - 2];
+              const prevClose = parseFloat(prevRow[6].replace(/,/g, ''));
+              if (prevClose > 0) {
+                changePercent = ((close - prevClose) / prevClose) * 100;
+              }
+            }
+            
+            const result = {
+              symbol,
+              date: parseTWSEDateToString(latestRow[0]),
+              open: parseFloat(latestRow[3].replace(/,/g, '')),
+              high: parseFloat(latestRow[4].replace(/,/g, '')),
+              low: parseFloat(latestRow[5].replace(/,/g, '')),
+              close,
+              volume: parseInt(latestRow[1].replace(/,/g, '')),
+              change,
+              changePercent,
+            };
+
+            // 寫入快取
+            const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+            await db.setStockDataCache({
+              cacheKey,
+              market: 'TW',
+              symbol,
+              dataType: 'latest',
+              data: JSON.stringify(result),
+              expiresAt,
+            });
+
+            return result;
+          })
+        );
+
+        const prices = results
+          .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled' && r.value !== null)
+          .map(r => r.value);
 
         return {
           success: true,
-          data: prices.map(price => ({
-            symbol: price.symbol,
-            date: formatDate(price.date),
-            open: centsToYuan(price.open),
-            high: centsToYuan(price.high),
-            low: centsToYuan(price.low),
-            close: centsToYuan(price.close),
-            volume: price.volume,
-            amount: price.amount,
-            change: centsToYuan(price.change),
-            changePercent: basisPointsToPercent(price.changePercent),
-          })),
+          data: prices,
           count: prices.length,
         };
       } catch (error) {
@@ -269,14 +396,12 @@ export const twStockRouter = router({
 
   /**
    * 手動觸發同步（需要管理員權限）
+   * 注意: 僅支援股票基本資料同步，價格資料改為即時 API 呼叫
    */
   triggerSync: protectedProcedure
     .input(
       z.object({
-        type: z.enum(['stocks', 'prices', 'pricesRange']),
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式錯誤 (YYYY-MM-DD)').optional(),
-        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式錯誤 (YYYY-MM-DD)').optional(),
-        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式錯誤 (YYYY-MM-DD)').optional(),
+        type: z.enum(['stocks']),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -288,7 +413,7 @@ export const twStockRouter = router({
         });
       }
 
-      const { type, date, startDate, endDate } = input;
+      const { type } = input;
 
       try {
         let result;
@@ -296,32 +421,6 @@ export const twStockRouter = router({
         switch (type) {
           case 'stocks':
             result = await syncStockInfo();
-            break;
-
-          case 'prices':
-            const targetDate = date ? new Date(date) : getPreviousTradingDay(new Date());
-            result = await syncStockPrices(targetDate);
-            break;
-
-          case 'pricesRange':
-            if (!startDate || !endDate) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                message: '日期範圍同步需要提供起始日期與結束日期',
-              });
-            }
-
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-
-            if (start > end) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                message: '起始日期不可晚於結束日期',
-              });
-            }
-
-            result = await syncStockPricesRange(start, end);
             break;
 
           default:
@@ -335,7 +434,7 @@ export const twStockRouter = router({
           success: result.success,
           recordCount: result.recordCount,
           errorCount: result.errorCount,
-          errors: result.errors.slice(0, 10), // 只回傳前 10 個錯誤
+          errors: result.errors.slice(0, 10),
         };
       } catch (error) {
         if (error instanceof TRPCError) {
@@ -351,38 +450,105 @@ export const twStockRouter = router({
     }),
 
   /**
-   * 獲取最近 N 天的價格
+   * 獲取最近 N 天的價格 (即時呼叫 TWSE API)
    */
   getRecentPrices: publicProcedure
     .input(
       z.object({
         symbol: z.string().regex(/^\d{4,6}$/, '股票代號格式錯誤'),
-        days: z.number().int().positive().max(365).default(30),
+        days: z.number().int().positive().max(90).default(30),
       })
     )
     .query(async ({ input }) => {
       const { symbol, days } = input;
 
       try {
-        const prices = await db.getRecentTwStockPrices(symbol, days);
+        // 計算需要的月份數
+        const months = Math.ceil(days / 30);
+        
+        // 檢查快取
+        const cacheKey = `tw_recent:${symbol}:${days}d`;
+        const cachedData = await db.getStockDataCache(cacheKey);
+        
+        if (cachedData) {
+          return {
+            success: true,
+            data: JSON.parse(cachedData.data),
+            fromCache: true,
+            cachedAt: cachedData.createdAt,
+          };
+        }
+
+        // 呼叫 TWSE API
+        const stockNo = convertSymbolToTWSE(symbol);
+        const twseData = await getTWSEStockHistory(stockNo, months);
+        
+        if (!twseData || twseData.length === 0) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: '找不到該股票的價格資料',
+          });
+        }
+
+        // 合併所有月份的數據
+        const allData: string[][] = [];
+        for (const monthData of twseData) {
+          if (monthData.data) {
+            for (const row of monthData.data) {
+              allData.push(row);
+            }
+          }
+        }
+        
+        // 取最近 N 天
+        const recentRows = allData.slice(-days);
+        const recentData = recentRows.map((row, index) => {
+          const close = parseFloat(row[6].replace(/,/g, ''));
+          const change = parseFloat(row[7].replace(/,/g, '')) || 0;
+          let changePercent = 0;
+          
+          if (index > 0) {
+            const prevClose = parseFloat(recentRows[index - 1][6].replace(/,/g, ''));
+            if (prevClose > 0) {
+              changePercent = ((close - prevClose) / prevClose) * 100;
+            }
+          }
+          
+          return {
+            symbol,
+            date: parseTWSEDateToString(row[0]),
+            open: parseFloat(row[3].replace(/,/g, '')),
+            high: parseFloat(row[4].replace(/,/g, '')),
+            low: parseFloat(row[5].replace(/,/g, '')),
+            close,
+            volume: parseInt(row[1].replace(/,/g, '')),
+            change,
+            changePercent,
+          };
+        });
+
+        // 寫入快取 (5 分鐘)
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await db.setStockDataCache({
+          cacheKey,
+          market: 'TW',
+          symbol,
+          dataType: 'recent',
+          data: JSON.stringify(recentData),
+          expiresAt,
+        });
 
         return {
           success: true,
-          data: prices.map(price => ({
-            symbol: price.symbol,
-            date: formatDate(price.date),
-            open: centsToYuan(price.open),
-            high: centsToYuan(price.high),
-            low: centsToYuan(price.low),
-            close: centsToYuan(price.close),
-            volume: price.volume,
-            amount: price.amount,
-            change: centsToYuan(price.change),
-            changePercent: basisPointsToPercent(price.changePercent),
-          })),
-          count: prices.length,
+          data: recentData,
+          count: recentData.length,
+          fromCache: false,
         };
       } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         console.error('[twStock.getRecentPrices] Error:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -439,14 +605,14 @@ export const twStockRouter = router({
     try {
       const totalStocks = await db.countTwStocks();
       const activeStocks = await db.countActiveTwStocks();
-      const priceRecords = await db.countTwStockPriceRecords();
 
       return {
         success: true,
         data: {
           totalStocks,
           activeStocks,
-          priceRecords,
+          // 價格記錄數已移除，改為即時 API 呼叫
+          priceRecords: 0,
         },
       };
     } catch (error) {

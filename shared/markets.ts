@@ -2,7 +2,7 @@
  * 市場配置
  */
 
-export type MarketType = 'US' | 'TW';
+export type MarketType = 'US' | 'TW' | 'ALL';
 
 export interface MarketConfig {
   id: MarketType;
@@ -33,6 +33,15 @@ export const MARKETS: Record<MarketType, MarketConfig> = {
     tradingHours: '09:00-13:30 (GMT+8)',
     timezone: 'Asia/Taipei',
   },
+  ALL: {
+    id: 'ALL',
+    name: '全部市場',
+    currency: 'USD',
+    currencySymbol: '$',
+    region: 'ALL',
+    tradingHours: '24/7',
+    timezone: 'UTC',
+  },
 };
 
 export interface HotStock {
@@ -61,6 +70,16 @@ export const HOT_STOCKS: Record<MarketType, HotStock[]> = {
     { symbol: '2891.TW', name: '中信金', market: 'TW' },
     { symbol: '2303.TW', name: '聯電', market: 'TW' },
     { symbol: '2308.TW', name: '台達電', market: 'TW' },
+  ],
+  ALL: [
+    { symbol: 'AAPL', name: 'Apple Inc.', market: 'US' },
+    { symbol: '2330.TW', name: '台積電', market: 'TW' },
+    { symbol: 'MSFT', name: 'Microsoft Corporation', market: 'US' },
+    { symbol: '2317.TW', name: '鴻海', market: 'TW' },
+    { symbol: 'NVDA', name: 'NVIDIA Corporation', market: 'US' },
+    { symbol: '2454.TW', name: '聯發科', market: 'TW' },
+    { symbol: 'TSLA', name: 'Tesla, Inc.', market: 'US' },
+    { symbol: '2882.TW', name: '國泰金', market: 'TW' },
   ],
 };
 

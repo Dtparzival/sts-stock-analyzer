@@ -1,29 +1,25 @@
 /**
  * 台股資料同步主程式
  * 
- * 提供股票基本資料與歷史價格的自動化同步功能
+ * 提供股票基本資料的自動化同步功能
  * 支援排程執行與手動觸發
+ * 
+ * 注意: 歷史價格資料已改為即時 API 呼叫，不再儲存於資料庫
  */
 
 import cron from 'node-cron';
 import {
   fetchAllStockInfo,
-  fetchStockPrice,
-  fetchBatchStockPrices,
   FinMindError,
 } from '../integrations/finmind';
 import {
   transformStockInfoBatch,
-  transformStockPriceBatch,
   formatDate,
 } from '../integrations/dataTransformer';
 import {
   batchUpsertTwStocks,
-  batchUpsertTwStockPrices,
-  getActiveTwStocks,
   insertTwDataSyncStatus,
   insertTwDataSyncError,
-  batchInsertTwDataSyncErrors,
 } from '../db';
 import { notifyOwner } from '../_core/notification';
 
@@ -215,188 +211,6 @@ export async function syncStockInfo(): Promise<SyncResult> {
 }
 
 /**
- * 同步歷史價格資料（單一日期）
- * 
- * @param date 目標日期
- * @returns 同步結果
- */
-export async function syncStockPrices(date: Date): Promise<SyncResult> {
-  console.log(`[SyncJob] Starting stock price sync for ${formatDate(date)}...`);
-
-  const result: SyncResult = {
-    success: false,
-    recordCount: 0,
-    errorCount: 0,
-    errors: [],
-  };
-
-  try {
-    // 1. 獲取所有活躍股票
-    const stocks = await getActiveTwStocks();
-
-    if (stocks.length === 0) {
-      throw new Error('No active stocks found in database');
-    }
-
-    console.log(`[SyncJob] Syncing prices for ${stocks.length} stocks...`);
-
-    const symbols = stocks.map(s => s.symbol);
-    const dateStr = formatDate(date);
-
-    // 2. 批次獲取價格資料
-    const priceMap = await fetchBatchStockPrices(
-      symbols,
-      dateStr,
-      dateStr,
-      5 // 並行請求數
-    );
-
-    // 3. 轉換並寫入資料庫
-    const allPrices: any[] = [];
-    const errors: Array<{ symbol: string; message: string }> = [];
-
-    for (const [symbol, apiPrices] of priceMap.entries()) {
-      try {
-        if (apiPrices.length === 0) {
-          // 可能該日期無交易資料（休市）
-          continue;
-        }
-
-        const prices = transformStockPriceBatch(apiPrices);
-        allPrices.push(...prices);
-      } catch (error) {
-        errors.push({
-          symbol,
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
-
-    // 4. 批次寫入資料庫
-    if (allPrices.length > 0) {
-      await batchUpsertTwStockPrices(allPrices);
-    }
-
-    result.success = errors.length === 0;
-    result.recordCount = allPrices.length;
-    result.errorCount = errors.length;
-    result.errors = errors;
-
-    console.log(
-      `[SyncJob] Stock price sync completed: ${allPrices.length} records, ${errors.length} errors`
-    );
-
-    // 5. 記錄同步狀態
-    await insertTwDataSyncStatus({
-      dataType: 'prices',
-      source: 'finmind',
-      lastSyncAt: new Date(),
-      status: errors.length === 0 ? 'success' : errors.length < symbols.length ? 'partial' : 'failed',
-      recordCount: allPrices.length,
-      errorMessage: errors.length > 0 ? `${errors.length} stocks failed` : null,
-    });
-
-    // 6. 記錄錯誤詳情
-    if (errors.length > 0) {
-      await batchInsertTwDataSyncErrors(
-        errors.map(e => ({
-          dataType: 'prices',
-          symbol: e.symbol,
-          errorType: 'API',
-          errorMessage: e.message,
-          errorStack: null,
-          retryCount: 0,
-          resolved: false,
-          syncedAt: new Date(),
-        }))
-      );
-    }
-  } catch (error) {
-    result.success = false;
-    result.errorCount = 1;
-    result.errors.push({
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    console.error('[SyncJob] Stock price sync failed:', error);
-
-    // 記錄錯誤
-    await insertTwDataSyncStatus({
-      dataType: 'prices',
-      source: 'finmind',
-      lastSyncAt: new Date(),
-      status: 'failed',
-      recordCount: 0,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    await insertTwDataSyncError({
-      dataType: 'prices',
-      symbol: null,
-      errorType: error instanceof FinMindError ? error.type : 'Unknown',
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      errorStack: error instanceof Error ? error.stack || null : null,
-      retryCount: 0,
-      resolved: false,
-      syncedAt: new Date(),
-    });
-  }
-
-  return result;
-}
-
-/**
- * 同步歷史價格資料（日期範圍）
- * 
- * @param startDate 起始日期
- * @param endDate 結束日期
- * @returns 同步結果
- */
-export async function syncStockPricesRange(
-  startDate: Date,
-  endDate: Date
-): Promise<SyncResult> {
-  console.log(
-    `[SyncJob] Starting stock price range sync from ${formatDate(startDate)} to ${formatDate(endDate)}...`
-  );
-
-  const result: SyncResult = {
-    success: true,
-    recordCount: 0,
-    errorCount: 0,
-    errors: [],
-  };
-
-  // 逐日同步
-  const currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    // 僅同步交易日
-    if (isTradingDay(currentDate)) {
-      const dayResult = await syncStockPrices(new Date(currentDate));
-
-      result.recordCount += dayResult.recordCount;
-      result.errorCount += dayResult.errorCount;
-      result.errors.push(...dayResult.errors);
-
-      if (!dayResult.success) {
-        result.success = false;
-      }
-
-      // 每日之間稍微延遲，避免 API 限流
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  console.log(
-    `[SyncJob] Stock price range sync completed: ${result.recordCount} records, ${result.errorCount} errors`
-  );
-
-  return result;
-}
-
-/**
  * 設定股票基本資料同步排程
  * 每週日凌晨 02:00 執行
  */
@@ -432,61 +246,10 @@ export function scheduleStockInfoSync() {
 }
 
 /**
- * 設定歷史價格同步排程
- * 每交易日凌晨 02:00 執行（T+1 模式）
- */
-export function scheduleStockPriceSync() {
-  cron.schedule(
-    '0 2 * * 1-5',
-    async () => {
-      console.log('[Scheduler] Starting scheduled stock price sync (T+1 mode)...');
-
-      // 計算前一交易日日期
-      const today = new Date();
-      const previousTradingDay = getPreviousTradingDay(today);
-
-      // 檢查前一交易日是否為交易日
-      if (!isTradingDay(previousTradingDay)) {
-        console.log('[Scheduler] Previous day was not a trading day, skipping price sync');
-        return;
-      }
-
-      try {
-        const result = await syncStockPrices(previousTradingDay);
-
-        if (!result.success) {
-          await notifyOwner({
-            title: '台股價格資料同步失敗',
-            content: `日期: ${formatDate(previousTradingDay)}\n錯誤數量: ${result.errorCount}\n錯誤訊息: ${result.errors.slice(0, 5).map(e => `${e.symbol || 'System'}: ${e.message}`).join('\n')}`,
-          });
-        } else if (result.errorCount > 0) {
-          // 部分成功，也發送通知
-          await notifyOwner({
-            title: '台股價格資料同步部分失敗',
-            content: `日期: ${formatDate(previousTradingDay)}\n成功: ${result.recordCount} 筆\n失敗: ${result.errorCount} 筆`,
-          });
-        }
-      } catch (error) {
-        console.error('[Scheduler] Stock price sync failed:', error);
-        await notifyOwner({
-          title: '台股價格資料同步失敗',
-          content: `日期: ${formatDate(previousTradingDay)}\n錯誤訊息: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        });
-      }
-    },
-    {
-      timezone: 'Asia/Taipei',
-    }
-  );
-
-  console.log('[Scheduler] Stock price sync scheduled: Every trading day 02:00 (T+1 mode)');
-}
-
-/**
  * 啟動所有排程
+ * 注意: 價格同步排程已移除，改為即時 API 呼叫
  */
 export function startAllSchedules() {
   scheduleStockInfoSync();
-  scheduleStockPriceSync();
-  console.log('[Scheduler] All schedules started (v3.0 - Off-peak hours)');
+  console.log('[Scheduler] All schedules started (v4.0 - Stock info only, prices via real-time API)');
 }

@@ -65,10 +65,10 @@ export function calculateMovingAverages(priceData: PriceData[]): TechnicalIndica
 
     result.push({
       date: priceData[i].date,
-      ma5: calculateSMA(closePrices, 5),
-      ma10: calculateSMA(closePrices, 10),
-      ma20: calculateSMA(closePrices, 20),
-      ma60: calculateSMA(closePrices, 60),
+      ma5: calculateSMA(closePrices, 5) ?? undefined,
+      ma10: calculateSMA(closePrices, 10) ?? undefined,
+      ma20: calculateSMA(closePrices, 20) ?? undefined,
+      ma60: calculateSMA(closePrices, 60) ?? undefined,
     });
   }
 

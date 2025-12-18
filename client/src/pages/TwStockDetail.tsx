@@ -67,41 +67,32 @@ export default function TwStockDetail() {
 
   // 獲取歷史價格
   const historicalQuery = trpc.twStock.getHistorical.useQuery(
-    { symbol, startDate, endDate },
+    { symbol, months: priceRange === '1M' ? 1 : priceRange === '3M' ? 3 : priceRange === '6M' ? 6 : 12 },
     { enabled: !!symbol }
   );
 
-  // 獲取技術指標
-  const indicatorsQuery = trpc.twStock.getIndicators.useQuery(
-    { symbol, startDate, endDate },
-    { enabled: !!symbol }
-  );
-
-  // 獲取基本面資料
-  const fundamentalsQuery = trpc.twStock.getFundamentals.useQuery(
-    { symbol },
-    { enabled: !!symbol }
-  );
+  // 技術指標和基本面資料功能待實作
+  const indicatorsQuery = { data: null, isLoading: false };
+  const fundamentalsQuery = { data: null, isLoading: false };
 
   // 準備圖表資料
   const chartData = useMemo(() => {
-    if (!historicalQuery.data || !indicatorsQuery.data) return [];
+    const data = historicalQuery.data?.data;
+    if (!data?.chart?.result?.[0]) return [];
 
-    return historicalQuery.data.map((price) => {
-      const indicator = indicatorsQuery.data.find(
-        (ind) => new Date(ind.date).toDateString() === new Date(price.date).toDateString()
-      );
+    const result = data.chart.result[0];
+    const timestamps = result.timestamp || [];
+    const quotes = result.indicators?.quote?.[0] || {};
 
-      return {
-        date: format(new Date(price.date), 'MM/dd'),
-        收盤價: price.close / 100, // 轉換回原始價格
-        MA5: indicator?.ma5 ? indicator.ma5 / 100 : null,
-        MA10: indicator?.ma10 ? indicator.ma10 / 100 : null,
-        MA20: indicator?.ma20 ? indicator.ma20 / 100 : null,
-        成交量: price.volume,
-      };
-    });
-  }, [historicalQuery.data, indicatorsQuery.data]);
+    return timestamps.map((ts: number, i: number) => ({
+      date: format(new Date(ts * 1000), 'MM/dd'),
+      收盤價: quotes.close?.[i] || 0,
+      開盤價: quotes.open?.[i] || 0,
+      最高價: quotes.high?.[i] || 0,
+      最低價: quotes.low?.[i] || 0,
+      成交量: quotes.volume?.[i] || 0,
+    }));
+  }, [historicalQuery.data]);
 
   const handleBack = () => {
     setLocation('/tw-stocks');
@@ -132,22 +123,22 @@ export default function TwStockDetail() {
             <Skeleton className="h-10 w-64" />
             <Skeleton className="h-6 w-96" />
           </div>
-        ) : detailQuery.data ? (
+        ) : detailQuery.data?.data ? (
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold">{detailQuery.data.symbol}</h1>
-              <Badge variant="outline">{detailQuery.data.market}</Badge>
-              {detailQuery.data.isActive ? (
+              <h1 className="text-4xl font-bold">{detailQuery.data.data.symbol}</h1>
+              <Badge variant="outline">{detailQuery.data.data.market}</Badge>
+              {detailQuery.data.data.isActive ? (
                 <Badge variant="default">交易中</Badge>
               ) : (
                 <Badge variant="secondary">已下市</Badge>
               )}
             </div>
-            <p className="text-xl text-muted-foreground">{detailQuery.data.name}</p>
-            {detailQuery.data.industry && (
+            <p className="text-xl text-muted-foreground">{detailQuery.data.data.name}</p>
+            {detailQuery.data.data.industry && (
               <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                 <Building2 className="h-4 w-4" />
-                {detailQuery.data.industry}
+                {detailQuery.data.data.industry}
               </div>
             )}
           </div>
@@ -181,30 +172,30 @@ export default function TwStockDetail() {
                       <Skeleton className="h-6 w-full" />
                       <Skeleton className="h-6 w-full" />
                     </div>
-                  ) : detailQuery.data ? (
+                  ) : detailQuery.data?.data ? (
                     <dl className="space-y-3">
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">股票代號</dt>
-                        <dd className="font-semibold">{detailQuery.data.symbol}</dd>
+                        <dd className="font-semibold">{detailQuery.data.data.symbol}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">公司名稱</dt>
-                        <dd className="font-semibold">{detailQuery.data.name}</dd>
+                        <dd className="font-semibold">{detailQuery.data.data.name}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">市場別</dt>
-                        <dd className="font-semibold">{detailQuery.data.market}</dd>
+                        <dd className="font-semibold">{detailQuery.data.data.market}</dd>
                       </div>
-                      {detailQuery.data.industry && (
+                      {detailQuery.data.data.industry && (
                         <div className="flex justify-between">
                           <dt className="text-muted-foreground">產業別</dt>
-                          <dd className="font-semibold">{detailQuery.data.industry}</dd>
+                          <dd className="font-semibold">{detailQuery.data.data.industry}</dd>
                         </div>
                       )}
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">狀態</dt>
                         <dd>
-                          {detailQuery.data.isActive ? (
+                          {detailQuery.data.data.isActive ? (
                             <Badge variant="default">交易中</Badge>
                           ) : (
                             <Badge variant="secondary">已下市</Badge>
@@ -230,16 +221,18 @@ export default function TwStockDetail() {
                       <Skeleton className="h-12 w-full" />
                       <Skeleton className="h-6 w-full" />
                     </div>
-                  ) : historicalQuery.data && historicalQuery.data.length > 0 ? (
+                  ) : historicalQuery.data?.data?.chart?.result?.[0]?.meta ? (
                     (() => {
-                      const latestPrice = historicalQuery.data[historicalQuery.data.length - 1];
-                      const isPositive = latestPrice.change >= 0;
+                      const meta = historicalQuery.data.data.chart.result[0].meta;
+                      const change = meta.regularMarketPrice - meta.previousClose;
+                      const changePercent = (change / meta.previousClose) * 100;
+                      const isPositive = change >= 0;
 
                       return (
                         <div className="space-y-4">
                           <div>
                             <div className="text-4xl font-bold">
-                              {(latestPrice.close / 100).toFixed(2)}
+                              {meta.regularMarketPrice.toFixed(2)}
                             </div>
                             <div
                               className={`flex items-center gap-2 mt-2 ${
@@ -253,38 +246,37 @@ export default function TwStockDetail() {
                               )}
                               <span className="text-lg font-semibold">
                                 {isPositive ? '+' : ''}
-                                {(latestPrice.change / 100).toFixed(2)} (
-                                {(latestPrice.changePercent / 10000).toFixed(2)}%)
+                                {change.toFixed(2)} ({changePercent.toFixed(2)}%)
                               </span>
                             </div>
                           </div>
                           <dl className="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                              <dt className="text-muted-foreground">開盤</dt>
+                              <dt className="text-muted-foreground">昨收</dt>
                               <dd className="font-semibold">
-                                {(latestPrice.open / 100).toFixed(2)}
+                                {meta.previousClose.toFixed(2)}
                               </dd>
                             </div>
                             <div>
                               <dt className="text-muted-foreground">最高</dt>
                               <dd className="font-semibold">
-                                {(latestPrice.high / 100).toFixed(2)}
+                                {meta.regularMarketDayHigh.toFixed(2)}
                               </dd>
                             </div>
                             <div>
                               <dt className="text-muted-foreground">最低</dt>
                               <dd className="font-semibold">
-                                {(latestPrice.low / 100).toFixed(2)}
+                                {meta.regularMarketDayLow.toFixed(2)}
                               </dd>
                             </div>
                             <div>
                               <dt className="text-muted-foreground">成交量</dt>
-                              <dd className="font-semibold">{latestPrice.volume.toLocaleString()} 張</dd>
+                              <dd className="font-semibold">{meta.regularMarketVolume?.toLocaleString() || 'N/A'}</dd>
                             </div>
                           </dl>
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            更新時間：{format(new Date(latestPrice.date), 'yyyy/MM/dd')}
+                            更新時間：{format(new Date(meta.regularMarketTime * 1000), 'yyyy/MM/dd HH:mm')}
                           </div>
                         </div>
                       );
@@ -404,167 +396,22 @@ export default function TwStockDetail() {
               </Card>
             )}
 
-            {fundamentalsQuery.error && (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <p className="text-destructive">載入基本面資料失敗</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {fundamentalsQuery.error.message}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {fundamentalsQuery.data && fundamentalsQuery.data.length === 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>基本面資料</CardTitle>
-                  <CardDescription>財務報表、股利、本益比等資訊</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <LineChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">暫無基本面資料</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      此股票目前沒有可用的財務指標資料
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {fundamentalsQuery.data && fundamentalsQuery.data.length > 0 && (
-              <>
-                {/* 最新財務指標 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>最新財務指標</CardTitle>
-                    <CardDescription>
-                      資料期間：{fundamentalsQuery.data[0].year} Q{fundamentalsQuery.data[0].quarter}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* EPS (每股盈餘) */}
-                      {fundamentalsQuery.data[0].eps !== null && (
-                        <div className="p-4 rounded-lg border bg-card">
-                          <div className="text-sm text-muted-foreground mb-1">每股盈餘 (EPS)</div>
-                          <div className="number-display-lg text-2xl font-semibold">
-                            {fundamentalsQuery.data[0].eps.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">元</div>
-                        </div>
-                      )}
-
-                      {/* PE Ratio (本益比) */}
-                      {fundamentalsQuery.data[0].pe !== null && (
-                        <div className="p-4 rounded-lg border bg-card">
-                          <div className="text-sm text-muted-foreground mb-1">本益比 (P/E)</div>
-                          <div className="number-display-lg text-2xl font-semibold">
-                            {fundamentalsQuery.data[0].pe.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">倍</div>
-                        </div>
-                      )}
-
-                      {/* PB Ratio (股價淨值比) */}
-                      {fundamentalsQuery.data[0].pb !== null && (
-                        <div className="p-4 rounded-lg border bg-card">
-                          <div className="text-sm text-muted-foreground mb-1">股價淨值比 (P/B)</div>
-                          <div className="number-display-lg text-2xl font-semibold">
-                            {fundamentalsQuery.data[0].pb.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">倍</div>
-                        </div>
-                      )}
-
-                      {/* Dividend Yield (殖利率) */}
-                      {fundamentalsQuery.data[0].yieldRate !== null && (
-                        <div className="p-4 rounded-lg border bg-card">
-                          <div className="text-sm text-muted-foreground mb-1">殖利率</div>
-                          <div className="number-display-lg text-2xl font-semibold">
-                            {fundamentalsQuery.data[0].yieldRate.toFixed(2)}%
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">年化</div>
-                        </div>
-                      )}
-
-                      {/* ROE (股東權益報酬率) */}
-                      {fundamentalsQuery.data[0].roe !== null && (
-                        <div className="p-4 rounded-lg border bg-card">
-                          <div className="text-sm text-muted-foreground mb-1">股東權益報酬率 (ROE)</div>
-                          <div className="number-display-lg text-2xl font-semibold">
-                            {fundamentalsQuery.data[0].roe.toFixed(2)}%
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">年化</div>
-                        </div>
-                      )}
-
-                      {/* Dividend (股利) */}
-                      {fundamentalsQuery.data[0].dividend !== null && (
-                        <div className="p-4 rounded-lg border bg-card">
-                          <div className="text-sm text-muted-foreground mb-1">股利</div>
-                          <div className="number-display-lg text-2xl font-semibold">
-                            {fundamentalsQuery.data[0].dividend.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">元</div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* 歷史財務指標趨勢 */}
-                {fundamentalsQuery.data.length > 1 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>歷史財務指標</CardTitle>
-                      <CardDescription>
-                        顯示最近 {fundamentalsQuery.data.length} 期的財務指標變化
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 px-4">日期</th>
-                              <th className="text-right py-2 px-4">EPS</th>
-                              <th className="text-right py-2 px-4">本益比</th>
-                              <th className="text-right py-2 px-4">股價淨值比</th>
-                              <th className="text-right py-2 px-4">殖利率</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {fundamentalsQuery.data.slice(0, 10).map((item, index) => (
-                              <tr key={index} className="border-b hover:bg-muted/50">
-                                <td className="py-2 px-4">
-                                  {item.year} Q{item.quarter}
-                                </td>
-                                <td className="text-right py-2 px-4 number-display-sm">
-                                  {item.eps !== null ? item.eps.toFixed(2) : '-'}
-                                </td>
-                                <td className="text-right py-2 px-4 number-display-sm">
-                                  {item.pe !== null ? item.pe.toFixed(2) : '-'}
-                                </td>
-                                <td className="text-right py-2 px-4 number-display-sm">
-                                  {item.pb !== null ? item.pb.toFixed(2) : '-'}
-                                </td>
-                                <td className="text-right py-2 px-4 number-display-sm">
-                                  {item.yieldRate !== null ? `${item.yieldRate.toFixed(2)}%` : '-'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
+            {/* 基本面資料功能待實作 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>基本面資料</CardTitle>
+                <CardDescription>財務報表、股利、本益比等資訊</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <LineChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">基本面資料功能開發中</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    即將提供 EPS、本益比、殖利率等財務指標
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -7,7 +7,7 @@ interface HotStock {
   symbol: string;
   name: string;
   originalSymbol: string;
-  market: 'US' | 'TW';
+  market: 'US' | 'TW' | 'ALL';
 }
 
 interface MobileHotStocksCarouselProps {

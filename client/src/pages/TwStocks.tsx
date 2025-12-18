@@ -21,7 +21,7 @@ export default function TwStocks() {
 
   // 搜尋台股
   const searchQuery = trpc.twStock.search.useQuery(
-    { keyword: searchKeyword },
+    { query: searchKeyword },
     { enabled: searchKeyword.length > 0 }
   );
 
@@ -80,13 +80,13 @@ export default function TwStocks() {
                 </form>
 
                 {/* 搜尋結果 */}
-                {searchQuery.data && searchQuery.data.length > 0 && (
+                {searchQuery.data?.data && searchQuery.data.data.length > 0 && (
                   <div className="mt-6 space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      找到 {searchQuery.data.length} 筆結果
+                      找到 {searchQuery.data.data.length} 筆結果
                     </p>
                     <div className="grid gap-3">
-                      {searchQuery.data.map((stock) => (
+                      {searchQuery.data.data.map((stock: any) => (
                         <Card
                           key={stock.id}
                           className="cursor-pointer hover:bg-accent transition-colors"
@@ -122,7 +122,7 @@ export default function TwStocks() {
                   </div>
                 )}
 
-                {searchQuery.data && searchQuery.data.length === 0 && (
+                {searchQuery.data?.data && searchQuery.data.data.length === 0 && (
                   <div className="mt-6 text-center py-12">
                     <p className="text-muted-foreground">找不到符合的股票</p>
                     <p className="text-sm text-muted-foreground mt-2">

@@ -10,4 +10,5 @@ export const ENV = {
   twelveDataBaseUrl: process.env.TWELVEDATA_BASE_URL ?? "",
   twelveDataToken: process.env.TWELVEDATA_TOKEN ?? "",
   tiingoApiToken: process.env.TIINGO_API_TOKEN ?? "",
+  finmindToken: process.env.FINMIND_TOKEN ?? "",
 };

@@ -21,24 +21,14 @@ export default function StockSearch() {
 
   // 台股搜尋
   const twSearchQuery = trpc.twStock.search.useQuery(
-    { keyword, limit: 20 },
-    { 
-      enabled: searchTriggered && market === "TW" && keyword.length > 0,
-      onError: (error) => {
-        toast.error(`台股搜尋失敗: ${error.message}`);
-      }
-    }
+    { query: keyword, limit: 20 },
+    { enabled: searchTriggered && market === "TW" && keyword.length > 0 }
   );
 
   // 美股搜尋
   const usSearchQuery = trpc.usStock.search.useQuery(
     { keyword, limit: 20 },
-    { 
-      enabled: searchTriggered && market === "US" && keyword.length > 0,
-      onError: (error) => {
-        toast.error(`美股搜尋失敗: ${error.message}`);
-      }
-    }
+    { enabled: searchTriggered && market === "US" && keyword.length > 0 }
   );
 
   const handleSearch = (e: React.FormEvent) => {

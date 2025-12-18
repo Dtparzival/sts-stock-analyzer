@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, index, bigint, date } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, index, date } from "drizzle-orm/mysql-core";
 
 /**
  * 核心用戶表
@@ -21,7 +21,9 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * 台股基本資料表
  * 儲存台股的基本資訊，包含股票代號、名稱、市場類別、產業別等
- * 資料來源: FinMind API - TaiwanStockInfo
+ * 資料來源: FinMind API - TaiwanStockInfo 或 TWSE/TPEx 官方資料
+ * 
+ * 更新策略: 每週自動同步一次 (週日 02:00 UTC+8)
  */
 export const twStocks = mysqlTable("twStocks", {
   id: int("id").autoincrement().primaryKey(),
@@ -30,6 +32,7 @@ export const twStocks = mysqlTable("twStocks", {
   shortName: varchar("shortName", { length: 50 }), // 股票簡稱
   market: mysqlEnum("market", ["TWSE", "TPEx"]).notNull(), // 市場類型: 上市/上櫃
   industry: varchar("industry", { length: 50 }), // 產業分類
+  type: varchar("type", { length: 20 }).default("STOCK"), // 類型: STOCK/ETF/WARRANT 等
   isActive: boolean("isActive").default(true).notNull(), // 是否活躍
   listedDate: date("listedDate"), // 上市日期
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -45,46 +48,13 @@ export type TwStock = typeof twStocks.$inferSelect;
 export type InsertTwStock = typeof twStocks.$inferInsert;
 
 /**
- * 台股歷史價格表
- * 儲存台股的每日交易資料，包含開高低收價格、成交量、成交金額等
- * 資料來源: FinMind API - TaiwanStockPrice
- * 
- * 價格儲存格式:
- * - 所有價格欄位(open, high, low, close, change)以「分」為單位儲存 (INT)
- *   例如: 股價 123.45 元儲存為 12345
- * - 漲跌幅以「基點」(萬分之一)為單位儲存 (INT)
- *   例如: 漲幅 3.25% 儲存為 325
- */
-export const twStockPrices = mysqlTable("twStockPrices", {
-  id: int("id").autoincrement().primaryKey(),
-  symbol: varchar("symbol", { length: 10 }).notNull(), // 股票代號
-  date: date("date").notNull(), // 交易日期
-  open: int("open").notNull(), // 開盤價 (以分為單位)
-  high: int("high").notNull(), // 最高價 (以分為單位)
-  low: int("low").notNull(), // 最低價 (以分為單位)
-  close: int("close").notNull(), // 收盤價 (以分為單位)
-  volume: bigint("volume", { mode: "number" }).notNull(), // 成交量 (股)
-  amount: bigint("amount", { mode: "number" }).notNull(), // 成交金額 (元)
-  change: int("change").notNull(), // 漲跌 (以分為單位)
-  changePercent: int("changePercent").notNull(), // 漲跌幅 (以基點為單位, 萬分之一)
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({
-  symbolDateIdx: index("symbol_date_idx").on(table.symbol, table.date),
-  dateIdx: index("date_idx").on(table.date),
-  symbolIdx: index("symbol_idx").on(table.symbol),
-}));
-
-export type TwStockPrice = typeof twStockPrices.$inferSelect;
-export type InsertTwStockPrice = typeof twStockPrices.$inferInsert;
-
-/**
- * 資料同步狀態表
- * 記錄各類資料的同步狀態，用於監控資料更新情況與排程執行結果
+ * 台股資料同步狀態表
+ * 記錄股票基本資料的同步狀態，用於監控資料更新情況
  */
 export const twDataSyncStatus = mysqlTable("twDataSyncStatus", {
   id: int("id").autoincrement().primaryKey(),
-  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks / prices
-  source: varchar("source", { length: 50 }).notNull(), // 資料來源: finmind
+  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks
+  source: varchar("source", { length: 50 }).notNull(), // 資料來源: finmind / twse / tpex
   lastSyncAt: timestamp("lastSyncAt").notNull(), // 最後同步時間 (UTC)
   status: mysqlEnum("status", ["success", "partial", "failed"]).notNull(), // 狀態
   recordCount: int("recordCount").default(0).notNull(), // 本次同步筆數
@@ -100,12 +70,12 @@ export type TwDataSyncStatus = typeof twDataSyncStatus.$inferSelect;
 export type InsertTwDataSyncStatus = typeof twDataSyncStatus.$inferInsert;
 
 /**
- * 資料同步錯誤記錄表
- * 詳細記錄同步過程中發生的錯誤，包含錯誤類型、錯誤訊息、堆疊追蹤等
+ * 台股資料同步錯誤記錄表
+ * 詳細記錄同步過程中發生的錯誤
  */
 export const twDataSyncErrors = mysqlTable("twDataSyncErrors", {
   id: int("id").autoincrement().primaryKey(),
-  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks / prices
+  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks
   symbol: varchar("symbol", { length: 10 }), // 股票代號 (可為空，系統級錯誤)
   errorType: varchar("errorType", { length: 50 }).notNull(), // 錯誤類型: API / Network / Parse / Database / Validation
   errorMessage: text("errorMessage").notNull(), // 錯誤訊息
@@ -126,7 +96,9 @@ export type InsertTwDataSyncError = typeof twDataSyncErrors.$inferInsert;
 /**
  * 美股基本資料表
  * 儲存美股的基本資訊，包含股票代號、公司名稱、交易所、產業分類等
- * 資料來源: TwelveData API - Quote
+ * 資料來源: TwelveData API - Stocks List
+ * 
+ * 更新策略: 每週自動同步一次 (週日 03:00 UTC+8)
  */
 export const usStocks = mysqlTable("usStocks", {
   id: int("id").autoincrement().primaryKey(),
@@ -138,6 +110,7 @@ export const usStocks = mysqlTable("usStocks", {
   country: varchar("country", { length: 50 }), // 國家 (例如: United States)
   sector: varchar("sector", { length: 100 }), // 產業類別 (例如: Technology)
   industry: varchar("industry", { length: 100 }), // 產業細分 (例如: Consumer Electronics)
+  type: varchar("type", { length: 20 }).default("Common Stock"), // 類型: Common Stock/ETF/ADR 等
   isActive: boolean("isActive").default(true).notNull(), // 是否活躍
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -152,44 +125,12 @@ export type UsStock = typeof usStocks.$inferSelect;
 export type InsertUsStock = typeof usStocks.$inferInsert;
 
 /**
- * 美股歷史價格表
- * 儲存美股的每日交易資料，包含開高低收價格、成交量等
- * 資料來源: TwelveData API - Time Series
- * 
- * 價格儲存格式:
- * - 所有價格欄位(open, high, low, close, change)以「美分」為單位儲存 (INT)
- *   例如: 股價 $150.25 儲存為 15025
- * - 漲跌幅以「基點」(萬分之一)為單位儲存 (INT)
- *   例如: 漲幅 3.25% 儲存為 325
- */
-export const usStockPrices = mysqlTable("usStockPrices", {
-  id: int("id").autoincrement().primaryKey(),
-  symbol: varchar("symbol", { length: 20 }).notNull(), // 股票代號
-  date: date("date").notNull(), // 交易日期
-  open: int("open").notNull(), // 開盤價 (以美分為單位)
-  high: int("high").notNull(), // 最高價 (以美分為單位)
-  low: int("low").notNull(), // 最低價 (以美分為單位)
-  close: int("close").notNull(), // 收盤價 (以美分為單位)
-  volume: bigint("volume", { mode: "number" }).notNull(), // 成交量 (股)
-  change: int("change").notNull(), // 漲跌 (以美分為單位)
-  changePercent: int("changePercent").notNull(), // 漲跌幅 (以基點為單位, 萬分之一)
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({
-  symbolDateIdx: index("us_symbol_date_idx").on(table.symbol, table.date),
-  dateIdx: index("us_date_idx").on(table.date),
-  symbolIdx: index("us_symbol_idx").on(table.symbol),
-}));
-
-export type UsStockPrice = typeof usStockPrices.$inferSelect;
-export type InsertUsStockPrice = typeof usStockPrices.$inferInsert;
-
-/**
  * 美股資料同步狀態表
- * 記錄美股各類資料的同步狀態 (主要用於快取管理)
+ * 記錄美股基本資料的同步狀態
  */
 export const usDataSyncStatus = mysqlTable("usDataSyncStatus", {
   id: int("id").autoincrement().primaryKey(),
-  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks / prices / cache
+  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks
   source: varchar("source", { length: 50 }).notNull(), // 資料來源: twelvedata
   lastSyncAt: timestamp("lastSyncAt").notNull(), // 最後同步時間 (UTC)
   status: mysqlEnum("status", ["success", "partial", "failed"]).notNull(), // 狀態
@@ -211,7 +152,7 @@ export type InsertUsDataSyncStatus = typeof usDataSyncStatus.$inferInsert;
  */
 export const usDataSyncErrors = mysqlTable("usDataSyncErrors", {
   id: int("id").autoincrement().primaryKey(),
-  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks / prices / cache
+  dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: stocks
   symbol: varchar("symbol", { length: 20 }), // 股票代號 (可為空，系統級錯誤)
   errorType: varchar("errorType", { length: 50 }).notNull(), // 錯誤類型: API / Network / Parse / Database / Validation
   errorMessage: text("errorMessage").notNull(), // 錯誤訊息
@@ -231,14 +172,14 @@ export type InsertUsDataSyncError = typeof usDataSyncErrors.$inferInsert;
 
 /**
  * 股票資料快取表
- * 用於快取美股即時查詢的資料，減少 API 呼叫次數
+ * 用於快取即時查詢的資料，減少 API 呼叫次數
  * 快取策略:
  * - 公司名稱: 24 小時
- * - 股價數據: 1 小時
+ * - 股價數據: 5 分鐘 (交易時段) / 1 小時 (非交易時段)
  */
 export const stockDataCache = mysqlTable("stockDataCache", {
   id: int("id").autoincrement().primaryKey(),
-  cacheKey: varchar("cacheKey", { length: 200 }).notNull().unique(), // 快取鍵值 (例如: stock_data:AAPL:US:1d:1day)
+  cacheKey: varchar("cacheKey", { length: 200 }).notNull().unique(), // 快取鍵值 (例如: stock_data:AAPL:US:quote)
   market: varchar("market", { length: 10 }).notNull(), // 市場: TW / US
   symbol: varchar("symbol", { length: 20 }).notNull(), // 股票代號
   dataType: varchar("dataType", { length: 50 }).notNull(), // 資料類型: quote / timeseries / name

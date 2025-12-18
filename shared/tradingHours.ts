@@ -2,7 +2,7 @@
  * 台股和美股交易時間判斷工具
  */
 
-export type Market = 'US' | 'TW';
+export type Market = 'US' | 'TW' | 'ALL';
 
 /**
  * 判斷當前是否在台股交易時間內
@@ -62,6 +62,9 @@ export function isUSMarketOpen(): boolean {
  * 根據市場判斷是否在交易時間內
  */
 export function isMarketOpen(market: Market): boolean {
+  if (market === 'ALL') {
+    return isTWMarketOpen() || isUSMarketOpen();
+  }
   return market === 'TW' ? isTWMarketOpen() : isUSMarketOpen();
 }
 
@@ -71,6 +74,8 @@ export function isMarketOpen(market: Market): boolean {
 export function getNextMarketOpenTime(market: Market): string {
   if (market === 'TW') {
     return '台股交易時間：週一至週五 09:00-13:30 (台北時間)';
+  } else if (market === 'ALL') {
+    return '台股 09:00-13:30 (台北) / 美股 09:30-16:00 (美東)';
   } else {
     return '美股交易時間：週一至週五 09:30-16:00 (美東時間)';
   }
