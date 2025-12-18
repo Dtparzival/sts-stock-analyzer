@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startAllSchedules } from "../jobs/syncTwStockData";
 import { startUsScheduledSyncs } from "../jobs/syncUsStockDataScheduled";
+import { scheduleStartupSyncCheck } from "../jobs/startupSyncCheck";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -67,6 +68,10 @@ async function startServer() {
     
     // 啟動美股定期同步排程 (v5.0 混合同步架構)
     startUsScheduledSyncs();
+    
+    // 啟動時同步檢查 (解決 sandbox 休眠導致排程無法執行的問題)
+    // 延遲 30 秒執行，避免影響伺服器啟動速度
+    scheduleStartupSyncCheck(30000);
   });
 }
 

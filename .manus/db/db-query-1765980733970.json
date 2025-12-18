@@ -1,0 +1,79 @@
+{
+  "query": "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE();",
+  "rows": [
+    {
+      "table_name": "__drizzle_migrations"
+    },
+    {
+      "table_name": "users"
+    },
+    {
+      "table_name": "analysisCache"
+    },
+    {
+      "table_name": "portfolio"
+    },
+    {
+      "table_name": "searchHistory"
+    },
+    {
+      "table_name": "watchlist"
+    },
+    {
+      "table_name": "portfolioHistory"
+    },
+    {
+      "table_name": "stockDataCache"
+    },
+    {
+      "table_name": "analysisHistory"
+    },
+    {
+      "table_name": "portfolioTransactions"
+    },
+    {
+      "table_name": "questionStats"
+    },
+    {
+      "table_name": "userBehavior"
+    },
+    {
+      "table_name": "recommendationCache"
+    },
+    {
+      "table_name": "userInteractions"
+    },
+    {
+      "table_name": "twStocks"
+    },
+    {
+      "table_name": "twStockPrices"
+    },
+    {
+      "table_name": "twDataSyncStatus"
+    },
+    {
+      "table_name": "twDataSyncErrors"
+    },
+    {
+      "table_name": "usDataSyncStatus"
+    },
+    {
+      "table_name": "usDataSyncErrors"
+    },
+    {
+      "table_name": "usStocks"
+    },
+    {
+      "table_name": "usStockPrices"
+    },
+    {
+      "table_name": "userSearchBehavior"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\n__drizzle_migrations\nusers\nanalysisCache\nportfolio\nsearchHistory\nwatchlist\nportfolioHistory\nstockDataCache\nanalysisHistory\nportfolioTransactions\nquestionStats\nuserBehavior\nrecommendationCache\nuserInteractions\ntwStocks\ntwStockPrices\ntwDataSyncStatus\ntwDataSyncErrors\nusDataSyncStatus\nusDataSyncErrors\nusStocks\nusStockPrices\nuserSearchBehavior\n",
+  "stderr": "",
+  "execution_time_ms": 1549
+}

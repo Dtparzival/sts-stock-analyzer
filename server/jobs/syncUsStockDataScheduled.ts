@@ -4,19 +4,22 @@
  * 針對重要股票 (S&P 500 + 主要 ETF) 實施定期批次同步
  * 
  * 同步範圍:
- * - S&P 500 成分股 (~220 支)
+ * - S&P 500 成分股 (~500 支)
  * - 主要 ETF (32 支)
  * 
  * 排程設定:
  * - 基本資料:每週日凌晨 06:00 (台北時間)
  * - 歷史價格:每交易日凌晨 06:00 (台北時間)
  * - 資料範圍:最近 30 天
+ * 
+ * 注意: TwelveData API 已無限流限制，同步速度大幅提升
  */
 
 import cron from 'node-cron';
 import {
   getTwelveDataQuote,
   getTwelveDataTimeSeries,
+  convertPriceToCents,
 } from '../integrations/twelvedata';
 import {
   SCHEDULED_SYNC_STOCKS,
@@ -169,9 +172,9 @@ export async function syncScheduledStockInfo(): Promise<SyncResult> {
 
         result.recordCount++;
 
-        // API 限流控制:每次請求間隔 8 秒
+        // 簡短延遲以避免 API 過載
         if (i < SCHEDULED_SYNC_STOCKS.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 8000));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       } catch (error) {
         result.errorCount++;
@@ -284,15 +287,24 @@ export async function syncScheduledStockPrices(days: number = 30): Promise<SyncR
         }
 
         // 轉換為資料庫格式
-        const prices = timeSeries.values.map(v => ({
-          symbol,
-          date: new Date(v.datetime),
-          openPrice: v.open,
-          highPrice: v.high,
-          lowPrice: v.low,
-          closePrice: v.close,
-          volume: v.volume,
-        }));
+        const prices = timeSeries.values.map(v => {
+          const openCents = convertPriceToCents(v.open);
+          const highCents = convertPriceToCents(v.high);
+          const lowCents = convertPriceToCents(v.low);
+          const closeCents = convertPriceToCents(v.close);
+          
+          return {
+            symbol,
+            date: v.datetime, // 使用字串格式 YYYY-MM-DD
+            open: openCents,
+            high: highCents,
+            low: lowCents,
+            close: closeCents,
+            volume: parseInt(v.volume, 10) || 0,
+            change: 0, // API 未提供，設為 0
+            changePercent: 0, // API 未提供，設為 0
+          };
+        });
 
         // 批次寫入資料庫
         await batchUpsertUsStockPrices(prices);
@@ -301,9 +313,9 @@ export async function syncScheduledStockPrices(days: number = 30): Promise<SyncR
 
         console.log(`[US Scheduled Sync] Synced ${prices.length} price records for ${symbol}`);
 
-        // API 限流控制:每次請求間隔 8 秒
+        // 簡短延遲以避免 API 過載
         if (i < SCHEDULED_SYNC_STOCKS.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 8000));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       } catch (error) {
         result.errorCount++;

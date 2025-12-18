@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, dataType, source, lastSyncAt, status, recordCount FROM twDataSyncStatus ORDER BY lastSyncAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3tyUrnEAZmgrWaW.7957998e07fb --database KzRzifpe7R9Hr8c3sVfR6n --execute SELECT id, dataType, source, lastSyncAt, status, recordCount FROM twDataSyncStatus ORDER BY lastSyncAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "210001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-07 18:05:44",
+      "status": "success",
+      "recordCount": "0"
+    },
+    {
+      "id": "180001",
+      "dataType": "stocks",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-06 03:19:48",
+      "status": "success",
+      "recordCount": "3620"
+    },
+    {
+      "id": "150001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-03 18:06:33",
+      "status": "success",
+      "recordCount": "0"
+    },
+    {
+      "id": "120001",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 20:14:28",
+      "status": "success",
+      "recordCount": "0"
+    },
+    {
+      "id": "90002",
+      "dataType": "prices",
+      "source": "finmind",
+      "lastSyncAt": "2025-12-02 18:06:41",
+      "status": "success",
+      "recordCount": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdataType\tsource\tlastSyncAt\tstatus\trecordCount\n210001\tprices\tfinmind\t2025-12-07 18:05:44\tsuccess\t0\n180001\tstocks\tfinmind\t2025-12-06 03:19:48\tsuccess\t3620\n150001\tprices\tfinmind\t2025-12-03 18:06:33\tsuccess\t0\n120001\tprices\tfinmind\t2025-12-02 20:14:28\tsuccess\t0\n90002\tprices\tfinmind\t2025-12-02 18:06:41\tsuccess\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1527
+}
