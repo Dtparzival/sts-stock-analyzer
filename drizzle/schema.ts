@@ -106,7 +106,7 @@ export const usStocks = mysqlTable("usStocks", {
   name: varchar("name", { length: 200 }).notNull(), // 公司全名
   shortName: varchar("shortName", { length: 100 }), // 公司簡稱
   exchange: varchar("exchange", { length: 20 }), // 交易所 (例如: NASDAQ, NYSE)
-  currency: varchar("currency", { length: 10 }), // 幣別 (例如: USD)
+  currency: varchar("currency", { length: 10 }).default("USD").notNull(), // 幣別 (例如: USD)
   country: varchar("country", { length: 50 }), // 國家 (例如: United States)
   sector: varchar("sector", { length: 100 }), // 產業類別 (例如: Technology)
   industry: varchar("industry", { length: 100 }), // 產業細分 (例如: Consumer Electronics)

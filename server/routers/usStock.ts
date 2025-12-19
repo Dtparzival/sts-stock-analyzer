@@ -383,12 +383,21 @@ export const usStockRouter = router({
 
   /**
    * 獲取美股同步錯誤
+   * 需要管理員權限
    */
-  getSyncErrors: publicProcedure
+  getSyncErrors: protectedProcedure
     .input(z.object({
       limit: z.number().min(1).max(100).optional().default(50),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // 檢查是否為管理員
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "需要管理員權限",
+        });
+      }
+      
       const { limit } = input;
       
       try {
