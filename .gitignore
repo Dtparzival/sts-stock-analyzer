@@ -109,3 +109,6 @@ temp/
 # Sync logs and temporary files
 sync_log_*.txt
 file_cleanup_analysis.md
+
+# Manus cache
+.manus/
