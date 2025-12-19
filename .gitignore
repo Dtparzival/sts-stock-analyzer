@@ -105,3 +105,7 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Sync logs and temporary files
+sync_log_*.txt
+file_cleanup_analysis.md
