@@ -634,3 +634,26 @@
 - [ ] 建立 checkpoint 並發佈
 - [ ] 推送到 GitHub sts-stock-analyzer repository
 
+
+---
+
+## 階段十八:檔案整合與歸類 (2025-12-19) 🔴
+
+### 測試檔案整合
+- [x] 整合分散的測試檔案至統一目錄結構
+- [x] 移除重複的測試檔案
+- [x] 統一測試檔案命名規範
+
+### 文件檔案整合
+- [x] 整合根目錄文件至 docs 目錄
+- [x] 移除過時的文件檔案
+- [x] 統一文件命名規範
+
+### 腳本檔案整合
+- [x] 整合 server/scripts 至 scripts 目錄
+- [x] 移除過時的 .old 檔案
+- [x] 清理重複的腳本檔案
+
+### 同步推送
+- [x] 同步推送變更到 GitHub sts-stock-analyzer (commit: 55fa9a6)
+
