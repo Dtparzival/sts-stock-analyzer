@@ -655,7 +655,7 @@
 - [x] 清理重複的腳本檔案
 
 ### 同步推送
-- [ ] 同步推送變更到 GitHub sts-stock-analyzer
+- [x] 同步推送變更到 GitHub sts-stock-analyzer (2025-12-19 已確認同步完成)
 
 
 
@@ -676,7 +676,7 @@
 - [x] 列出各子目錄的文件說明
 
 ### 同步回 GitHub
-- [ ] 推送變更到 GitHub sts-stock-analyzer
+- [x] 推送變更到 GitHub sts-stock-analyzer (2025-12-19 已確認同步完成)
 
 
 
@@ -716,3 +716,41 @@
 - [x] 常用指令列表
 - [x] 測試執行說明
 - [x] 疑難排解指南
+
+
+---
+
+## 階段二十一：規格文件更新 (2025-12-19) 🔴
+
+### 資料庫架構更新
+- [ ] 更新 STS_System_Design_Specification.md 移除 twStockPrices 表說明
+- [ ] 更新 STS_System_Design_Specification.md 移除 usStockPrices 表說明
+- [ ] 更新資料表關聯圖移除歷史價格表
+- [ ] 更新儲存空間估算移除歷史價格資料
+
+### 資料同步機制更新
+- [ ] 更新同步策略說明（從批次同步改為即時 API 呼叫）
+- [ ] 更新台股資料來源說明（從 FinMind 改為 TWSE/TPEx 官方 API）
+- [ ] 更新美股資料同步排程說明
+
+### 新增功能說明
+- [ ] 新增 userSearchBehavior 表說明
+- [ ] 新增個人化搜尋功能說明
+- [ ] 更新快取策略說明
+
+
+
+---
+
+## 階段二十二：規格文件一致性檢查與 GitHub 同步 (2025-01-10) 🔴
+
+### 規格文件與實作一致性檢查
+- [x] 檢查資料庫 schema 與規格文件是否一致
+- [x] 檢查資料流設計圖是否反映目前架構
+- [x] 檢查 API 設計是否與實作一致
+- [x] 更新規格文件中過時的內容
+
+### GitHub 同步
+- [ ] 提交規格文件更新
+- [ ] 推送變更到 GitHub sts-stock-analyzer
+

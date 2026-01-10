@@ -1,9 +1,10 @@
 # STS 台美股投資分析平台 - 系統設計規格文件
 
 **專案名稱**: STS (Stock Trading System) - 台美股投資分析平台  
-**文件版本**: v1.0  
+**文件版本**: v2.0  
 **文件類型**: System Design Specification (SD)  
-**交付日期**: 2024年12月  
+**初版日期**: 2024年12月  
+**最後更新**: 2025年12月19日  
 **作者**: Manus AI
 
 ---
@@ -18,7 +19,7 @@
 
 ### 1.2 專案背景
 
-STS 平台是一個整合台股與美股市場資料的投資分析系統，提供股票基本資料查詢、歷史價格分析、技術指標計算等功能。系統採用雙資料源策略：台股使用 **FinMind API**，美股使用 **TwelveData API**，並針對不同股票類型實施差異化同步策略，確保資料的一致性、完整性與可靠性。
+STS 平台是一個整合台股與美股市場資料的投資分析系統，提供股票基本資料查詢、即時價格查詢、技術指標計算等功能。系統採用雙資料源策略：台股使用 **TWSE/TPEx 官方 API**，美股使用 **TwelveData API**，並採用即時 API 呼叫策略取得價格資料，確保資料的即時性與準確性。
 
 系統的核心設計理念為**精簡化 + 雙市場 + 混合同步**，專注於核心資料的穩定性與可靠性，同時為未來的進階功能（如技術分析、基本面分析、投資組合管理等）預留擴展空間。
 
@@ -26,15 +27,16 @@ STS 平台是一個整合台股與美股市場資料的投資分析系統，提�
 
 本系統的核心目標包括：
 
-1. **建立精簡的雙市場資料庫架構**，涵蓋台股與美股的基本資料與歷史價格資料
+1. **建立精簡的雙市場資料庫架構**，涵蓋台股與美股的基本資料
 2. **整合雙資料源**，實作穩定的 API 整合層，處理資料轉換、驗證與錯誤處理
-3. **實作差異化同步機制**：
-   - 台股：定期批次同步（全部股票，約 2,000 支）
-   - 美股（S&P 500 + 主要 ETF）：定期批次同步（重要股票，約 532 支）
-   - 美股（其他）：即時查詢 + 快取（靈活查詢）
+3. **實作即時價格查詢機制**：
+   - 台股：即時呼叫 TWSE/TPEx 官方 API 取得價格
+   - 美股：即時呼叫 TwelveData API 取得價格
+   - 股票基本資料：每週自動同步更新
 4. **提供統一的 tRPC API 介面**，支援前端應用的各種查詢需求
 5. **建立資料驗證和品質檢查工具**，確保資料的準確性與可靠性
 6. **實作使用者認證與授權機制**，基於 Manus OAuth 提供安全的使用者管理
+7. **實作個人化搜尋功能**，追蹤使用者搜尋行為並提供個人化排序
 
 ### 1.4 文件範圍
 
@@ -233,16 +235,67 @@ STS 平台採用**前後端分離**的架構設計，基於 **tRPC** 實現端�
 
 ### 2.4 資料流設計
 
-#### 台股資料流
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```
-定期同步 (每交易日凌晨 02:00)
+
+#### 美股資料流
+
+系統採用**即時 API 呼叫**策略取得美股價格資料，股票基本資料則每週自動同步更新。
+
+**股票基本資料同步（每週日 03:00 UTC+8）**
+
+```
+定期同步
     │
     ↓
 ┌─────────────────┐
-│  FinMind API    │
-│  TaiwanStockInfo│
-│  TaiwanStockPrice│
+│ TwelveData API  │
+│  Stocks List    │
 └─────────────────┘
     │
     │ HTTP Request
@@ -257,76 +310,48 @@ STS 平台採用**前後端分離**的架構設計，基於 **tRPC** 實現端�
     │ Transformed Data
     ↓
 ┌─────────────────┐
-│  資料庫操作層    │
-│  - Batch Upsert │
-│  - 同步狀態記錄  │
-│  - 錯誤記錄      │
-└─────────────────┘
-    │
-    │ SQL Insert/Update
-    ↓
-┌─────────────────┐
 │  MySQL Database │
-│  - twStocks     │
-│  - twStockPrices│
+│  - usStocks     │
 └─────────────────┘
+```
+
+**即時價格查詢**
+
+```
+使用者請求
     │
-    │ tRPC Query
     ↓
 ┌─────────────────┐
 │  前端應用        │
-│  - 股票搜尋      │
-│  - 價格查詢      │
-│  - 圖表顯示      │
+│  tRPC Query     │
 └─────────────────┘
-```
-
-#### 美股資料流（定期同步）
-
-```
-定期同步 (每交易日凌晨 06:00)
-S&P 500 + 主要 ETF (~532 支)
     │
+    │ tRPC Request
+    ↓
+┌─────────────────┐
+│  tRPC Router    │
+│  usStock.getPrice│
+└─────────────────┘
+    │
+    │ 檢查快取
+    ↓
+┌─────────────────┐
+│  快取層          │
+│  stockDataCache │
+└─────────────────┘
+    │
+    │ 快取未命中
     ↓
 ┌─────────────────┐
 │ TwelveData API  │
-│  - Quote        │
-│  - Time Series  │
+│  Quote / Price  │
 └─────────────────┘
     │
-    │ HTTP Request (每次間隔 8 秒)
-    ↓
-┌─────────────────┐
-│  API 整合層      │
-│  - 資料轉換      │
-│  - 價格單位轉換  │
-│  - 錯誤處理      │
-└─────────────────┘
-    │
-    │ Transformed Data
-    ↓
-┌─────────────────┐
-│  資料庫操作層    │
-│  - Batch Upsert │
-│  - 同步狀態記錄  │
-│  - 錯誤記錄      │
-└─────────────────┘
-    │
-    │ SQL Insert/Update
-    ↓
-┌─────────────────┐
-│  MySQL Database │
-│  - usStocks     │
-│  - usStockPrices│
-└─────────────────┘
-    │
-    │ tRPC Query
+    │ 更新快取 + 回傳
     ↓
 ┌─────────────────┐
 │  前端應用        │
-│  - 股票搜尋      │
-│  - 價格查詢      │
-│  - 圖表顯示      │
+│  顯示即時價格    │
 └─────────────────┘
 ```
 
@@ -461,42 +486,9 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 - 一般索引：`INDEX idx_isActive (isActive)`
 - 複合索引：`INDEX idx_market_isActive (market, isActive)`
 
-**資料來源**：FinMind API - `TaiwanStockInfo` 端點
+**資料來源**：TWSE/TPEx 官方 API - 上市櫃股票清單
 
-#### twStockPrices - 台股歷史價格表
-
-此表儲存台股的每日交易資料，包含開高低收價格、成交量、成交金額等資訊。
-
-| 欄位名稱 | 型別 | 說明 | 約束 | 備註 |
-|---------|------|------|------|------|
-| id | INT | 主鍵 | PK, AUTO_INCREMENT | 自動遞增 |
-| symbol | VARCHAR(10) | 股票代號 | NOT NULL | 關聯 twStocks |
-| date | DATE | 交易日期 | NOT NULL | 格式: YYYY-MM-DD |
-| open | INT | 開盤價 | NOT NULL | 以分為單位，例如: 12345 = 123.45 元 |
-| high | INT | 最高價 | NOT NULL | 以分為單位 |
-| low | INT | 最低價 | NOT NULL | 以分為單位 |
-| close | INT | 收盤價 | NOT NULL | 以分為單位 |
-| volume | BIGINT | 成交量 | NOT NULL | 單位: 股 |
-| amount | BIGINT | 成交金額 | NOT NULL | 單位: 元 |
-| change | INT | 漲跌 | NOT NULL | 以分為單位 |
-| changePercent | INT | 漲跌幅 | NOT NULL | 以基點為單位(萬分之一)，例如: 325 = 3.25% |
-| createdAt | TIMESTAMP | 建立時間 | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 記錄建立時間 |
-
-**索引設計**：
-- 主鍵索引：`PRIMARY KEY (id)`
-- 唯一索引：`UNIQUE INDEX idx_symbol_date (symbol, date)`
-- 一般索引：`INDEX idx_date (date)`
-- 一般索引：`INDEX idx_symbol (symbol)`
-
-**資料來源**：FinMind API - `TaiwanStockPrice` 端點
-
-**價格儲存格式說明**：
-- 所有價格欄位（open, high, low, close, change）以**分**為單位儲存
-  - 例如：股價 123.45 元儲存為 12345
-- 漲跌幅以**基點**（萬分之一）為單位儲存
-  - 例如：漲幅 3.25% 儲存為 325
-- 此設計避免浮點數精度問題，確保財務計算的準確性
-- 前端顯示時需除以 100（價格）或 10000（漲跌幅）進行格式轉換
+> **注意**：twStockPrices 歷史價格表已於 v2.0 版本移除，改用即時 API 呼叫取得價格資料。
 
 #### twDataSyncStatus - 台股資料同步狀態表
 
@@ -505,8 +497,8 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 | 欄位名稱 | 型別 | 說明 | 約束 | 備註 |
 |---------|------|------|------|------|
 | id | INT | 主鍵 | PK, AUTO_INCREMENT | 自動遞增 |
-| dataType | VARCHAR(50) | 資料類型 | NOT NULL | stocks / prices |
-| source | VARCHAR(50) | 資料來源 | NOT NULL | finmind |
+| dataType | VARCHAR(50) | 資料類型 | NOT NULL | stocks |
+| source | VARCHAR(50) | 資料來源 | NOT NULL | twse / tpex |
 | lastSyncAt | TIMESTAMP | 最後同步時間 | NOT NULL | UTC 時區 |
 | status | ENUM('success', 'partial', 'failed') | 狀態 | NOT NULL | 同步結果 |
 | recordCount | INT | 記錄數 | NOT NULL, DEFAULT 0 | 本次同步筆數 |
@@ -526,7 +518,7 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 | 欄位名稱 | 型別 | 說明 | 約束 | 備註 |
 |---------|------|------|------|------|
 | id | INT | 主鍵 | PK, AUTO_INCREMENT | 自動遞增 |
-| dataType | VARCHAR(50) | 資料類型 | NOT NULL | stocks / prices |
+| dataType | VARCHAR(50) | 資料類型 | NOT NULL | stocks |
 | symbol | VARCHAR(10) | 股票代號 | NULLABLE | 可為空（系統級錯誤） |
 | errorType | VARCHAR(50) | 錯誤類型 | NOT NULL | API / Network / Parse |
 | errorMessage | TEXT | 錯誤訊息 | NOT NULL | 錯誤描述 |
@@ -573,36 +565,7 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 
 **資料來源**：TwelveData API - `quote` 端點
 
-#### usStockPrices - 美股歷史價格表
-
-此表儲存美股的每日交易資料，包含開高低收價格、成交量等資訊。
-
-| 欄位名稱 | 型別 | 說明 | 約束 | 備註 |
-|---------|------|------|------|------|
-| id | INT | 主鍵 | PK, AUTO_INCREMENT | 自動遞增 |
-| symbol | VARCHAR(20) | 股票代號 | NOT NULL | 關聯 usStocks |
-| date | DATE | 交易日期 | NOT NULL | 格式: YYYY-MM-DD |
-| open | INT | 開盤價 | NOT NULL | 以美分為單位，例如: 15025 = $150.25 |
-| high | INT | 最高價 | NOT NULL | 以美分為單位 |
-| low | INT | 最低價 | NOT NULL | 以美分為單位 |
-| close | INT | 收盤價 | NOT NULL | 以美分為單位 |
-| volume | BIGINT | 成交量 | NOT NULL | 單位: 股 |
-| change | INT | 漲跌 | NOT NULL | 以美分為單位 |
-| changePercent | INT | 漲跌幅 | NOT NULL | 以基點為單位（萬分之一） |
-| createdAt | TIMESTAMP | 建立時間 | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 記錄建立時間 |
-
-**索引設計**：
-- 主鍵索引：`PRIMARY KEY (id)`
-- 唯一索引：`UNIQUE INDEX idx_symbol_date (symbol, date)`
-- 一般索引：`INDEX idx_date (date)`
-- 一般索引：`INDEX idx_symbol (symbol)`
-
-**資料來源**：TwelveData API - `time_series` 端點
-
-**價格儲存格式說明**：
-- 所有價格欄位以**美分**為單位儲存
-  - 例如：股價 $150.25 儲存為 15025
-- 前端顯示時需除以 100 進行格式轉換
+> **注意**：usStockPrices 歷史價格表已於 v2.0 版本移除，改用即時 API 呼叫取得價格資料。
 
 #### usDataSyncStatus - 美股資料同步狀態表
 
@@ -674,7 +637,35 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 - **timeseries（歷史數據）**：快取時間 1 小時
 - **company（公司資訊）**：快取時間 24 小時
 
-### 3.6 資料表關聯圖
+### 3.6 使用者行為追蹤表設計
+
+#### userSearchBehavior - 使用者搜尋行為追蹤表
+
+此表記錄使用者的搜尋行為，用於個人化搜尋排序與建議功能。
+
+| 欄位名稱 | 型別 | 說明 | 約束 | 備註 |
+|---------|------|------|------|------|
+| id | INT | 主鍵 | PK, AUTO_INCREMENT | 自動遞增 |
+| userId | INT | 使用者 ID | NOT NULL | 關聯 users 表 |
+| market | VARCHAR(10) | 市場 | NOT NULL | TW / US |
+| symbol | VARCHAR(20) | 股票代號 | NOT NULL | 例如: 2330, AAPL |
+| searchCount | INT | 搜尋次數 | NOT NULL, DEFAULT 1 | 累計搜尋次數 |
+| lastSearchAt | TIMESTAMP | 最後搜尋時間 | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 最近一次搜尋時間 |
+| createdAt | TIMESTAMP | 建立時間 | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 記錄建立時間 |
+| updatedAt | TIMESTAMP | 更新時間 | NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 最後更新時間 |
+
+**索引設計**：
+- 主鍵索引：`PRIMARY KEY (id)`
+- 複合索引：`INDEX idx_user_market_symbol (userId, market, symbol)`
+- 一般索引：`INDEX idx_userId (userId)`
+- 一般索引：`INDEX idx_lastSearchAt (lastSearchAt)`
+
+**個人化搜尋排序演算法**：
+- 搜尋結果根據使用者的搜尋頻率與時間衰減進行排序
+- 計算公式：`score = searchCount * timeDecayFactor`
+- 時間衰減因子：近期搜尋權重較高，隨時間遞減
+
+### 3.7 資料表關聯圖
 
 ```
 ┌─────────────────┐
@@ -682,22 +673,19 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 │  (使用者資料)    │
 └─────────────────┘
         │
-        │ (無直接關聯，透過應用層控制存取權限)
-        │
+        │ userId (1:N)
         ↓
+┌─────────────────────┐
+│ userSearchBehavior  │
+│  (搜尋行為追蹤)      │
+└─────────────────────┘
+
 ┌─────────────────────────────────────────────────────────────┐
 │                         台股資料                              │
 │                                                               │
 │  ┌─────────────┐                                             │
 │  │  twStocks   │                                             │
 │  │ (基本資料)   │                                             │
-│  └─────────────┘                                             │
-│        │                                                      │
-│        │ symbol (1:N)                                        │
-│        ↓                                                      │
-│  ┌─────────────┐                                             │
-│  │twStockPrices│                                             │
-│  │ (歷史價格)   │                                             │
 │  └─────────────┘                                             │
 │                                                               │
 │  ┌─────────────────┐      ┌──────────────────┐             │
@@ -713,18 +701,15 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 │  │  usStocks   │                                             │
 │  │ (基本資料)   │                                             │
 │  └─────────────┘                                             │
-│        │                                                      │
-│        │ symbol (1:N)                                        │
-│        ↓                                                      │
-│  ┌─────────────┐                                             │
-│  │usStockPrices│                                             │
-│  │ (歷史價格)   │                                             │
-│  └─────────────┘                                             │
 │                                                               │
 │  ┌─────────────────┐      ┌──────────────────┐             │
 │  │usDataSyncStatus │      │usDataSyncErrors  │             │
 │  │  (同步狀態)      │      │  (錯誤記錄)       │             │
 │  └─────────────────┘      └──────────────────┘             │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                       共用快取資料                            │
 │                                                               │
 │  ┌─────────────────┐                                         │
 │  │stockDataCache   │                                         │
@@ -739,43 +724,50 @@ STS 平台包含 **8 個核心資料表** 與 **1 個快取資料表**，分為�
 - 未使用外鍵約束以提升寫入效能，由應用層確保資料一致性
 - 使用者資料與股票資料無直接關聯，透過應用層控制存取權限
 
-### 3.7 儲存空間估算
+### 3.8 儲存空間估算
 
-#### 台股（2,000 檔股票，5 年歷史）
+#### 台股（約 2,300 檔股票）
 
 | 資料表 | 單筆大小 | 記錄數 | 總容量 |
 |-------|---------|--------|--------|
-| twStocks | ~300 bytes | 2,000 | ~0.6 MB |
-| twStockPrices | ~100 bytes | 2,000 × 250 × 5 | ~250 MB |
+| twStocks | ~300 bytes | 2,300 | ~0.7 MB |
 | twDataSyncStatus | ~200 bytes | ~100 | ~0.02 MB |
 | twDataSyncErrors | ~500 bytes | ~1,000 | ~0.5 MB |
-| **小計** | - | - | **~251 MB** |
+| **小計** | - | - | **~1.2 MB** |
 
-#### 美股（252 檔定期同步 + 5,000 檔快取，5 年歷史）
+> **注意**：歷史價格表已移除，改用即時 API 呼叫取得價格資料。
+
+#### 美股（約 530 檔 S&P 500 + ETF）
 
 | 資料表 | 單筆大小 | 記錄數 | 總容量 |
 |-------|---------|--------|--------|
-| usStocks | ~400 bytes | 5,252 | ~2.1 MB |
-| usStockPrices | ~120 bytes | 252 × 250 × 5 + 5,000 × 30 | ~195 MB |
+| usStocks | ~400 bytes | 530 | ~0.2 MB |
 | usDataSyncStatus | ~200 bytes | ~100 | ~0.02 MB |
 | usDataSyncErrors | ~500 bytes | ~1,000 | ~0.5 MB |
 | stockDataCache | ~2 KB | ~5,000 | ~10 MB |
-| **小計** | - | - | **~207.6 MB** |
+| **小計** | - | - | **~10.7 MB** |
+
+> **注意**：歷史價格表已移除，改用即時 API 呼叫取得價格資料。
 
 #### 使用者資料（1,000 使用者）
 
 | 資料表 | 單筆大小 | 記錄數 | 總容量 |
 |-------|---------|--------|--------|
 | users | ~300 bytes | 1,000 | ~0.3 MB |
+| userSearchBehavior | ~150 bytes | ~50,000 | ~7.5 MB |
+| **小計** | - | - | **~7.8 MB** |
 
 #### 總計
 
 | 類別 | 容量 |
 |-----|------|
-| 使用者資料 | ~0.3 MB |
-| 台股資料 | ~251 MB |
-| 美股資料 | ~207.6 MB |
-| 索引（約 30%） | ~137.7 MB |
+| 使用者資料 | ~7.8 MB |
+| 台股資料 | ~1.2 MB |
+| 美股資料 | ~10.7 MB |
+| 索引（約 30%） | ~5.9 MB |
+| **總計** | **~25.6 MB** |
+
+> **架構優化說明**：v2.0 版本移除歷史價格表後，資料庫儲存需求大幅降低（從約 600 MB 降至約 26 MB），同時透過即時 API 呼叫確保價格資料的即時性。
 | **總計** | **~596.6 MB (約 0.6 GB)** |
 
 **說明**：
